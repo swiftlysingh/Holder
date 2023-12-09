@@ -27,11 +27,15 @@ struct ContentView: View {
 							}
 						}
 					}
+					NavigationLink(destination: CardView(card: .init(id: UUID(), number: "", cvv: "", expiration: "", nickname: ""), isEditing: true)) {
+						Text("Add new card")
+							.foregroundStyle(.blue)
+					}
+
 				}
 			header: {
 				Text("Credit Cards")
 			}
-
 
 			}
 			.navigationTitle("Cards")
