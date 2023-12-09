@@ -11,7 +11,7 @@ struct CardView: View {
 
 	@State var card : Card
 
-	@State var edit = true
+	@State var isEditing = false
 
 	fileprivate func itemView(heading : String, value : Binding<String>) -> some View {
 		return HStack{
@@ -20,8 +20,8 @@ struct CardView: View {
 			Spacer()
 			TextField("", text: value)
 				.multilineTextAlignment(.trailing)
-				.disabled(edit)
-				.foregroundColor(edit ? .accentColor : .blue)
+				.disabled(!isEditing)
+				.foregroundColor(isEditing ? .blue : .accentColor)
 
 		}
 	}
@@ -37,7 +37,7 @@ struct CardView: View {
 		.navigationBarTitleDisplayMode(.inline)
 		.toolbar {
 			Button("Edit") {
-				edit.toggle()
+				isEditing.toggle()
 			}
 		}
     }
