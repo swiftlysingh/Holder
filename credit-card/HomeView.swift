@@ -17,36 +17,22 @@ struct HomeView: View {
 	var body: some View {
 		NavigationStack {
 			List{
-				Section(header: Text("\(CardType.creditCard.rawValue)s")){
-					ForEach(cards.filter({ cardData in
-						cardData.type == CardType.creditCard
-					})) { card in
-						NavigationLink(destination: CardView(card: card )){
-							VStack(alignment: .leading){
-								Text(card.nickname)
-								Text(card.number.toSecureCard())
+				ForEach(CardType.allCases){ type in
+					Section(header: Text("\(type.rawValue)s")){
+						ForEach(cards.filter({ cardData in
+							cardData.type == type
+						})) { card in
+							NavigationLink(destination: CardView(card: card )){
+								VStack(alignment: .leading){
+									Text(card.nickname)
+									Text(card.number.toSecureCard())
+								}
 							}
 						}
-					}
-					NavigationLink(destination: CardView(card: .init(id: UUID(), number: "", cvv: "", expiration: "", nickname: "", type: .creditCard), isEditing: true)) {
-						Text("Add a new \(CardType.creditCard.rawValue)")
-							.foregroundStyle(.blue)
-					}
-				}
-				Section(header: Text("\(CardType.debitCard.rawValue)s")){
-					ForEach(cards.filter({ cardData in
-						cardData.type == CardType.debitCard
-					})) { card in
-						NavigationLink(destination: CardView(card: card )){
-							VStack(alignment: .leading){
-								Text(card.nickname)
-								Text(card.number.toSecureCard())
-							}
+						NavigationLink(destination: CardView(card: .init(id: UUID(), number: "", cvv: "", expiration: "", nickname: "", type: .creditCard), isEditing: true)) {
+							Text("Add a new \(type.rawValue)")
+								.foregroundStyle(.blue)
 						}
-					}
-					NavigationLink(destination: CardView(card: .init(id: UUID(), number: "", cvv: "", expiration: "", nickname: "", type: .creditCard), isEditing: true)) {
-						Text("Add a new \(CardType.debitCard.rawValue)")
-							.foregroundStyle(.blue)
 					}
 				}
 			}
