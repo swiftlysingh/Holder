@@ -7,7 +7,7 @@
 
 import SwiftUI
 
-struct ContentView: View {
+struct HomeView: View {
 
 	var cards : [Card] = [ Card(id: UUID(), number: "2030 202030 2020", cvv: "3232", expiration: "11/11", nickname: "American Express"),
 						   Card(id: UUID(), number: "2030 2020 3023 2323", cvv: "3232", expiration:"11/11", nickname: "Visa"),
@@ -48,16 +48,6 @@ struct ContentView: View {
 
 		}
 	}
-
-}
-
-extension String {
-	func toSecureCard () -> String {
-		let spaceCount = self.components(separatedBy: " ").count - 1
-		return self.replacing(try! Regex("[0-9]"), maxReplacements: self.count - spaceCount - Int(UserSettings.shared.$showNumber.wrappedValue)) { val in
-			"X"
-		}
-	}
 }
 
 struct Card: Identifiable {
@@ -69,5 +59,5 @@ struct Card: Identifiable {
 }
 
 #Preview {
-    ContentView()
+    HomeView()
 }
