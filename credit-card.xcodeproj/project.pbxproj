@@ -10,8 +10,9 @@
 		EE599BAC2B23900A002F49F8 /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE599BAB2B23900A002F49F8 /* SettingsView.swift */; };
 		EE599BAE2B2398DF002F49F8 /* UserSettings.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE599BAD2B2398DF002F49F8 /* UserSettings.swift */; };
 		EE599BB02B239F28002F49F8 /* CardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE599BAF2B239F27002F49F8 /* CardView.swift */; };
+		EE599BB22B24465A002F49F8 /* Extensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE599BB12B24465A002F49F8 /* Extensions.swift */; };
 		EEBB52EA2B238D6600035B92 /* CreditCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = EEBB52E92B238D6600035B92 /* CreditCard.swift */; };
-		EEBB52EC2B238D6600035B92 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = EEBB52EB2B238D6600035B92 /* ContentView.swift */; };
+		EEBB52EC2B238D6600035B92 /* HomeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = EEBB52EB2B238D6600035B92 /* HomeView.swift */; };
 		EEBB52EE2B238D6800035B92 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = EEBB52ED2B238D6800035B92 /* Assets.xcassets */; };
 		EEBB52F12B238D6800035B92 /* Preview Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = EEBB52F02B238D6800035B92 /* Preview Assets.xcassets */; };
 /* End PBXBuildFile section */
@@ -20,9 +21,10 @@
 		EE599BAB2B23900A002F49F8 /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
 		EE599BAD2B2398DF002F49F8 /* UserSettings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UserSettings.swift; sourceTree = "<group>"; };
 		EE599BAF2B239F27002F49F8 /* CardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CardView.swift; sourceTree = "<group>"; };
+		EE599BB12B24465A002F49F8 /* Extensions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Extensions.swift; sourceTree = "<group>"; };
 		EEBB52E62B238D6600035B92 /* credit-card.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "credit-card.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 		EEBB52E92B238D6600035B92 /* CreditCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CreditCard.swift; sourceTree = "<group>"; };
-		EEBB52EB2B238D6600035B92 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
+		EEBB52EB2B238D6600035B92 /* HomeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeView.swift; sourceTree = "<group>"; };
 		EEBB52ED2B238D6800035B92 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		EEBB52F02B238D6800035B92 /* Preview Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = "Preview Assets.xcassets"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
@@ -58,12 +60,13 @@
 			isa = PBXGroup;
 			children = (
 				EEBB52E92B238D6600035B92 /* CreditCard.swift */,
-				EEBB52EB2B238D6600035B92 /* ContentView.swift */,
+				EEBB52EB2B238D6600035B92 /* HomeView.swift */,
 				EE599BAB2B23900A002F49F8 /* SettingsView.swift */,
+				EE599BAF2B239F27002F49F8 /* CardView.swift */,
+				EE599BAD2B2398DF002F49F8 /* UserSettings.swift */,
+				EE599BB12B24465A002F49F8 /* Extensions.swift */,
 				EEBB52ED2B238D6800035B92 /* Assets.xcassets */,
 				EEBB52EF2B238D6800035B92 /* Preview Content */,
-				EE599BAD2B2398DF002F49F8 /* UserSettings.swift */,
-				EE599BAF2B239F27002F49F8 /* CardView.swift */,
 			);
 			path = "credit-card";
 			sourceTree = "<group>";
@@ -147,8 +150,9 @@
 			buildActionMask = 2147483647;
 			files = (
 				EE599BAC2B23900A002F49F8 /* SettingsView.swift in Sources */,
+				EE599BB22B24465A002F49F8 /* Extensions.swift in Sources */,
 				EE599BAE2B2398DF002F49F8 /* UserSettings.swift in Sources */,
-				EEBB52EC2B238D6600035B92 /* ContentView.swift in Sources */,
+				EEBB52EC2B238D6600035B92 /* HomeView.swift in Sources */,
 				EEBB52EA2B238D6600035B92 /* CreditCard.swift in Sources */,
 				EE599BB02B239F28002F49F8 /* CardView.swift in Sources */,
 			);
