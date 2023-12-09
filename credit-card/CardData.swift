@@ -21,6 +21,13 @@ struct PartCardData : Identifiable{
 	var number: String
 	var name : String
 	var type : CardType
+
+	init(card : CardData) {
+		self.id = UUID()
+		self.number = card.number.toSecureCard()
+		self.name = card.nickname
+		self.type = card.type
+	}
 }
 
 

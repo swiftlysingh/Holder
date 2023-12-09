@@ -12,14 +12,16 @@ final class CardManager {
 	static let standard = CardManager()
 	private init() {}
 
-	func save(_ data: CardData, id: String) {
-		
+	func save(_ card: CardData) {
+
+		let partData = PartCardData(card: card)
+
 		// Create query
 		let query = [
-			kSecValueData: data,
+			kSecValueData: card,
 			kSecClass: kSecClassGenericPassword,
 			kSecAttrService: "service",
-			kSecAttrAccount: id,
+			kSecAttrAccount: partData.id,
 		] as CFDictionary
 
 		// Add data in query to keychain
