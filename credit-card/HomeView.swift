@@ -41,7 +41,9 @@ struct HomeView: View {
 													 expiration: "",
 													 nickname: "",
 													 type: type),
-										 isAddNew: true)
+										 isEditing: true, 
+										 isAddNew: true
+								)
 							}
 						}
 					}
