@@ -6,12 +6,15 @@
 //
 
 import SwiftUI
+import SwiftData
 
 @main
 struct CreditCard: App {
     var body: some Scene {
         WindowGroup {
             HomeView()
+				.modelContainer(for: [PartCardData.self])
         }
+
     }
 }

@@ -6,13 +6,19 @@
 //
 
 import SwiftUI
+import SwiftData
 
 struct HomeView: View {
 
-	var cards : [CardData] = [ CardData(id: UUID(), number: "2030 202030 2020", cvv: "3232", expiration: "11/11", nickname: "American Express", type: .creditCard),
-							   CardData(id: UUID(), number: "2030 2020 3023 2323", cvv: "3232", expiration:"11/11", nickname: "Visa", type: .debitCard),
-							   CardData(id: UUID(), number: "2030 2020 3032 2020", cvv: "3232", expiration: "11/11", nickname: "Visa", type: .creditCard)
+	var cards : [PartCardData] = [
+		PartCardData(card: CardData(id: UUID(), number: "2030 2020 3023 2323", cvv: "3232", expiration:"11/11", nickname: "Visa", type: .debitCard)),
+								   PartCardData(card: CardData(id: UUID(), number: "2030 2020 3023 2323", cvv: "3232", expiration:"11/11", nickname: "Visa", type: .debitCard)),
+							  
+		PartCardData(card: CardData(id: UUID(), number: "2030 2020 3023 2323", cvv: "3232", expiration:"11/11", nickname: "Visa", type: .debitCard))
 	]
+
+//	@Query private var cards : [PartCardData]
+	@Environment(\.modelContext) private var context
 
 	var body: some View {
 		NavigationStack {
@@ -22,14 +28,14 @@ struct HomeView: View {
 						ForEach(cards.filter({ cardData in
 							cardData.type == type
 						})) { card in
-							NavigationLink(destination: CardView(card: card )){
+							NavigationLink(destination: CardView(card: card,context)){
 								VStack(alignment: .leading){
-									Text(card.nickname)
+									Text(card.name)
 									Text(card.number.toSecureCard())
 								}
 							}
 						}
-						NavigationLink(destination: CardView(card: .init(id: UUID(), number: "", cvv: "", expiration: "", nickname: "", type: .creditCard), isEditing: true)) {
+						NavigationLink(destination: CardView(card: PartCardData(card: CardData(id: .init(), number: "", cvv: "", expiration: "", nickname: "", type: .creditCard)), context)) {
 							Text("Add a new \(type.rawValue)")
 								.foregroundStyle(.blue)
 						}
@@ -43,6 +49,9 @@ struct HomeView: View {
 				}
 			}
 		}
+	}
+
+	func generateDefaultDate() {
 	}
 }
 

@@ -5,12 +5,14 @@
 //  Created by Pushpinder Pal Singh on 09/12/23.
 //
 
-import Foundation
+import SwiftUI
 
 final class CardManager {
 
 	static let standard = CardManager()
 	private init() {}
+
+//	@AppStorage("cards") var cards: [PartCardData]?
 
 	func save(_ card: CardData) {
 

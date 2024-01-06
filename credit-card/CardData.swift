@@ -6,8 +6,9 @@
 //
 
 import Foundation
+import SwiftData
 
-struct CardData : Identifiable{
+struct CardData : Identifiable {
 	var id: UUID
 	var number : String
 	var cvv : String
@@ -16,7 +17,8 @@ struct CardData : Identifiable{
 	var type : CardType
 }
 
-struct PartCardData : Identifiable{
+@Model
+class PartCardData : Identifiable {
 	var id: UUID
 	var number: String
 	var name : String
@@ -31,7 +33,7 @@ struct PartCardData : Identifiable{
 }
 
 
-enum CardType: String, CaseIterable, Identifiable {
+enum CardType: String, CaseIterable, Identifiable, Codable {
 	var id: Self {
 		return self
 	}
