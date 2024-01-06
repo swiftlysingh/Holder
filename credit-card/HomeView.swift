@@ -13,6 +13,7 @@ struct HomeView: View {
 							   CardData(id: UUID(), number: "2030 2020 3023 2323", cvv: "3232", expiration:"11/11", nickname: "Visa", type: .debitCard),
 							   CardData(id: UUID(), number: "2030 2020 3032 2020", cvv: "3232", expiration: "11/11", nickname: "Visa", type: .creditCard)
 	]
+	@State private var showingPopover = false
 
 	var body: some View {
 		NavigationStack {
@@ -29,9 +30,19 @@ struct HomeView: View {
 								}
 							}
 						}
-						NavigationLink(destination: CardView(card: .init(id: UUID(), number: "", cvv: "", expiration: "", nickname: "", type: .creditCard), isEditing: true)) {
-							Text("Add a new \(type.rawValue)")
-								.foregroundStyle(.blue)
+						Button("Add a new \(type.rawValue)") {
+							showingPopover.toggle()
+						}
+						.sheet(isPresented: $showingPopover) {
+							NavigationView {
+								CardView(card: .init(id: UUID(),
+													 number: "",
+													 cvv: "",
+													 expiration: "",
+													 nickname: "",
+													 type: type),
+										 isAddNew: true)
+							}
 						}
 					}
 				}

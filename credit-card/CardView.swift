@@ -13,6 +13,10 @@ struct CardView: View {
 
 	@State var isEditing = false
 
+	var isAddNew = false
+
+	@Environment(\.dismiss) private var dismiss
+
 	fileprivate func itemView(heading : String, value : Binding<String>) -> some View {
 		return HStack{
 			Text(heading)
@@ -20,7 +24,7 @@ struct CardView: View {
 			Spacer()
 			TextField("", text: value)
 				.multilineTextAlignment(.trailing)
-				.disabled(!isEditing)
+				.disabled(!isEditing || !isAddNew)
 				.foregroundColor(isEditing ? .blue : .accentColor)
 
 		}
@@ -38,13 +42,13 @@ struct CardView: View {
 				}
 			}
 			.bold()
-			.disabled(!isEditing)
+			.disabled(!isEditing || !isAddNew)
 		}
 		.navigationTitle("Credit Cards")
 		.navigationBarTitleDisplayMode(.inline)
 		.toolbar {
-			Button(isEditing ? "Done" : "Edit") {
-				isEditing.toggle()
+			Button(isEditing || isAddNew ? "Done" : "Edit") {
+				isAddNew ? dismiss() : isEditing.toggle()
 			}
 		}
     }
