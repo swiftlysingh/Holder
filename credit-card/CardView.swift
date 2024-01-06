@@ -24,7 +24,7 @@ struct CardView: View {
 			Spacer()
 			TextField("", text: value)
 				.multilineTextAlignment(.trailing)
-				.disabled(!isEditing || !isAddNew)
+				.disabled(!isEditing)
 				.foregroundColor(isEditing ? .blue : .accentColor)
 
 		}
@@ -42,12 +42,11 @@ struct CardView: View {
 				}
 			}
 			.bold()
-			.disabled(!isEditing || !isAddNew)
 		}
 		.navigationTitle("Credit Cards")
 		.navigationBarTitleDisplayMode(.inline)
 		.toolbar {
-			Button(isEditing || isAddNew ? "Done" : "Edit") {
+			Button(isEditing ? "Done" : "Edit") {
 				isAddNew ? dismiss() : isEditing.toggle()
 			}
 		}
