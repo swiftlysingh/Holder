@@ -7,7 +7,7 @@
 
 import Foundation
 
-struct CardData : Identifiable{
+struct CardData : Identifiable, Codable {
 	var id: UUID
 	var number : String
 	var cvv : String
@@ -16,26 +16,18 @@ struct CardData : Identifiable{
 	var type : CardType
 }
 
-struct PartCardData : Identifiable{
-	var id: UUID
-	var number: String
-	var name : String
-	var type : CardType
-
-	init(card : CardData) {
-		self.id = UUID()
-		self.number = card.number.toSecureCard()
-		self.name = card.nickname
-		self.type = card.type
-	}
-}
-
-
-enum CardType: String, CaseIterable, Identifiable {
+enum CardType: String, CaseIterable, Identifiable, Codable {
 	var id: Self {
 		return self
 	}
 
 	case creditCard = "Credit Card"
 	case debitCard = "Debit Card"
+}
+
+extension CardData {
+	func toData() throws -> Data {
+		let encoder = JSONEncoder()
+		return try encoder.encode(self)
+	}
 }
