@@ -18,10 +18,8 @@ struct HomeView: View {
 			List{
 				ForEach(CardType.allCases){ type in
 					Section(header: Text("\(type.rawValue)s")){
-						ForEach(cardDataStore.cards.filter({ cardData in
-							cardData.type == type
-						})) { card in
-							NavigationLink(destination: 
+						ForEach(cardDataStore.cardsByType[type] ?? [], id: \.id) { card in
+							NavigationLink(destination:
 											CardView(card: card,
 													 addUpdateCard:
 														{ card in
@@ -67,20 +65,15 @@ struct HomeView: View {
 		}
 	}
 	private func deleteCard(at offsets: IndexSet, inSection cardType: CardType) {
-		let allCardsOfType = cardDataStore.cards.filter { $0.type == cardType }
 		offsets.forEach { index in
-			let cardId = allCardsOfType[index].id
-			print(allCardsOfType[index])
-			if cardDataStore.deleteCard(with: cardId) {
-				if let mainIndex = cardDataStore.cards.firstIndex(where: { $0.id == cardId }) {
-					cardDataStore.cards.remove(at: mainIndex)
-				}
+			guard let card = cardDataStore.cardsByType[cardType]?[index] else { return }
+			if cardDataStore.deleteCard(with: card.id) {
+				cardDataStore.cardsByType[cardType]?.remove(at: index)
 			} else {
 				// Handle error if deletion was not successful
 			}
 		}
 	}
-
 }
 
 #Preview {

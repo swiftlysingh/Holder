@@ -8,15 +8,18 @@ import SwiftUI
 
 @Observable
 class CardDataStore {
-	var cards: [CardData] = []
 
+	var cardsByType: [CardType: [CardData]] = [:]
+	
 	init() {
 		loadCards()
 	}
 
 	func loadCards() {
 		let retrievedCard = retrieveAllCardData(service: Bundle.main.bundleIdentifier ?? "com.myApp.defaultService") ?? []
-		cards = retrievedCard.sorted(by: { $0.type < $1.type })
+		for type in CardType.allCases {
+			cardsByType[type] = retrievedCard.filter { $0.type == type }
+		}
 	}
 
 	func addCard(_ card: CardData) {
