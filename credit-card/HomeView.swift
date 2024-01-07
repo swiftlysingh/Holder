@@ -39,19 +39,19 @@ struct HomeView: View {
 						}
 						.sheet(isPresented: $showingPopover) {
 							NavigationView {
-								CardView(card: .init(id: UUID(),
-													 number: "",
-													 cvv: "",
-													 expiration: "",
-													 nickname: "",
-													 type: type),
-										 isEditing: true,
-										 addUpdateCard: { card in
-									cardDataStore.addCard(card)
-									showingPopover = false
+									CardView(card: .init(id: UUID(),
+														 number: "",
+														 cvv: "",
+														 expiration: "",
+														 nickname: "",
+														 type: type),
+											 isEditing: true,
+											 addUpdateCard: { card in
+										cardDataStore.addCard(card)
+										showingPopover = false
+									}
+									)
 								}
-								)
-							}
 						}
 					}
 				}
