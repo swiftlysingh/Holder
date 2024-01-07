@@ -28,8 +28,16 @@ struct SettingsView: View {
 
 				}
 				}
-				.navigationTitle("Settings")
+				Section{
+					LabeledContent("App Version", value: model.appVersion)
+					Link("Follow me on twitter @swiftlysingh", destination: URL(string: "https://twitter.com/swiftlysingh")!)
+				}
+			header: {
+				Text("About")
 			}
+
+			}
+			.navigationTitle("Settings")
 		}
 	}
 }
