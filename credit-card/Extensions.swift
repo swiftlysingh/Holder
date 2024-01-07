@@ -10,8 +10,9 @@ import Foundation
 extension String {
 	func toSecureCard () -> String {
 		let spaceCount = self.components(separatedBy: " ").count - 1
-		return self.replacing(try! Regex("[0-9]"), maxReplacements: self.count - (spaceCount + Int(UserSettings.shared.$showNumber.wrappedValue))) { val in
-			"X"
-		}
+		return self
+//			.replacing(try! Regex("[0-9]"), maxReplacements: self.count - (spaceCount + Int(UserSettings.shared.$showNumber.wrappedValue))) { val in
+//			"X"
+//		}
 	}
 }
