@@ -33,6 +33,9 @@ struct HomeView: View {
 								}
 							}
 						}
+						.onDelete { offsets in
+							deleteCard(at: offsets, inSection: type)
+						}
 						Button("Add a new \(type.rawValue)") {
 							showingPopover.toggle()
 						}
@@ -63,6 +66,21 @@ struct HomeView: View {
 			}
 		}
 	}
+	private func deleteCard(at offsets: IndexSet, inSection cardType: CardType) {
+		let allCardsOfType = cardDataStore.cards.filter { $0.type == cardType }
+		offsets.forEach { index in
+			let cardId = allCardsOfType[index].id
+			print(allCardsOfType[index])
+			if cardDataStore.deleteCard(with: cardId) {
+				if let mainIndex = cardDataStore.cards.firstIndex(where: { $0.id == cardId }) {
+					cardDataStore.cards.remove(at: mainIndex)
+				}
+			} else {
+				// Handle error if deletion was not successful
+			}
+		}
+	}
+
 }
 
 #Preview {

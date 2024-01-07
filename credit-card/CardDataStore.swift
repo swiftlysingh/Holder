@@ -25,6 +25,18 @@ class CardDataStore {
 		loadCards()
 	}
 
+	func deleteCard(with id: UUID) -> Bool {
+		let query: [String: Any] = [
+			kSecClass as String: kSecClassGenericPassword,
+			kSecAttrService as String: Bundle.main.bundleIdentifier ?? "com.myApp.defaultService",
+			kSecAttrAccount as String: id.uuidString
+		]
+
+		let status = SecItemDelete(query as CFDictionary)
+
+		return status == errSecSuccess
+	}
+
 	private func saveOrUpdateCardData(_ cardData: CardData) -> Bool {
 		let service = Bundle.main.bundleIdentifier ?? "com.myApp.defaultService"
 		let account = cardData.id.uuidString
