@@ -26,7 +26,7 @@
 		EE599BB12B24465A002F49F8 /* Extensions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Extensions.swift; sourceTree = "<group>"; };
 		EE599BB52B24495F002F49F8 /* CardData.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CardData.swift; sourceTree = "<group>"; };
 		EE960C4E2B4AC00B00B67805 /* CardDataStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CardDataStore.swift; sourceTree = "<group>"; };
-		EEBB52E62B238D6600035B92 /* credit-card.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "credit-card.app"; sourceTree = BUILT_PRODUCTS_DIR; };
+		EEBB52E62B238D6600035B92 /* cards.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = cards.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		EEBB52E92B238D6600035B92 /* CreditCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CreditCard.swift; sourceTree = "<group>"; };
 		EEBB52EB2B238D6600035B92 /* HomeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeView.swift; sourceTree = "<group>"; };
 		EEBB52ED2B238D6800035B92 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
@@ -47,7 +47,7 @@
 		EEBB52DD2B238D6600035B92 = {
 			isa = PBXGroup;
 			children = (
-				EEBB52E82B238D6600035B92 /* credit-card */,
+				EEBB52E82B238D6600035B92 /* cards */,
 				EEBB52E72B238D6600035B92 /* Products */,
 			);
 			sourceTree = "<group>";
@@ -55,12 +55,12 @@
 		EEBB52E72B238D6600035B92 /* Products */ = {
 			isa = PBXGroup;
 			children = (
-				EEBB52E62B238D6600035B92 /* credit-card.app */,
+				EEBB52E62B238D6600035B92 /* cards.app */,
 			);
 			name = Products;
 			sourceTree = "<group>";
 		};
-		EEBB52E82B238D6600035B92 /* credit-card */ = {
+		EEBB52E82B238D6600035B92 /* cards */ = {
 			isa = PBXGroup;
 			children = (
 				EEBB52E92B238D6600035B92 /* CreditCard.swift */,
@@ -74,7 +74,7 @@
 				EE599BB52B24495F002F49F8 /* CardData.swift */,
 				EE960C4E2B4AC00B00B67805 /* CardDataStore.swift */,
 			);
-			path = "credit-card";
+			path = cards;
 			sourceTree = "<group>";
 		};
 		EEBB52EF2B238D6800035B92 /* Preview Content */ = {
@@ -88,9 +88,9 @@
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
-		EEBB52E52B238D6600035B92 /* credit-card */ = {
+		EEBB52E52B238D6600035B92 /* cards */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = EEBB52F42B238D6800035B92 /* Build configuration list for PBXNativeTarget "credit-card" */;
+			buildConfigurationList = EEBB52F42B238D6800035B92 /* Build configuration list for PBXNativeTarget "cards" */;
 			buildPhases = (
 				EEBB52E22B238D6600035B92 /* Sources */,
 				EEBB52E32B238D6600035B92 /* Frameworks */,
@@ -100,9 +100,9 @@
 			);
 			dependencies = (
 			);
-			name = "credit-card";
+			name = cards;
 			productName = "credit-card";
-			productReference = EEBB52E62B238D6600035B92 /* credit-card.app */;
+			productReference = EEBB52E62B238D6600035B92 /* cards.app */;
 			productType = "com.apple.product-type.application";
 		};
 /* End PBXNativeTarget section */
@@ -120,7 +120,7 @@
 					};
 				};
 			};
-			buildConfigurationList = EEBB52E12B238D6600035B92 /* Build configuration list for PBXProject "credit-card" */;
+			buildConfigurationList = EEBB52E12B238D6600035B92 /* Build configuration list for PBXProject "cards" */;
 			compatibilityVersion = "Xcode 14.0";
 			developmentRegion = en;
 			hasScannedForEncodings = 0;
@@ -133,7 +133,7 @@
 			projectDirPath = "";
 			projectRoot = "";
 			targets = (
-				EEBB52E52B238D6600035B92 /* credit-card */,
+				EEBB52E52B238D6600035B92 /* cards */,
 			);
 		};
 /* End PBXProject section */
@@ -294,8 +294,8 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_ASSET_PATHS = "\"credit-card/Preview Content\"";
+				CURRENT_PROJECT_VERSION = 6;
+				DEVELOPMENT_ASSET_PATHS = "\"cards/Preview Content\"";
 				DEVELOPMENT_TEAM = 4WMQY24R33;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
@@ -326,8 +326,8 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_ASSET_PATHS = "\"credit-card/Preview Content\"";
+				CURRENT_PROJECT_VERSION = 6;
+				DEVELOPMENT_ASSET_PATHS = "\"cards/Preview Content\"";
 				DEVELOPMENT_TEAM = 4WMQY24R33;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
@@ -355,7 +355,7 @@
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
-		EEBB52E12B238D6600035B92 /* Build configuration list for PBXProject "credit-card" */ = {
+		EEBB52E12B238D6600035B92 /* Build configuration list for PBXProject "cards" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				EEBB52F22B238D6800035B92 /* Debug */,
@@ -364,7 +364,7 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		EEBB52F42B238D6800035B92 /* Build configuration list for PBXNativeTarget "credit-card" */ = {
+		EEBB52F42B238D6800035B92 /* Build configuration list for PBXNativeTarget "cards" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				EEBB52F52B238D6800035B92 /* Debug */,
