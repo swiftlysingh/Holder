@@ -15,7 +15,8 @@ class CardDataStore {
 	}
 
 	func loadCards() {
-		cards = retrieveAllCardData(service: Bundle.main.bundleIdentifier ?? "com.myApp.defaultService") ?? []
+		let retrievedCard = retrieveAllCardData(service: Bundle.main.bundleIdentifier ?? "com.myApp.defaultService") ?? []
+		cards = retrievedCard.sorted(by: { $0.type < $1.type })
 	}
 
 	func addCard(_ card: CardData) {

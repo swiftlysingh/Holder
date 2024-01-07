@@ -23,6 +23,13 @@ enum CardType: String, CaseIterable, Identifiable, Codable {
 
 	case creditCard = "Credit Card"
 	case debitCard = "Debit Card"
+
+	static func < (lhs: CardType, rhs: CardType) -> Bool {
+		// credit card
+		// debit card
+		return lhs.rawValue < rhs.rawValue
+	}
+
 }
 
 extension CardData {
