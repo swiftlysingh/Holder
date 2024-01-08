@@ -26,7 +26,7 @@
 		EE599BB12B24465A002F49F8 /* Extensions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Extensions.swift; sourceTree = "<group>"; };
 		EE599BB52B24495F002F49F8 /* CardData.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CardData.swift; sourceTree = "<group>"; };
 		EE960C4E2B4AC00B00B67805 /* CardDataStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CardDataStore.swift; sourceTree = "<group>"; };
-		EEBB52E62B238D6600035B92 /* cards.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = cards.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		EEBB52E62B238D6600035B92 /* Card(s).app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "Card(s).app"; sourceTree = BUILT_PRODUCTS_DIR; };
 		EEBB52E92B238D6600035B92 /* CreditCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CreditCard.swift; sourceTree = "<group>"; };
 		EEBB52EB2B238D6600035B92 /* HomeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeView.swift; sourceTree = "<group>"; };
 		EEBB52ED2B238D6800035B92 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
@@ -55,7 +55,7 @@
 		EEBB52E72B238D6600035B92 /* Products */ = {
 			isa = PBXGroup;
 			children = (
-				EEBB52E62B238D6600035B92 /* cards.app */,
+				EEBB52E62B238D6600035B92 /* Card(s).app */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -102,7 +102,7 @@
 			);
 			name = cards;
 			productName = "credit-card";
-			productReference = EEBB52E62B238D6600035B92 /* cards.app */;
+			productReference = EEBB52E62B238D6600035B92 /* Card(s).app */;
 			productType = "com.apple.product-type.application";
 		};
 /* End PBXNativeTarget section */
@@ -299,7 +299,7 @@
 				DEVELOPMENT_TEAM = 4WMQY24R33;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_KEY_CFBundleDisplayName = Cards;
+				INFOPLIST_KEY_CFBundleDisplayName = "Card(s)";
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.utilities";
 				INFOPLIST_KEY_NSFaceIDUsageDescription = "To protect card details";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
@@ -313,7 +313,7 @@
 				);
 				MARKETING_VERSION = 1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.swiftlysingh.cards;
-				PRODUCT_NAME = "$(TARGET_NAME)";
+				PRODUCT_NAME = "Card(s)";
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
@@ -331,7 +331,7 @@
 				DEVELOPMENT_TEAM = 4WMQY24R33;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_KEY_CFBundleDisplayName = Cards;
+				INFOPLIST_KEY_CFBundleDisplayName = "Card(s)";
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.utilities";
 				INFOPLIST_KEY_NSFaceIDUsageDescription = "To protect card details";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
@@ -345,7 +345,7 @@
 				);
 				MARKETING_VERSION = 1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.swiftlysingh.cards;
-				PRODUCT_NAME = "$(TARGET_NAME)";
+				PRODUCT_NAME = "Card(s)";
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
