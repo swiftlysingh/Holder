@@ -27,7 +27,7 @@
 		EE599BB52B24495F002F49F8 /* CardData.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CardData.swift; sourceTree = "<group>"; };
 		EE7AF3E82B4C3A1300F2F7C0 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
 		EE960C4E2B4AC00B00B67805 /* CardDataStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CardDataStore.swift; sourceTree = "<group>"; };
-		EEBB52E62B238D6600035B92 /* Card(s).app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "Card(s).app"; sourceTree = BUILT_PRODUCTS_DIR; };
+		EEBB52E62B238D6600035B92 /* Holder: A Secure Card Vault.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "Holder: A Secure Card Vault.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 		EEBB52E92B238D6600035B92 /* CreditCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CreditCard.swift; sourceTree = "<group>"; };
 		EEBB52EB2B238D6600035B92 /* HomeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeView.swift; sourceTree = "<group>"; };
 		EEBB52ED2B238D6800035B92 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
@@ -56,7 +56,7 @@
 		EEBB52E72B238D6600035B92 /* Products */ = {
 			isa = PBXGroup;
 			children = (
-				EEBB52E62B238D6600035B92 /* Card(s).app */,
+				EEBB52E62B238D6600035B92 /* Holder: A Secure Card Vault.app */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -90,9 +90,9 @@
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
-		EEBB52E52B238D6600035B92 /* Card(s) */ = {
+		EEBB52E52B238D6600035B92 /* cards */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = EEBB52F42B238D6800035B92 /* Build configuration list for PBXNativeTarget "Card(s)" */;
+			buildConfigurationList = EEBB52F42B238D6800035B92 /* Build configuration list for PBXNativeTarget "cards" */;
 			buildPhases = (
 				EEBB52E22B238D6600035B92 /* Sources */,
 				EEBB52E32B238D6600035B92 /* Frameworks */,
@@ -102,9 +102,9 @@
 			);
 			dependencies = (
 			);
-			name = "Card(s)";
+			name = cards;
 			productName = "credit-card";
-			productReference = EEBB52E62B238D6600035B92 /* Card(s).app */;
+			productReference = EEBB52E62B238D6600035B92 /* Holder: A Secure Card Vault.app */;
 			productType = "com.apple.product-type.application";
 		};
 /* End PBXNativeTarget section */
@@ -135,7 +135,7 @@
 			projectDirPath = "";
 			projectRoot = "";
 			targets = (
-				EEBB52E52B238D6600035B92 /* Card(s) */,
+				EEBB52E52B238D6600035B92 /* cards */,
 			);
 		};
 /* End PBXProject section */
@@ -302,7 +302,7 @@
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = cards/Info.plist;
-				INFOPLIST_KEY_CFBundleDisplayName = "Card(s)";
+				INFOPLIST_KEY_CFBundleDisplayName = Holder;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.utilities";
 				INFOPLIST_KEY_NSFaceIDUsageDescription = "To protect card details";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
@@ -316,7 +316,7 @@
 				);
 				MARKETING_VERSION = 1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.swiftlysingh.cards;
-				PRODUCT_NAME = "$(TARGET_NAME)";
+				PRODUCT_NAME = "Holder: A Secure Card Vault";
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
@@ -335,7 +335,7 @@
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = cards/Info.plist;
-				INFOPLIST_KEY_CFBundleDisplayName = "Card(s)";
+				INFOPLIST_KEY_CFBundleDisplayName = Holder;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.utilities";
 				INFOPLIST_KEY_NSFaceIDUsageDescription = "To protect card details";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
@@ -349,7 +349,7 @@
 				);
 				MARKETING_VERSION = 1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.swiftlysingh.cards;
-				PRODUCT_NAME = "$(TARGET_NAME)";
+				PRODUCT_NAME = "Holder: A Secure Card Vault";
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
@@ -368,7 +368,7 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		EEBB52F42B238D6800035B92 /* Build configuration list for PBXNativeTarget "Card(s)" */ = {
+		EEBB52F42B238D6800035B92 /* Build configuration list for PBXNativeTarget "cards" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				EEBB52F52B238D6800035B92 /* Debug */,
