@@ -15,8 +15,8 @@
             <BuildableReference
                BuildableIdentifier = "primary"
                BlueprintIdentifier = "EEBB52E52B238D6600035B92"
-               BuildableName = "Card(s).app"
-               BlueprintName = "Card(s)"
+               BuildableName = "cards.app"
+               BlueprintName = "cards"
                ReferencedContainer = "container:cards.xcodeproj">
             </BuildableReference>
          </BuildActionEntry>
@@ -44,8 +44,8 @@
          <BuildableReference
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "EEBB52E52B238D6600035B92"
-            BuildableName = "Card(s).app"
-            BlueprintName = "Card(s)"
+            BuildableName = "cards.app"
+            BlueprintName = "cards"
             ReferencedContainer = "container:cards.xcodeproj">
          </BuildableReference>
       </BuildableProductRunnable>
@@ -61,8 +61,8 @@
          <BuildableReference
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "EEBB52E52B238D6600035B92"
-            BuildableName = "Card(s).app"
-            BlueprintName = "Card(s)"
+            BuildableName = "cards.app"
+            BlueprintName = "cards"
             ReferencedContainer = "container:cards.xcodeproj">
          </BuildableReference>
       </BuildableProductRunnable>
