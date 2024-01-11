@@ -15,7 +15,7 @@
             <BuildableReference
                BuildableIdentifier = "primary"
                BlueprintIdentifier = "EEBB52E52B238D6600035B92"
-               BuildableName = "cards.app"
+               BuildableName = "Holder: A Secure Card Vault.app"
                BlueprintName = "cards"
                ReferencedContainer = "container:cards.xcodeproj">
             </BuildableReference>
@@ -44,7 +44,7 @@
          <BuildableReference
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "EEBB52E52B238D6600035B92"
-            BuildableName = "cards.app"
+            BuildableName = "Holder: A Secure Card Vault.app"
             BlueprintName = "cards"
             ReferencedContainer = "container:cards.xcodeproj">
          </BuildableReference>
@@ -61,7 +61,7 @@
          <BuildableReference
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "EEBB52E52B238D6600035B92"
-            BuildableName = "cards.app"
+            BuildableName = "Holder: A Secure Card Vault.app"
             BlueprintName = "cards"
             ReferencedContainer = "container:cards.xcodeproj">
          </BuildableReference>

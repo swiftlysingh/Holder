@@ -22,12 +22,23 @@ struct CardView: View {
 			Text(heading)
 				.bold()
 			Spacer()
-			if isAuthenticated {
+            if isAuthenticated || (isEditing) {
 				TextField("", text: value)
 					.multilineTextAlignment(.trailing)
 					.disabled(!isEditing)
 					.foregroundColor(isEditing ? .blue : .accentColor)
 					.keyboardType(type)
+                    .contextMenu(menuItems: {
+                        Button(action: {
+                            UIPasteboard.general.string = value.wrappedValue
+                                }) {
+                                    Text("Copy to clipboard")
+                                    Image(systemName: "doc.on.doc")
+                                }
+                    })
+                    .onTapGesture(count: 2) {
+                        UIPasteboard.general.string = value.wrappedValue
+                    }
 //					https://codingwithrashid.com/how-to-limit-characters-in-ios-swiftui-textfield/
 
 			} else {
