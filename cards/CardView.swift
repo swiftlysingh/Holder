@@ -14,6 +14,7 @@ struct CardView: View {
 	@State var card : CardData
 	@State var isEditing = false
 	@State private var isAuthenticated = false
+//    @State private var didTap = false
 
 	var addUpdateCard: (CardData) -> Void
 
@@ -28,24 +29,36 @@ struct CardView: View {
 					.disabled(!isEditing)
 					.foregroundColor(isEditing ? .blue : .accentColor)
 					.keyboardType(type)
-                    .contextMenu(menuItems: {
-                        Button(action: {
-                            UIPasteboard.general.string = value.wrappedValue
+                   .contextMenu(menuItems: {
+                                Button(action: {
+                                    UIPasteboard.general.string = value.wrappedValue
                                 }) {
                                     Text("Copy to clipboard")
                                     Image(systemName: "doc.on.doc")
                                 }
-                    })
-                    .onTapGesture(count: 2) {
-                        UIPasteboard.general.string = value.wrappedValue
-                    }
+                            })
 //					https://codingwithrashid.com/how-to-limit-characters-in-ios-swiftui-textfield/
-
 			} else {
 				SecureField("", text: value)
 					.multilineTextAlignment(.trailing)
 			}
 		}
+        .onTapGesture(count: 2) {
+            UIPasteboard.general.string = value.wrappedValue
+        }
+// Popover not showing.
+//        .onTapGesture {
+//            print("Lalala")
+//            didTap = true
+//            print(didTap)
+//        }
+//        .popover(isPresented: $didTap) {
+//            Button("Copy") {
+//                UIPasteboard.general.string = value.wrappedValue
+//                print("Copied: \(value.wrappedValue)")
+//                didTap = false
+//            }
+//        }
 	}
 	
 	fileprivate func getCardListView() -> some View {
@@ -59,6 +72,7 @@ struct CardView: View {
 					Text(pref.rawValue)
 				}
 			}
+            .disabled(!isEditing)
 			.bold()
 		}
 		.navigationTitle("Credit Cards")
@@ -68,6 +82,7 @@ struct CardView: View {
 				addUpdateCard(card)
 				isEditing.toggle()
 			}
+            .disabled(!isAuthenticated)
 		}
 	}
 	
