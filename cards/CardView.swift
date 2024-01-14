@@ -63,10 +63,11 @@ struct CardView: View {
 	
 	fileprivate func getCardListView() -> some View {
 		return List {
+            itemView(heading: "Name", value: $card.name, .alphabet)
 			itemView(heading: "Number", value: $card.number,.numberPad)
 			itemView(heading: "Expiration", value: $card.expiration, .numberPad)
 			itemView(heading: "Security Code", value: $card.cvv, .numberPad)
-			itemView(heading: "Name", value: $card.nickname, .alphabet)
+            itemView(heading: "Description", value: $card.description, .alphabet)
 			Picker("Card Type", selection: $card.type){
 				ForEach(CardType.allCases) { pref in
 					Text(pref.rawValue)
@@ -79,7 +80,9 @@ struct CardView: View {
 		.navigationBarTitleDisplayMode(.inline)
 		.toolbar {
 			Button(isEditing ? "Done" : "Edit") {
-				addUpdateCard(card)
+                if !card.number.isEmpty{
+                        addUpdateCard(card)
+                }
 				isEditing.toggle()
 			}
             .disabled(!isAuthenticated)

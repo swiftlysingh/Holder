@@ -12,6 +12,10 @@ struct HomeView: View {
 	@Bindable var cardDataStore = CardDataStore()
 
 	@State private var showingPopover = false
+    
+    var appName: String? {
+        Bundle.main.object(forInfoDictionaryKey: "CFBundleDisplayName") as? String
+    }
 
 	var body: some View {
 		NavigationStack {
@@ -26,7 +30,7 @@ struct HomeView: View {
 								cardDataStore.addCard(card)
 							})){
 								VStack(alignment: .leading){
-									Text(card.nickname)
+									Text(card.name)
 									Text(card.number.toSecureCard())
 								}
 							}
@@ -43,7 +47,8 @@ struct HomeView: View {
 														 number: "",
 														 cvv: "",
 														 expiration: "",
-														 nickname: "",
+														 name: "",
+                                                         description: "",
 														 type: type),
 											 isEditing: true,
 											 addUpdateCard: { card in
