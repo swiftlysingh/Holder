@@ -30,7 +30,11 @@ struct HomeView: View {
 								cardDataStore.addCard(card)
 							})){
 								VStack(alignment: .leading){
-									Text(card.name)
+                                    if card.description != "" {
+                                        Text(card.description)
+                                    } else {
+                                        Text(card.name)
+                                    }
 									Text(card.number.toSecureCard())
 								}
 							}
