@@ -12,7 +12,8 @@ struct CardData : Identifiable, Codable {
 	var number : String
 	var cvv : String
 	var expiration : String
-	var nickname : String
+	var name : String
+    var description: String
 	var type : CardType
 }
 
