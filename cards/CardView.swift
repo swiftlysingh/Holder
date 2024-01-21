@@ -7,6 +7,7 @@
 
 import SwiftUI
 import LocalAuthentication
+import TipKit
 
 
 struct CardView: View {
@@ -74,9 +75,14 @@ struct CardView: View {
     }
 	
 	fileprivate func getCardListView() -> some View {
+        let tip = DoubleTapTip()
+        
 		return List {
             itemView(heading: "Name", value: $card.name, .alphabet)
 			itemView(heading: "Number", value: $card.number,.numberPad)
+                .if(!isEditing) { viewy in
+                    viewy.popoverTip(tip,arrowEdge: .top)
+                }
 			itemView(heading: "Expiration", value: $card.expiration, .numberPad)
 			itemView(heading: "Security Code", value: $card.cvv, .numberPad)
             itemView(heading: "Description", value: $card.description, .alphabet)
@@ -129,4 +135,29 @@ struct CardView: View {
 		}
 	}
 
+}
+
+struct DoubleTapTip: Tip {
+    var title: Text {
+        Text("Double Tap to Copy")
+    }
+ 
+    var message: Text? {
+        Text("You can double tap to copy details")
+    }
+}
+
+extension View {
+    /// Applies the given transform if the given condition evaluates to `true`.
+    /// - Parameters:
+    ///   - condition: The condition to evaluate.
+    ///   - transform: The transform to apply to the source `View`.
+    /// - Returns: Either the original `View` or the modified `View` if the condition is `true`.
+    @ViewBuilder func `if`<Content: View>(_ condition: Bool, transform: (Self) -> Content) -> some View {
+        if condition {
+            transform(self)
+        } else {
+            self
+        }
+    }
 }
