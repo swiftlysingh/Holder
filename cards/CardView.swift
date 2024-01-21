@@ -31,7 +31,7 @@ struct CardView: View {
 					.keyboardType(type)
                    .contextMenu(menuItems: {
                                 Button(action: {
-                                    UIPasteboard.general.string = value.wrappedValue
+                                    onTap(copy: value.wrappedValue)
                                 }) {
                                     Text("Copy to clipboard")
                                     Image(systemName: "doc.on.doc")
@@ -44,7 +44,7 @@ struct CardView: View {
 			}
 		}
         .onTapGesture(count: 2) {
-            UIPasteboard.general.string = value.wrappedValue
+            onTap(copy: value.wrappedValue)
         }
 // Popover not showing.
 //        .onTapGesture {
@@ -60,6 +60,18 @@ struct CardView: View {
 //            }
 //        }
 	}
+    
+    fileprivate func onTap(copy value: String) {
+        let generator = UINotificationFeedbackGenerator()
+        
+        guard !value.isEmpty else {
+            generator.notificationOccurred(.error)
+                return
+            }
+        
+        UIPasteboard.general.string = value
+        generator.notificationOccurred(.success)
+    }
 	
 	fileprivate func getCardListView() -> some View {
 		return List {
