@@ -15,7 +15,6 @@ struct CardView: View {
 	@State var card : CardData
 	@State var isEditing = false
 	@State private var isAuthenticated = false
-//    @State private var didTap = false
 
 	var addUpdateCard: (CardData) -> Void
 
@@ -32,7 +31,7 @@ struct CardView: View {
 					.keyboardType(type)
                    .contextMenu(menuItems: {
                                 Button(action: {
-                                    onTap(copy: value.wrappedValue)
+                                    copyAction(with: value.wrappedValue)
                                 }) {
                                     Text("Copy to clipboard")
                                     Image(systemName: "doc.on.doc")
@@ -44,32 +43,19 @@ struct CardView: View {
 					.multilineTextAlignment(.trailing)
 			}
 		}
-        .onTapGesture(count: 2) {
-            onTap(copy: value.wrappedValue)
+        .contentShape(Rectangle())
+        .onTapGesture {
+            copyAction(with: value.wrappedValue)
         }
-// Popover not showing.
-//        .onTapGesture {
-//            print("Lalala")
-//            didTap = true
-//            print(didTap)
-//        }
-//        .popover(isPresented: $didTap) {
-//            Button("Copy") {
-//                UIPasteboard.general.string = value.wrappedValue
-//                print("Copied: \(value.wrappedValue)")
-//                didTap = false
-//            }
-//        }
 	}
     
-    fileprivate func onTap(copy value: String) {
+    private func copyAction(with value: String) {
         let generator = UINotificationFeedbackGenerator()
-        
         guard !value.isEmpty else {
             generator.notificationOccurred(.error)
                 return
             }
-        
+        print("log: Copied With item: \(value)")
         UIPasteboard.general.string = value
         generator.notificationOccurred(.success)
     }
@@ -139,11 +125,11 @@ struct CardView: View {
 
 struct DoubleTapTip: Tip {
     var title: Text {
-        Text("Double Tap to Copy")
+        Text("Tap to Copy")
     }
  
     var message: Text? {
-        Text("You can double tap to copy details")
+        Text("You can tap to copy details")
     }
 }
 
