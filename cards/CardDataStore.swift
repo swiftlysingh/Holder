@@ -10,13 +10,33 @@ import SwiftUI
 class CardDataStore {
 
 	var cardsByType: [CardType: [CardData]] = [:]
-	
+
+	private var isDebugOrSimulator = {
+	#if DEBUG
+		return true
+	#else
+		return false
+	#endif
+	}()
+
 	init() {
 		loadCards()
 	}
 
 	func loadCards() {
-		let retrievedCard = retrieveAllCardData(service: Bundle.main.bundleIdentifier ?? "com.myApp.defaultService") ?? []
+		var retrievedCard = retrieveAllCardData(service: Bundle.main.bundleIdentifier ?? "com.myApp.defaultService") ?? []
+
+//		Add default data for simulator
+		if retrievedCard.isEmpty && isDebugOrSimulator {
+			retrievedCard.append(contentsOf: [
+				CardData(id: UUID(), number: "1234567890123456", cvv: "123", expiration: "12/25", name: "John Doe", description: "Axis Visa", type: .creditCard),
+				CardData(id: UUID(), number: "2345678901234567", cvv: "234", expiration: "11/24", name: "Jane Smith", description: "SBI MasterCard", type: .creditCard),
+				CardData(id: UUID(), number: "34567890123456", cvv: "345", expiration: "10/23", name: "Alex Johnson", description: "American Express Gold", type: .creditCard),
+				CardData(id: UUID(), number: "4567890123456789", cvv: "456", expiration: "08/26", name: "Emily Davis", description: "Kotak PVR", type: .debitCard),
+				CardData(id: UUID(), number: "5678901234567890", cvv: "567", expiration: "07/25", name: "Michael Brown", description: "HDFC Platinum", type: .debitCard)
+			])
+
+		}
 		for type in CardType.allCases {
 			cardsByType[type] = retrievedCard.filter { $0.type == type }
 		}
