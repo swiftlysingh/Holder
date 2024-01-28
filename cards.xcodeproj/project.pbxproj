@@ -7,11 +7,14 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		EE1D3E902B66AE66009733A5 /* Tip.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE1D3E8F2B66AE66009733A5 /* Tip.swift */; };
+		EE1D3E922B66AE83009733A5 /* CardViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE1D3E912B66AE83009733A5 /* CardViewModel.swift */; };
 		EE599BAC2B23900A002F49F8 /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE599BAB2B23900A002F49F8 /* SettingsView.swift */; };
 		EE599BAE2B2398DF002F49F8 /* UserSettings.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE599BAD2B2398DF002F49F8 /* UserSettings.swift */; };
 		EE599BB02B239F28002F49F8 /* CardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE599BAF2B239F27002F49F8 /* CardView.swift */; };
 		EE599BB22B24465A002F49F8 /* Extensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE599BB12B24465A002F49F8 /* Extensions.swift */; };
 		EE599BB62B24495F002F49F8 /* CardData.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE599BB52B24495F002F49F8 /* CardData.swift */; };
+		EE8ADBEF2B66A5B600F0DC29 /* HomeViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE8ADBEE2B66A5B600F0DC29 /* HomeViewModel.swift */; };
 		EE960C4F2B4AC00B00B67805 /* CardDataStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE960C4E2B4AC00B00B67805 /* CardDataStore.swift */; };
 		EEBB52EA2B238D6600035B92 /* CreditCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = EEBB52E92B238D6600035B92 /* CreditCard.swift */; };
 		EEBB52EC2B238D6600035B92 /* HomeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = EEBB52EB2B238D6600035B92 /* HomeView.swift */; };
@@ -20,12 +23,15 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
+		EE1D3E8F2B66AE66009733A5 /* Tip.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Tip.swift; sourceTree = "<group>"; };
+		EE1D3E912B66AE83009733A5 /* CardViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CardViewModel.swift; sourceTree = "<group>"; };
 		EE599BAB2B23900A002F49F8 /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
 		EE599BAD2B2398DF002F49F8 /* UserSettings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UserSettings.swift; sourceTree = "<group>"; };
 		EE599BAF2B239F27002F49F8 /* CardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CardView.swift; sourceTree = "<group>"; };
 		EE599BB12B24465A002F49F8 /* Extensions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Extensions.swift; sourceTree = "<group>"; };
 		EE599BB52B24495F002F49F8 /* CardData.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CardData.swift; sourceTree = "<group>"; };
 		EE7AF3E82B4C3A1300F2F7C0 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
+		EE8ADBEE2B66A5B600F0DC29 /* HomeViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeViewModel.swift; sourceTree = "<group>"; };
 		EE960C4E2B4AC00B00B67805 /* CardDataStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CardDataStore.swift; sourceTree = "<group>"; };
 		EEBB52E62B238D6600035B92 /* Holder: A Secure Card Vault.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "Holder: A Secure Card Vault.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 		EEBB52E92B238D6600035B92 /* CreditCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CreditCard.swift; sourceTree = "<group>"; };
@@ -45,6 +51,43 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		EE1D3E8D2B66AE2A009733A5 /* Home */ = {
+			isa = PBXGroup;
+			children = (
+				EE8ADBEE2B66A5B600F0DC29 /* HomeViewModel.swift */,
+				EEBB52EB2B238D6600035B92 /* HomeView.swift */,
+			);
+			path = Home;
+			sourceTree = "<group>";
+		};
+		EE1D3E8E2B66AE36009733A5 /* Settings */ = {
+			isa = PBXGroup;
+			children = (
+				EE599BAB2B23900A002F49F8 /* SettingsView.swift */,
+				EE599BAD2B2398DF002F49F8 /* UserSettings.swift */,
+			);
+			path = Settings;
+			sourceTree = "<group>";
+		};
+		EE1D3E932B66B133009733A5 /* CardView */ = {
+			isa = PBXGroup;
+			children = (
+				EE599BAF2B239F27002F49F8 /* CardView.swift */,
+				EE1D3E912B66AE83009733A5 /* CardViewModel.swift */,
+				EE1D3E8F2B66AE66009733A5 /* Tip.swift */,
+			);
+			path = CardView;
+			sourceTree = "<group>";
+		};
+		EE1D3E942B66B156009733A5 /* Model */ = {
+			isa = PBXGroup;
+			children = (
+				EE960C4E2B4AC00B00B67805 /* CardDataStore.swift */,
+				EE599BB52B24495F002F49F8 /* CardData.swift */,
+			);
+			path = Model;
+			sourceTree = "<group>";
+		};
 		EEBB52DD2B238D6600035B92 = {
 			isa = PBXGroup;
 			children = (
@@ -66,15 +109,13 @@
 			children = (
 				EE7AF3E82B4C3A1300F2F7C0 /* Info.plist */,
 				EEBB52E92B238D6600035B92 /* CreditCard.swift */,
-				EEBB52EB2B238D6600035B92 /* HomeView.swift */,
-				EE599BAB2B23900A002F49F8 /* SettingsView.swift */,
-				EE599BAF2B239F27002F49F8 /* CardView.swift */,
-				EE599BAD2B2398DF002F49F8 /* UserSettings.swift */,
+				EE1D3E8D2B66AE2A009733A5 /* Home */,
+				EE1D3E932B66B133009733A5 /* CardView */,
+				EE1D3E8E2B66AE36009733A5 /* Settings */,
+				EE1D3E942B66B156009733A5 /* Model */,
 				EE599BB12B24465A002F49F8 /* Extensions.swift */,
 				EEBB52ED2B238D6800035B92 /* Assets.xcassets */,
 				EEBB52EF2B238D6800035B92 /* Preview Content */,
-				EE599BB52B24495F002F49F8 /* CardData.swift */,
-				EE960C4E2B4AC00B00B67805 /* CardDataStore.swift */,
 			);
 			path = cards;
 			sourceTree = "<group>";
@@ -157,12 +198,15 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				EE1D3E922B66AE83009733A5 /* CardViewModel.swift in Sources */,
 				EE599BAC2B23900A002F49F8 /* SettingsView.swift in Sources */,
+				EE8ADBEF2B66A5B600F0DC29 /* HomeViewModel.swift in Sources */,
 				EE599BB22B24465A002F49F8 /* Extensions.swift in Sources */,
 				EE599BAE2B2398DF002F49F8 /* UserSettings.swift in Sources */,
 				EE960C4F2B4AC00B00B67805 /* CardDataStore.swift in Sources */,
 				EEBB52EC2B238D6600035B92 /* HomeView.swift in Sources */,
 				EE599BB62B24495F002F49F8 /* CardData.swift in Sources */,
+				EE1D3E902B66AE66009733A5 /* Tip.swift in Sources */,
 				EEBB52EA2B238D6600035B92 /* CreditCard.swift in Sources */,
 				EE599BB02B239F28002F49F8 /* CardView.swift in Sources */,
 			);
@@ -314,7 +358,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 1.0;
+				MARKETING_VERSION = 1.1;
 				PRODUCT_BUNDLE_IDENTIFIER = com.swiftlysingh.cards;
 				PRODUCT_NAME = "Holder: A Secure Card Vault";
 				SWIFT_EMIT_LOC_STRINGS = YES;
@@ -347,7 +391,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 1.0;
+				MARKETING_VERSION = 1.1;
 				PRODUCT_BUNDLE_IDENTIFIER = com.swiftlysingh.cards;
 				PRODUCT_NAME = "Holder: A Secure Card Vault";
 				SWIFT_EMIT_LOC_STRINGS = YES;
