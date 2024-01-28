@@ -53,15 +53,15 @@ struct CardView: View {
 		let tip = DoubleTapTip()
 
 		return List {
-			itemView(heading: "Name", value: model.$card.name, .alphabet)
-			itemView(heading: "Number", value: model.$card.number,.numberPad)
+			itemView(heading: "Name", value: $model.card.name, .alphabet)
+			itemView(heading: "Number", value: $model.card.number,.numberPad)
 				.if(!model.isEditing) { viewy in
 					viewy.popoverTip(tip,arrowEdge: .top)
 				}
-			itemView(heading: "Expiration", value: model.$card.expiration, .numberPad)
-			itemView(heading: "Security Code", value: model.$card.cvv, .numberPad)
-			itemView(heading: "Description", value: model.$card.description, .alphabet)
-			Picker("Card Type", selection: model.$card.type){
+			itemView(heading: "Expiration", value: $model.card.expiration, .numberPad)
+			itemView(heading: "Security Code", value: $model.card.cvv, .numberPad)
+			itemView(heading: "Description", value: $model.card.description, .alphabet)
+			Picker("Card Type", selection: $model.card.type){
 				ForEach(CardType.allCases) { pref in
 					Text(pref.rawValue)
 				}
@@ -80,6 +80,9 @@ struct CardView: View {
 				model.isEditing.toggle()
 			}
 			.disabled(!model.isAuthenticated)
+		}
+		.onDisappear {
+			model.isAuthenticated = false
 		}
 	}
 }
