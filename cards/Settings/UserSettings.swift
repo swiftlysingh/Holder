@@ -13,6 +13,4 @@ class UserSettings : Observable{
 	private init (){}
 	
 	@AppStorage("username") var showNumber = 4.0
-
-	let appVersion : String = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? ""
 }
