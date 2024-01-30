@@ -10,6 +10,7 @@
 		EE1D3E902B66AE66009733A5 /* Tip.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE1D3E8F2B66AE66009733A5 /* Tip.swift */; };
 		EE1D3E922B66AE83009733A5 /* CardViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE1D3E912B66AE83009733A5 /* CardViewModel.swift */; };
 		EE1D3E982B69379E009733A5 /* SettingsViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE1D3E972B69379E009733A5 /* SettingsViewModel.swift */; };
+		EE1D3E9B2B6962E5009733A5 /* SharkCardScan in Frameworks */ = {isa = PBXBuildFile; productRef = EE1D3E9A2B6962E5009733A5 /* SharkCardScan */; };
 		EE599BAC2B23900A002F49F8 /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE599BAB2B23900A002F49F8 /* SettingsView.swift */; };
 		EE599BAE2B2398DF002F49F8 /* UserSettings.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE599BAD2B2398DF002F49F8 /* UserSettings.swift */; };
 		EE599BB02B239F28002F49F8 /* CardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE599BAF2B239F27002F49F8 /* CardView.swift */; };
@@ -47,6 +48,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				EE1D3E9B2B6962E5009733A5 /* SharkCardScan in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -147,6 +149,9 @@
 			dependencies = (
 			);
 			name = cards;
+			packageProductDependencies = (
+				EE1D3E9A2B6962E5009733A5 /* SharkCardScan */,
+			);
 			productName = "credit-card";
 			productReference = EEBB52E62B238D6600035B92 /* Holder: A Secure Card Vault.app */;
 			productType = "com.apple.product-type.application";
@@ -175,6 +180,9 @@
 				Base,
 			);
 			mainGroup = EEBB52DD2B238D6600035B92;
+			packageReferences = (
+				EE1D3E992B6962E5009733A5 /* XCRemoteSwiftPackageReference "ios-card-scan" */,
+			);
 			productRefGroup = EEBB52E72B238D6600035B92 /* Products */;
 			projectDirPath = "";
 			projectRoot = "";
@@ -287,7 +295,7 @@
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = cards/Info.plist;
-				INFOPLIST_KEY_CFBundleDisplayName = Holder;
+				INFOPLIST_KEY_CFBundleDisplayName = "Holder-beta";
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.utilities";
 				INFOPLIST_KEY_NSFaceIDUsageDescription = "To protect card details";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
@@ -439,7 +447,7 @@
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = cards/Info.plist;
-				INFOPLIST_KEY_CFBundleDisplayName = Holder;
+				INFOPLIST_KEY_CFBundleDisplayName = "Holder-debug";
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.utilities";
 				INFOPLIST_KEY_NSFaceIDUsageDescription = "To protect card details";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
@@ -452,7 +460,7 @@
 					"@executable_path/Frameworks",
 				);
 				MARKETING_VERSION = 1.1;
-				PRODUCT_BUNDLE_IDENTIFIER = com.swiftlysingh.cards;
+				PRODUCT_BUNDLE_IDENTIFIER = com.swiftlysingh.cards.debug;
 				PRODUCT_NAME = "Holder: A Secure Card Vault";
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_VERSION = 5.0;
@@ -517,6 +525,25 @@
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		EE1D3E992B6962E5009733A5 /* XCRemoteSwiftPackageReference "ios-card-scan" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/gymshark/ios-card-scan.git";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 1.0.5;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		EE1D3E9A2B6962E5009733A5 /* SharkCardScan */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = EE1D3E992B6962E5009733A5 /* XCRemoteSwiftPackageReference "ios-card-scan" */;
+			productName = SharkCardScan;
+		};
+/* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = EEBB52DE2B238D6600035B92 /* Project object */;
 }

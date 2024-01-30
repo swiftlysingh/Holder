@@ -10,7 +10,7 @@ import LocalAuthentication
 
 class CardViewModel: ObservableObject {
 
-	var card : CardData
+	@Published var card : CardData
 	@Published var isEditing = false
 	@Published var isAuthenticated = false
 	var addUpdateCard: ((CardData) -> Void)?
