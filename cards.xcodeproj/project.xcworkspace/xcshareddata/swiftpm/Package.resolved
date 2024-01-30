@@ -1,0 +1,23 @@
+{
+  "pins" : [
+    {
+      "identity" : "ios-card-scan",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/gymshark/ios-card-scan.git",
+      "state" : {
+        "revision" : "8c7ed0de768fa709ab5ac42c02639c3dfb5fc3b9",
+        "version" : "1.0.5"
+      }
+    },
+    {
+      "identity" : "ios-shark-utils",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/gymshark/ios-shark-utils.git",
+      "state" : {
+        "revision" : "377455779103d45f537ae202b2dbb8575575dc92",
+        "version" : "1.0.5"
+      }
+    }
+  ],
+  "version" : 2
+}

@@ -6,11 +6,12 @@
 //
 
 import SwiftUI
+import SharkCardScan
 
 struct CardView: View {
 	
 	@ObservedObject var model: CardViewModel
-	
+	@State private var isShowingScanner = false
 	var body: some View {
 		getCardListView()
 			.onAppear {
@@ -81,8 +82,46 @@ struct CardView: View {
 			}
 			.disabled(!model.isAuthenticated)
 		}
+		.toolbar {
+			if model.card.number.isEmpty {
+				ToolbarItem(placement: .topBarLeading){
+					Button(action: {
+						isShowingScanner = true
+					}, label: {
+						Image(systemName: "camera.on.rectangle")
+					})
+					.sheet(isPresented: $isShowingScanner) {
+						SharkCardScanViewRepresentable(
+							noPermissionAction: {
+								//TODO: Handle no permission case
+								print("Error No Permission")
+							},
+							successHandler: { response in
+								DispatchQueue.main.async {
+									model.card.number = response.number
+									model.card.name = response.holder ?? ""
+									model.card.expiration = response.expiry ?? ""
+								}
+							}
+						)					}
+				}
+			}
+		}
 		.onDisappear {
 			model.isAuthenticated = false
 		}
+	}
+}
+
+struct SharkCardScanViewRepresentable: UIViewControllerRepresentable {
+	var noPermissionAction: () -> Void
+	var successHandler: (CardScannerResponse) -> Void
+
+	func makeUIViewController(context: Context) -> SharkCardScanViewController {
+		let viewModel = CardScanViewModel(noPermissionAction: noPermissionAction, successHandler: successHandler)
+		return SharkCardScanViewController(viewModel: viewModel)
+	}
+
+	func updateUIViewController(_ uiViewController: SharkCardScanViewController, context: Context) {
 	}
 }
