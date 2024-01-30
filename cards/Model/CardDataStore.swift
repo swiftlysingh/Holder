@@ -12,7 +12,7 @@ class CardDataStore {
 	var cardsByType: [CardType: [CardData]] = [:]
 
 	private var isDebugOrSimulator = {
-	#if DEBUG
+	#if DEBUG || BETA
 		return true
 	#else
 		return false
@@ -27,7 +27,7 @@ class CardDataStore {
 		var retrievedCard = retrieveAllCardData(service: Bundle.main.bundleIdentifier ?? "com.myApp.defaultService") ?? []
 
 //		Add default data for simulator
-		if retrievedCard.isEmpty && isDebugOrSimulator {
+		if isDebugOrSimulator {
 			retrievedCard.append(contentsOf: [
 				CardData(id: UUID(), number: "1234567890123456", cvv: "123", expiration: "12/25", name: "John Doe", description: "Axis Visa", type: .creditCard),
 				CardData(id: UUID(), number: "2345678901234567", cvv: "234", expiration: "11/24", name: "Jane Smith", description: "SBI MasterCard", type: .creditCard),
