@@ -9,7 +9,7 @@ import SwiftUI
 
 struct SettingsView: View {
 
-	@Bindable var model = UserSettings.shared
+	var model = SettingsViewModel()
 
 	var body: some View {
 		NavigationStack {
@@ -31,6 +31,9 @@ struct SettingsView: View {
 				Section{
 					LabeledContent("App Version", value: model.appVersion)
 					Link("Follow me on twitter @swiftlysingh", destination: URL(string: "https://twitter.com/swiftlysingh")!)
+					Button("Rate the App") {
+						model.requestReview()
+					}
 				}
 			header: {
 				Text("About")
