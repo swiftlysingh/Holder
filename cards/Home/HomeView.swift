@@ -25,7 +25,7 @@ struct HomeView: View {
 						Button("Add a new \(type.rawValue)") {
 							model.showingPopover.toggle()
 						}
-						.sheet(isPresented: model.$showingPopover) {
+						.sheet(isPresented: $model.showingPopover) {
 							NavigationView {
 								CardView(model: CardViewModel(
 									card: .init(id: UUID(),
