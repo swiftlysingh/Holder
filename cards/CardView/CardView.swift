@@ -6,7 +6,6 @@
 //
 
 import SwiftUI
-import SharkCardScan
 
 struct CardView: View {
 	
@@ -110,25 +109,13 @@ struct CardView: View {
 									print(response.number,response.holder,response.expiry)
 								}
 							}
-						)					}
+						)
+					}
 				}
 			}
 		}
 		.onDisappear {
 			model.isAuthenticated = false
 		}
-	}
-}
-
-struct SharkCardScanViewRepresentable: UIViewControllerRepresentable {
-	var noPermissionAction: () -> Void
-	var successHandler: (CardScannerResponse) -> Void
-
-	func makeUIViewController(context: Context) -> SharkCardScanViewController {
-		let viewModel = CardScanViewModel(noPermissionAction: noPermissionAction, successHandler: successHandler)
-		return SharkCardScanViewController(viewModel: viewModel)
-	}
-
-	func updateUIViewController(_ uiViewController: SharkCardScanViewController, context: Context) {
 	}
 }
