@@ -46,7 +46,9 @@ struct CardView: View {
 		}
 		.contentShape(Rectangle())
 		.onTapGesture {
-			model.copyAction(with: value.wrappedValue)
+			if model.addUpdateCard == nil{
+				model.copyAction(with: value.wrappedValue)
+			}
 		}
 	}
 
@@ -74,6 +76,10 @@ struct CardView: View {
 		.navigationBarTitleDisplayMode(.inline)
 		.toolbar {
 			Button(model.isEditing ? "Done" : "Edit") {
+//				TODO: Check the update flow. Might not be working
+//				TODO: New card flow add bool. For the following and ontap to copy thingy
+//				TODO: fork shark card scan, check for threads and performance improvements
+//				TODO: overall lagg. performance monitor
 				if !model.card.number.isEmpty{
 					guard let addUpdateCard = model.addUpdateCard else {return}
 					(addUpdateCard)(model.card)
@@ -90,17 +96,18 @@ struct CardView: View {
 					}, label: {
 						Image(systemName: "camera.on.rectangle")
 					})
-					.sheet(isPresented: $isShowingScanner) {
+					.fullScreenCover(isPresented: $isShowingScanner) {
 						SharkCardScanViewRepresentable(
 							noPermissionAction: {
 								//TODO: Handle no permission case
 								print("Error No Permission")
 							},
 							successHandler: { response in
-								DispatchQueue.main.async {
+								DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
 									model.card.number = response.number
 									model.card.name = response.holder ?? ""
 									model.card.expiration = response.expiry ?? ""
+									print(response.number,response.holder,response.expiry)
 								}
 							}
 						)					}
