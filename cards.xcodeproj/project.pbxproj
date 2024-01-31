@@ -11,6 +11,7 @@
 		EE1D3E922B66AE83009733A5 /* CardViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE1D3E912B66AE83009733A5 /* CardViewModel.swift */; };
 		EE1D3E982B69379E009733A5 /* SettingsViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE1D3E972B69379E009733A5 /* SettingsViewModel.swift */; };
 		EE1D3E9B2B6962E5009733A5 /* SharkCardScan in Frameworks */ = {isa = PBXBuildFile; productRef = EE1D3E9A2B6962E5009733A5 /* SharkCardScan */; };
+		EE1D3E9D2B6AC7BC009733A5 /* SharkCardScanViewRepresentable.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE1D3E9C2B6AC7BC009733A5 /* SharkCardScanViewRepresentable.swift */; };
 		EE599BAC2B23900A002F49F8 /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE599BAB2B23900A002F49F8 /* SettingsView.swift */; };
 		EE599BAE2B2398DF002F49F8 /* UserSettings.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE599BAD2B2398DF002F49F8 /* UserSettings.swift */; };
 		EE599BB02B239F28002F49F8 /* CardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE599BAF2B239F27002F49F8 /* CardView.swift */; };
@@ -28,6 +29,7 @@
 		EE1D3E8F2B66AE66009733A5 /* Tip.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Tip.swift; sourceTree = "<group>"; };
 		EE1D3E912B66AE83009733A5 /* CardViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CardViewModel.swift; sourceTree = "<group>"; };
 		EE1D3E972B69379E009733A5 /* SettingsViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsViewModel.swift; sourceTree = "<group>"; };
+		EE1D3E9C2B6AC7BC009733A5 /* SharkCardScanViewRepresentable.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SharkCardScanViewRepresentable.swift; sourceTree = "<group>"; };
 		EE599BAB2B23900A002F49F8 /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
 		EE599BAD2B2398DF002F49F8 /* UserSettings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UserSettings.swift; sourceTree = "<group>"; };
 		EE599BAF2B239F27002F49F8 /* CardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CardView.swift; sourceTree = "<group>"; };
@@ -80,6 +82,7 @@
 				EE599BAF2B239F27002F49F8 /* CardView.swift */,
 				EE1D3E912B66AE83009733A5 /* CardViewModel.swift */,
 				EE1D3E8F2B66AE66009733A5 /* Tip.swift */,
+				EE1D3E9C2B6AC7BC009733A5 /* SharkCardScanViewRepresentable.swift */,
 			);
 			path = CardView;
 			sourceTree = "<group>";
@@ -212,6 +215,7 @@
 				EE1D3E922B66AE83009733A5 /* CardViewModel.swift in Sources */,
 				EE599BAC2B23900A002F49F8 /* SettingsView.swift in Sources */,
 				EE8ADBEF2B66A5B600F0DC29 /* HomeViewModel.swift in Sources */,
+				EE1D3E9D2B6AC7BC009733A5 /* SharkCardScanViewRepresentable.swift in Sources */,
 				EE599BB22B24465A002F49F8 /* Extensions.swift in Sources */,
 				EE599BAE2B2398DF002F49F8 /* UserSettings.swift in Sources */,
 				EE960C4F2B4AC00B00B67805 /* CardDataStore.swift in Sources */,
@@ -310,9 +314,12 @@
 				MARKETING_VERSION = 1.1;
 				PRODUCT_BUNDLE_IDENTIFIER = com.swiftlysingh.cards.beta;
 				PRODUCT_NAME = "Holder: A Secure Card Vault";
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator xros xrsimulator";
+				SUPPORTS_MACCATALYST = NO;
+				SUPPORTS_XR_DESIGNED_FOR_IPHONE_IPAD = NO;
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_VERSION = 5.0;
-				TARGETED_DEVICE_FAMILY = "1,2";
+				TARGETED_DEVICE_FAMILY = "1,2,7";
 			};
 			name = Beta;
 		};
@@ -462,9 +469,12 @@
 				MARKETING_VERSION = 1.1;
 				PRODUCT_BUNDLE_IDENTIFIER = com.swiftlysingh.cards.debug;
 				PRODUCT_NAME = "Holder: A Secure Card Vault";
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator xros xrsimulator";
+				SUPPORTS_MACCATALYST = NO;
+				SUPPORTS_XR_DESIGNED_FOR_IPHONE_IPAD = NO;
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_VERSION = 5.0;
-				TARGETED_DEVICE_FAMILY = "1,2";
+				TARGETED_DEVICE_FAMILY = "1,2,7";
 			};
 			name = Debug;
 		};
@@ -495,9 +505,12 @@
 				MARKETING_VERSION = 1.1;
 				PRODUCT_BUNDLE_IDENTIFIER = com.swiftlysingh.cards;
 				PRODUCT_NAME = "Holder: A Secure Card Vault";
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator xros xrsimulator";
+				SUPPORTS_MACCATALYST = NO;
+				SUPPORTS_XR_DESIGNED_FOR_IPHONE_IPAD = NO;
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_VERSION = 5.0;
-				TARGETED_DEVICE_FAMILY = "1,2";
+				TARGETED_DEVICE_FAMILY = "1,2,7";
 			};
 			name = Release;
 		};
