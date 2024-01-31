@@ -37,6 +37,7 @@ struct HomeView: View {
 												type: type
 											   ),
 									isEditing: true,
+									addNewFlow: true,
 									addUpdateCard: { card in
 										model.cardDataStore.addCard(card)
 										model.showingPopover = false
@@ -57,7 +58,16 @@ struct HomeView: View {
 	}
 
 	private func getRowforCards(with card: CardData) -> some View {
-		NavigationLink(destination: CardView(model: CardViewModel(card: card))) {
+		
+		NavigationLink(destination: CardView(model:
+												CardViewModel(
+													card: card,
+													addUpdateCard: { card in
+														model.cardDataStore.addCard(card)
+													}
+												)
+											)
+		) {
 			VStack(alignment: .leading){
 				if card.description != "" {
 					Text(card.description)

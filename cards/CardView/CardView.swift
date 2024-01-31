@@ -10,7 +10,7 @@ import SwiftUI
 struct CardView: View {
 	
 	@ObservedObject var model: CardViewModel
-	@State private var isShowingScanner = false
+
 	var body: some View {
 		getCardListView()
 			.onAppear {
@@ -23,7 +23,10 @@ struct CardView: View {
 			Text(heading)
 				.bold()
 			Spacer()
-			if model.isAuthenticated || (model.isEditing) {
+			if !model.isAuthenticated {
+				SecureField("", text: value)
+					.multilineTextAlignment(.trailing)
+			} else {
 				TextField("", text: value)
 					.multilineTextAlignment(.trailing)
 					.disabled(!model.isEditing)
@@ -37,18 +40,15 @@ struct CardView: View {
 							Image(systemName: "doc.on.doc")
 						}
 					})
-				//					https://codingwithrashid.com/how-to-limit-characters-in-ios-swiftui-textfield/
-			} else {
-				SecureField("", text: value)
-					.multilineTextAlignment(.trailing)
 			}
 		}
 		.contentShape(Rectangle())
-		.onTapGesture {
-			if model.addUpdateCard == nil{
-				model.copyAction(with: value.wrappedValue)
-			}
-		}
+		.if (!model.isAddNewFlow, transform: { view in
+			view
+				.onTapGesture {
+					model.copyAction(with: value.wrappedValue)
+				}
+		})
 	}
 
 	fileprivate func getCardListView() -> some View {
@@ -71,31 +71,29 @@ struct CardView: View {
 			.disabled(!model.isEditing)
 			.bold()
 		}
-		.navigationTitle("Credit Cards")
-		.navigationBarTitleDisplayMode(.inline)
 		.toolbar {
-			Button(model.isEditing ? "Done" : "Edit") {
-//				TODO: Check the update flow. Might not be working
-//				TODO: New card flow add bool. For the following and ontap to copy thingy
+			Button(action: {
+				model.isEditing.toggle()
+				// if user is not editing, then he is done editing when button press
+				if !$model.isEditing.wrappedValue {
+					model.addUpdateCard(model.card)
+				}
+			}) {
 //				TODO: fork shark card scan, check for threads and performance improvements
 //				TODO: overall lagg. performance monitor
-				if !model.card.number.isEmpty{
-					guard let addUpdateCard = model.addUpdateCard else {return}
-					(addUpdateCard)(model.card)
-				}
-				model.isEditing.toggle()
+				Text(model.isEditing ? "Done" : "Edit")
 			}
-			.disabled(!model.isAuthenticated)
+			.disabled(!$model.isAuthenticated.wrappedValue)
 		}
 		.toolbar {
 			if model.card.number.isEmpty {
 				ToolbarItem(placement: .topBarLeading){
 					Button(action: {
-						isShowingScanner = true
+						model.isShowingScanner = true
 					}, label: {
 						Image(systemName: "camera.on.rectangle")
 					})
-					.fullScreenCover(isPresented: $isShowingScanner) {
+					.fullScreenCover(isPresented: $model.isShowingScanner) {
 						SharkCardScanViewRepresentable(
 							noPermissionAction: {
 								//TODO: Handle no permission case
@@ -106,7 +104,7 @@ struct CardView: View {
 									model.card.number = response.number
 									model.card.name = response.holder ?? ""
 									model.card.expiration = response.expiry ?? ""
-									print(response.number,response.holder,response.expiry)
+									print(response.number,response.holder as Any,response.expiry as Any)
 								}
 							}
 						)
