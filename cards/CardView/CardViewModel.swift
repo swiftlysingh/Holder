@@ -13,13 +13,16 @@ class CardViewModel: ObservableObject {
 	@Published var card : CardData
 	@Published var isEditing = false
 	@Published var isAuthenticated = false
-	var addUpdateCard: ((CardData) -> Void)?
+	@Published var isShowingScanner = false
 
-	init(card: CardData, isEditing: Bool = false, isAuthenticated: Bool = false, addUpdateCard: ( (CardData) -> Void)? = nil) {
+	var isAddNewFlow : Bool
+	var addUpdateCard: (CardData) -> Void
+
+	init(card: CardData, isEditing: Bool = false, addNewFlow: Bool = false, addUpdateCard: @escaping ((CardData) -> Void) ) {
 		self.card = card
 		self.isEditing = isEditing
-		self.isAuthenticated = isAuthenticated
 		self.addUpdateCard = addUpdateCard
+		self.isAddNewFlow = addNewFlow
 	}
 
 	func authenticateUser() {
