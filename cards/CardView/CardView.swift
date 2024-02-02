@@ -42,10 +42,8 @@ struct CardView: View {
 					})
 			}
 		}
-		.contentShape(Rectangle())
-		.if (!model.isAddNewFlow, transform: { view in
-			view
-				.onTapGesture {
+		.if (!model.isEditing, transform: { view in
+			view.onTapGesture {
 					model.copyAction(with: value.wrappedValue)
 				}
 		})
@@ -91,6 +89,10 @@ struct CardView: View {
 					}, label: {
 						Image(systemName: "camera.on.rectangle")
 					})
+					.if(!model.isAddNewFlow, transform: { view in
+						view.hidden()
+					})
+
 					// .screen was causing issues with camera session not closing
 					.fullScreenCover(isPresented: $model.isShowingScanner) {
 						SharkCardScanViewRepresentable(
