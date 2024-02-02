@@ -3,10 +3,10 @@
     {
       "identity" : "ios-card-scan",
       "kind" : "remoteSourceControl",
-      "location" : "https://github.com/gymshark/ios-card-scan.git",
+      "location" : "https://github.com/swiftlysingh/ios-card-scan.git",
       "state" : {
-        "revision" : "8c7ed0de768fa709ab5ac42c02639c3dfb5fc3b9",
-        "version" : "1.0.5"
+        "branch" : "master",
+        "revision" : "e6c909ed064296c549596616eb09fdcd3e956a4a"
       }
     },
     {

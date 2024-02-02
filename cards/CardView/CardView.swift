@@ -79,8 +79,6 @@ struct CardView: View {
 					model.addUpdateCard(model.card)
 				}
 			}) {
-//				TODO: fork shark card scan, check for threads and performance improvements
-//				TODO: overall lagg. performance monitor
 				Text(model.isEditing ? "Done" : "Edit")
 			}
 			.disabled(!$model.isAuthenticated.wrappedValue)
@@ -93,6 +91,7 @@ struct CardView: View {
 					}, label: {
 						Image(systemName: "camera.on.rectangle")
 					})
+					// .screen was causing issues with camera session not closing
 					.fullScreenCover(isPresented: $model.isShowingScanner) {
 						SharkCardScanViewRepresentable(
 							noPermissionAction: {
@@ -104,6 +103,7 @@ struct CardView: View {
 									model.card.number = response.number
 									model.card.name = response.holder ?? ""
 									model.card.expiration = response.expiry ?? ""
+									model.isShowingScanner = false
 									print(response.number,response.holder as Any,response.expiry as Any)
 								}
 							}

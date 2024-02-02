@@ -14,9 +14,11 @@ struct SharkCardScanViewRepresentable: UIViewControllerRepresentable {
 
 	func makeUIViewController(context: Context) -> SharkCardScanViewController {
 		let viewModel = CardScanViewModel(noPermissionAction: noPermissionAction, successHandler: successHandler)
-		return SharkCardScanViewController(viewModel: viewModel)
+		return SharkCardScanViewController(viewModel: viewModel, styling: CardScanViewStyle())
 	}
 
 	func updateUIViewController(_ uiViewController: SharkCardScanViewController, context: Context) {
 	}
 }
+
+
