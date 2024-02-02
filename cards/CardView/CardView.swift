@@ -73,7 +73,7 @@ struct CardView: View {
 			Button(action: {
 				model.isEditing.toggle()
 				// if user is not editing, then he is done editing when button press
-				if !$model.isEditing.wrappedValue {
+				if !$model.isEditing.wrappedValue && !model.card.number.isEmpty {
 					model.addUpdateCard(model.card)
 				}
 			}) {
