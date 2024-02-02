@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import WhatsNewKit
 
 struct HomeView: View {
 
@@ -54,6 +55,7 @@ struct HomeView: View {
 					Image(systemName: "gear")
 				}
 			}
+			.whatsNewSheet()
 		}
 	}
 
