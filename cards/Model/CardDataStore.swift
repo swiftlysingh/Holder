@@ -83,6 +83,7 @@ class CardDataStore {
 			// Add a new item
 			var newItem = query
 			newItem[kSecValueData as String] = cardDataEncoded
+			newItem[kSecAttrSynchronizable as String] = kCFBooleanTrue
 			return SecItemAdd(newItem as CFDictionary, nil) == errSecSuccess
 		} else if status == errSecSuccess {
 			// Update existing item
@@ -102,7 +103,8 @@ class CardDataStore {
 			kSecAttrService as String: service,
 			kSecMatchLimit as String: kSecMatchLimitAll,
 			kSecReturnAttributes as String: kCFBooleanTrue!,
-			kSecReturnData as String: kCFBooleanTrue!
+			kSecReturnData as String: kCFBooleanTrue!,
+			kSecAttrSynchronizable as String: kCFBooleanTrue
 		]
 
 		var items: CFTypeRef?
