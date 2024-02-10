@@ -9,16 +9,15 @@ import SwiftUI
 
 extension String {
 	func toSecureCard() -> String {
-		let components = self.components(separatedBy: " ")
-		let processedComponents = components.map { component -> String in
-			if component.count > 4 {
-				let lastFour = component.suffix(4)
-				return String(repeating: "•", count: component.count - 4) + " " + lastFour
-			} else {
-				return component
-			}
+		guard let components = self.components(separatedBy: " ").last else {return self}
+
+		let baseString = String(repeating: "•", count: 4) + " "
+		if components.count > 4 {
+			let lastFour = components.suffix(Int(UserSettings.shared.showNumber)) 
+			return  baseString + lastFour
+		} else {
+			return baseString + (components)
 		}
-		return processedComponents.joined(separator: " ")
 	}
 }
 
