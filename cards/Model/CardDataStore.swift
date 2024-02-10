@@ -104,7 +104,7 @@ class CardDataStore {
 			kSecMatchLimit as String: kSecMatchLimitAll,
 			kSecReturnAttributes as String: kCFBooleanTrue!,
 			kSecReturnData as String: kCFBooleanTrue!,
-			kSecAttrSynchronizable as String: kCFBooleanTrue
+			kSecAttrSynchronizable as String: kCFBooleanTrue!
 		]
 
 		var items: CFTypeRef?
@@ -120,9 +120,12 @@ class CardDataStore {
 			return nil
 		}
 
+		migrateOldEntriesforiCloud(items: existingItems)
+
 		var cardDataArray = [CardData]()
 
 		for item in existingItems {
+
 			if let data = item[kSecValueData as String] as? Data {
 				do {
 					let cardData = try JSONDecoder().decode(CardData.self, from: data)
@@ -134,5 +137,16 @@ class CardDataStore {
 			}
 		}
 		return cardDataArray
+	}
+
+	private func migrateOldEntriesforiCloud(items: [[String:Any]]){
+		guard !UserDefaults().bool(forKey: "supportiCloudKeyChain") else {return}
+		UserDefaults().setValue(true, forKey: "supportiCloudKeyChain")
+
+		let updateAttributes: [String: Any] = [kSecAttrSynchronizable as String : kCFBooleanTrue!]
+
+		for item in items {
+			SecItemUpdate(item as CFDictionary, updateAttributes as CFDictionary)
+		}
 	}
 }
