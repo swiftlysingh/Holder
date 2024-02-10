@@ -16,17 +16,21 @@ struct SettingsView: View {
 			Form {
 				VStack(alignment: .leading){
 					Text("Visible digits on homepage")
+
 					Slider(value: UserSettings.shared.$showNumber, in: 1...10,step: 1)
 					{
 						Text("Steps")
 					}
-				minimumValueLabel: {
-					Text("1")
-				}
-				maximumValueLabel:  {
-					Text("10")
 
-				}
+					minimumValueLabel: {
+						Text("1")
+					}
+					maximumValueLabel:  {
+						Text("10")
+
+					}
+					Text("You may need to reboot the app when updating this setting")
+						.font(.caption)
 				}
 				Section{
 					LabeledContent("App Version", value: model.appVersion)
