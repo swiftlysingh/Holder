@@ -4,6 +4,7 @@
 //
 //  Created by Pushpinder Pal Singh on 03/02/24.
 //
+#if os(iOS)
 
 import SharkCardScan
 import UIKit
@@ -23,3 +24,4 @@ struct CardScanViewStyle: CardScanStyling {
 		self.backgroundColor = .systemBackground
 	}
 }
+#endif

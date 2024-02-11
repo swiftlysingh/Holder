@@ -31,7 +31,7 @@ struct CardView: View {
 				TextField("", text: value)
 					.multilineTextAlignment(.trailing)
 					.disabled(!model.isEditing)
-					.foregroundColor(model.isEditing ? .blue : .accentColor)
+					.foregroundColor(model.isEditing ? .blue : .primary)
 					.keyboardType(type)
 					.contextMenu(menuItems: {
 						Button(action: {
@@ -95,6 +95,7 @@ struct CardView: View {
 					})
 
 					// .screen was causing issues with camera session not closing
+					#if os(iOS)
 					.fullScreenCover(isPresented: $model.isShowingScanner) {
 						SharkCardScanViewRepresentable(
 							noPermissionAction: {
@@ -112,6 +113,7 @@ struct CardView: View {
 							}
 						)
 					}
+					#endif
 				}
 			}
 		}
