@@ -52,7 +52,8 @@ class CardDataStore {
 		let query: [String: Any] = [
 			kSecClass as String: kSecClassGenericPassword,
 			kSecAttrService as String: Bundle.main.bundleIdentifier ?? "com.myApp.defaultService",
-			kSecAttrAccount as String: id.uuidString
+			kSecAttrAccount as String: id.uuidString,
+			kSecAttrSynchronizable as String: kCFBooleanTrue!
 		]
 
 		let status = SecItemDelete(query as CFDictionary)

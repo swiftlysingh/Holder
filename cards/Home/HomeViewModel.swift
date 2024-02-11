@@ -22,7 +22,7 @@ class HomeViewModel : ObservableObject {
 			if cardDataStore.deleteCard(with: card.id) {
 				cardDataStore.cardsByType[cardType]?.remove(at: index)
 			} else {
-				// Handle error if deletion was not successful
+				print("Error deleting")
 			}
 		}
 	}
