@@ -7,8 +7,7 @@
 
 import SwiftUI
 
-class UserSettings : Observable{
-
+class UserSettings : ObservableObject {
 	static let shared = UserSettings()
 	private init (){}
 	

@@ -13,8 +13,8 @@ struct HomeView: View {
 	@ObservedObject var model = HomeViewModel()
 
 	var body: some View {
-		NavigationStack {
-			List{
+		NavigationSplitView {
+			List(){
 				ForEach(CardType.allCases){ type in
 					Section(header: Text("\(type.rawValue)s")){
 						ForEach(model.cardDataStore.cardsByType[type] ?? [], id: \.id) { card in
@@ -42,7 +42,7 @@ struct HomeView: View {
 									addUpdateCard: { card in
 										model.cardDataStore.addCard(card)
 										model.showingPopover = false
-								})
+									})
 								)
 							}
 						}
@@ -55,8 +55,10 @@ struct HomeView: View {
 					Image(systemName: "gear")
 				}
 			}
-			.whatsNewSheet()
+		} detail: {
+		Text("Tap on a Card to view details")
 		}
+		.whatsNewSheet()
 	}
 
 	private func getRowforCards(with card: CardData) -> some View {
