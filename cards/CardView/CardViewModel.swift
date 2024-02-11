@@ -47,13 +47,13 @@ class CardViewModel: ObservableObject {
 	}
 
 	func copyAction(with value: String) {
-		let generator = UINotificationFeedbackGenerator()
+//		let generator = UINotificationFeedbackGenerator()
 		guard !value.isEmpty else {
-			generator.notificationOccurred(.error)
+//			generator.notificationOccurred(.error)
 			return
 		}
 		print("log: Copied With item: \(value)")
 		UIPasteboard.general.string = value
-		generator.notificationOccurred(.success)
+//		generator.notificationOccurred(.success)
 	}
 }

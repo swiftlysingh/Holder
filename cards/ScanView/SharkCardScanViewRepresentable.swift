@@ -4,7 +4,7 @@
 //
 //  Created by Pushpinder Pal Singh on 31/01/24.
 //
-
+#if os(iOS)
 import SharkCardScan
 import SwiftUI
 
@@ -20,5 +20,4 @@ struct SharkCardScanViewRepresentable: UIViewControllerRepresentable {
 	func updateUIViewController(_ uiViewController: SharkCardScanViewController, context: Context) {
 	}
 }
-
-
+#endif

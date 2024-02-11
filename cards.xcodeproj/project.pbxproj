@@ -11,7 +11,7 @@
 		EE1D3E922B66AE83009733A5 /* CardViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE1D3E912B66AE83009733A5 /* CardViewModel.swift */; };
 		EE1D3E982B69379E009733A5 /* SettingsViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE1D3E972B69379E009733A5 /* SettingsViewModel.swift */; };
 		EE1D3E9D2B6AC7BC009733A5 /* SharkCardScanViewRepresentable.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE1D3E9C2B6AC7BC009733A5 /* SharkCardScanViewRepresentable.swift */; };
-		EE3406CE2B6D0FF8007E7DD2 /* SharkCardScan in Frameworks */ = {isa = PBXBuildFile; productRef = EE3406CD2B6D0FF8007E7DD2 /* SharkCardScan */; };
+		EE3406CE2B6D0FF8007E7DD2 /* SharkCardScan in Frameworks */ = {isa = PBXBuildFile; platformFilter = ios; productRef = EE3406CD2B6D0FF8007E7DD2 /* SharkCardScan */; };
 		EE599BAC2B23900A002F49F8 /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE599BAB2B23900A002F49F8 /* SettingsView.swift */; };
 		EE599BAE2B2398DF002F49F8 /* UserSettings.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE599BAD2B2398DF002F49F8 /* UserSettings.swift */; };
 		EE599BB02B239F28002F49F8 /* CardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE599BAF2B239F27002F49F8 /* CardView.swift */; };
