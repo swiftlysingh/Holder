@@ -8,6 +8,10 @@
 import TipKit
 
 struct DoubleTapTip: Tip {
+	var options: [Option] {
+		MaxDisplayCount(1)
+	}
+
 	var title: Text {
 		Text("Tap to Copy")
 	}
