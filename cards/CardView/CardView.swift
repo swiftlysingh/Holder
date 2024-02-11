@@ -10,6 +10,7 @@ import SwiftUI
 struct CardView: View {
 	
 	@ObservedObject var model: CardViewModel
+	@Environment(\.scenePhase) var scenePhase
 
 	var body: some View {
 		getCardListView()
@@ -114,8 +115,17 @@ struct CardView: View {
 				}
 			}
 		}
-		.onDisappear {
-			model.isAuthenticated = false
+		.onChange(of: scenePhase) {
+			if scenePhase == .background {
+				DispatchQueue.main.asyncAfter(deadline: .now() + .seconds(UserSettings.shared.authTimeout)) {
+					if scenePhase == .background {
+						self.model.$isAuthenticated.wrappedValue = false
+					}
+				}
+			}
 		}
+		.onDisappear(perform: {
+			model.$isAuthenticated.wrappedValue = false
+		})
 	}
 }

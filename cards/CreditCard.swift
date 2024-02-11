@@ -31,6 +31,7 @@ struct CreditCard: App {
 						whatsNewCollection: self
 					 )
 				)
+
         }
     }
 }
