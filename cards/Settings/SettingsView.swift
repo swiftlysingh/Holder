@@ -14,19 +14,28 @@ struct SettingsView: View {
 	var body: some View {
 		NavigationStack {
 			Form {
+				VStack(alignment: .trailing){
+					Text("Time Before You Need to Reauth In Again (in seconds)")
+						TextField("Sup", value: UserSettings.shared.$authTimeout, formatter: NumberFormatter())
+							.keyboardType(.numberPad)
+				}
 				VStack(alignment: .leading){
 					Text("Visible digits on homepage")
+
 					Slider(value: UserSettings.shared.$showNumber, in: 1...10,step: 1)
 					{
 						Text("Steps")
 					}
-				minimumValueLabel: {
-					Text("1")
-				}
-				maximumValueLabel:  {
-					Text("10")
 
-				}
+					minimumValueLabel: {
+						Text("1")
+					}
+					maximumValueLabel:  {
+						Text("10")
+
+					}
+					Text("You may need to reboot the app when updating this setting")
+						.font(.caption)
 				}
 				Section{
 					LabeledContent("App Version", value: model.appVersion)

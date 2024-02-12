@@ -27,7 +27,7 @@ class CardDataStore {
 		var retrievedCard = retrieveAllCardData(service: Bundle.main.bundleIdentifier ?? "com.myApp.defaultService") ?? []
 
 //		Add default data for simulator
-		if isDebugOrSimulator {
+		if isDebugOrSimulator && retrievedCard.isEmpty {
 			retrievedCard.append(contentsOf: [
 				CardData(id: UUID(), number: "1234567890123456", cvv: "123", expiration: "12/25", name: "John Doe", description: "Axis Visa", type: .creditCard),
 				CardData(id: UUID(), number: "2345678901234567", cvv: "234", expiration: "11/24", name: "Jane Smith", description: "SBI MasterCard", type: .creditCard),
@@ -52,7 +52,8 @@ class CardDataStore {
 		let query: [String: Any] = [
 			kSecClass as String: kSecClassGenericPassword,
 			kSecAttrService as String: Bundle.main.bundleIdentifier ?? "com.myApp.defaultService",
-			kSecAttrAccount as String: id.uuidString
+			kSecAttrAccount as String: id.uuidString,
+			kSecAttrSynchronizable as String: kCFBooleanTrue!
 		]
 
 		let status = SecItemDelete(query as CFDictionary)
@@ -83,6 +84,7 @@ class CardDataStore {
 			// Add a new item
 			var newItem = query
 			newItem[kSecValueData as String] = cardDataEncoded
+			newItem[kSecAttrSynchronizable as String] = kCFBooleanTrue
 			return SecItemAdd(newItem as CFDictionary, nil) == errSecSuccess
 		} else if status == errSecSuccess {
 			// Update existing item
@@ -102,7 +104,8 @@ class CardDataStore {
 			kSecAttrService as String: service,
 			kSecMatchLimit as String: kSecMatchLimitAll,
 			kSecReturnAttributes as String: kCFBooleanTrue!,
-			kSecReturnData as String: kCFBooleanTrue!
+			kSecReturnData as String: kCFBooleanTrue!,
+			kSecAttrSynchronizable as String: kCFBooleanTrue!
 		]
 
 		var items: CFTypeRef?
@@ -118,9 +121,12 @@ class CardDataStore {
 			return nil
 		}
 
+		migrateOldEntriesforiCloud(items: existingItems)
+
 		var cardDataArray = [CardData]()
 
 		for item in existingItems {
+
 			if let data = item[kSecValueData as String] as? Data {
 				do {
 					let cardData = try JSONDecoder().decode(CardData.self, from: data)
@@ -132,5 +138,16 @@ class CardDataStore {
 			}
 		}
 		return cardDataArray
+	}
+
+	private func migrateOldEntriesforiCloud(items: [[String:Any]]){
+		guard !UserDefaults().bool(forKey: "supportiCloudKeyChain") else {return}
+		UserDefaults().setValue(true, forKey: "supportiCloudKeyChain")
+
+		let updateAttributes: [String: Any] = [kSecAttrSynchronizable as String : kCFBooleanTrue!]
+
+		for item in items {
+			SecItemUpdate(item as CFDictionary, updateAttributes as CFDictionary)
+		}
 	}
 }

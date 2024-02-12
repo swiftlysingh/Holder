@@ -12,7 +12,7 @@ class CardViewModel: ObservableObject {
 
 	@Published var card : CardData
 	@Published var isEditing = false
-	@Published var isAuthenticated = false
+	@AppStorage("auth") var isAuthenticated = false
 	@Published var isShowingScanner = false
 
 	var isAddNewFlow : Bool
