@@ -24,6 +24,7 @@ class CardDataStore {
 	}
 
 	func loadCards() {
+		migrateOldEntriesforiCloud(for: Bundle.main.bundleIdentifier ?? "com.myApp.defaultService")
 		var retrievedCard = retrieveAllCardData(service: Bundle.main.bundleIdentifier ?? "com.myApp.defaultService") ?? []
 
 //		Add default data for simulator
@@ -74,7 +75,8 @@ class CardDataStore {
 		let query: [String: Any] = [
 			kSecClass as String: kSecClassGenericPassword,
 			kSecAttrService as String: service,
-			kSecAttrAccount as String: account
+			kSecAttrAccount as String: account,
+			kSecAttrSynchronizable as String : kCFBooleanTrue!
 		]
 
 		// Check if item already exists
@@ -84,7 +86,6 @@ class CardDataStore {
 			// Add a new item
 			var newItem = query
 			newItem[kSecValueData as String] = cardDataEncoded
-			newItem[kSecAttrSynchronizable as String] = kCFBooleanTrue
 			return SecItemAdd(newItem as CFDictionary, nil) == errSecSuccess
 		} else if status == errSecSuccess {
 			// Update existing item
@@ -121,8 +122,6 @@ class CardDataStore {
 			return nil
 		}
 
-		migrateOldEntriesforiCloud(items: existingItems)
-
 		var cardDataArray = [CardData]()
 
 		for item in existingItems {
@@ -140,14 +139,42 @@ class CardDataStore {
 		return cardDataArray
 	}
 
-	private func migrateOldEntriesforiCloud(items: [[String:Any]]){
-		guard !UserDefaults().bool(forKey: "supportiCloudKeyChain") else {return}
-		UserDefaults().setValue(true, forKey: "supportiCloudKeyChain")
+	private func migrateOldEntriesforiCloud(for service: String) {
+		let query: [String: Any] = [
+			kSecClass as String: kSecClassGenericPassword,
+			kSecAttrService as String: service,
+			kSecMatchLimit as String: kSecMatchLimitAll,
+			kSecReturnAttributes as String: kCFBooleanTrue as Any,
+			kSecReturnData as String: kCFBooleanTrue as Any,
+			kSecAttrSynchronizable as String: kCFBooleanFalse as Any // Look for non-synchronizable items
+		]
 
-		let updateAttributes: [String: Any] = [kSecAttrSynchronizable as String : kCFBooleanTrue!]
+		var items: CFTypeRef?
+		let status = SecItemCopyMatching(query as CFDictionary, &items)
 
-		for item in items {
-			SecItemUpdate(item as CFDictionary, updateAttributes as CFDictionary)
+		guard status == errSecSuccess, let existingItems = items as? [[String: Any]] else {
+			print("Error retrieving from Keychain for migration: \(status)")
+			return
+		}
+
+		for item in existingItems {
+			guard let account = item[kSecAttrAccount as String] as? String else {
+				continue
+			}
+
+			let uniqueQuery: [String: Any] = [
+				kSecClass as String: kSecClassGenericPassword,
+				kSecAttrService as String: service,
+				kSecAttrAccount as String: account,
+				kSecAttrSynchronizable as String: kCFBooleanFalse as Any // Specify non-synchronizable to match the item
+			]
+
+			let updateAttributes: [String: Any] = [kSecAttrSynchronizable as String: kCFBooleanTrue as Any]
+
+			let updateStatus = SecItemUpdate(uniqueQuery as CFDictionary, updateAttributes as CFDictionary)
+			if updateStatus != errSecSuccess {
+				print("Failed to migrate item for iCloud: \(updateStatus)")
+			}
 		}
 	}
 }
