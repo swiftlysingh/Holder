@@ -315,8 +315,9 @@
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = cards/Info.plist;
-				INFOPLIST_KEY_CFBundleDisplayName = "Holder-beta";
+				INFOPLIST_KEY_CFBundleDisplayName = "Holder Beta";
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.utilities";
+				INFOPLIST_KEY_NSCameraUsageDescription = "To scan cards";
 				INFOPLIST_KEY_NSFaceIDUsageDescription = "To protect card details";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
@@ -327,7 +328,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 1.2;
+				MARKETING_VERSION = 1.2.1;
 				PRODUCT_BUNDLE_IDENTIFIER = com.swiftlysingh.cards.beta;
 				PRODUCT_NAME = "Holder: A Secure Card Vault";
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator xros xrsimulator";
@@ -472,6 +473,7 @@
 				INFOPLIST_FILE = cards/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = "Holder-debug";
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.utilities";
+				INFOPLIST_KEY_NSCameraUsageDescription = "To scan cards";
 				INFOPLIST_KEY_NSFaceIDUsageDescription = "To protect card details";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
@@ -482,7 +484,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 1.2;
+				MARKETING_VERSION = 1.2.1;
 				PRODUCT_BUNDLE_IDENTIFIER = com.swiftlysingh.cards.debug;
 				PRODUCT_NAME = "Holder: A Secure Card Vault";
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator xros xrsimulator";
@@ -508,6 +510,7 @@
 				INFOPLIST_FILE = cards/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = Holder;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.utilities";
+				INFOPLIST_KEY_NSCameraUsageDescription = "To scan cards";
 				INFOPLIST_KEY_NSFaceIDUsageDescription = "To protect card details";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
@@ -518,7 +521,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 1.2;
+				MARKETING_VERSION = 1.2.1;
 				PRODUCT_BUNDLE_IDENTIFIER = com.swiftlysingh.cards;
 				PRODUCT_NAME = "Holder: A Secure Card Vault";
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator xros xrsimulator";
