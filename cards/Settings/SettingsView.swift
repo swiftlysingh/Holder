@@ -12,7 +12,6 @@ struct SettingsView: View {
 	var model = SettingsViewModel()
 
 	var body: some View {
-		NavigationStack {
 			Form {
 				VStack(alignment: .trailing){
 					Text("Time Before You Need to Reauth In Again (in seconds)")
@@ -51,7 +50,6 @@ struct SettingsView: View {
 			}
 			.navigationTitle("Settings")
 		}
-	}
 }
 
 #Preview {

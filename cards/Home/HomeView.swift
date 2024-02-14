@@ -14,8 +14,7 @@ struct HomeView: View {
 
 	var body: some View {
 		NavigationSplitView {
-			List(){
-				ForEach(CardType.allCases){ type in
+			List(CardType.allCases, selection: $model.selectedCard){ type in
 					Section(header: Text("\(type.rawValue)s")){
 						ForEach(model.cardDataStore.cardsByType[type] ?? [], id: \.id) { card in
 							getRowforCards(with: card)
@@ -48,7 +47,6 @@ struct HomeView: View {
 						}
 					}
 				}
-			}
 			.navigationTitle("Cards")
 			.toolbar{
 				NavigationLink(destination: SettingsView()){
@@ -56,22 +54,22 @@ struct HomeView: View {
 				}
 			}
 		} detail: {
-		Text("Tap on a Card to view details")
+			if let card = model.selectedCard {
+				CardView(model: CardViewModel(
+								card: card,
+								addUpdateCard: { card in
+									model.cardDataStore.addCard(card)
+								}))
+			} 
+			else {
+				Text("Tap on a Card to view details")
+			}
 		}
 		.whatsNewSheet()
 	}
 
 	private func getRowforCards(with card: CardData) -> some View {
-		
-		NavigationLink(destination: CardView(model:
-												CardViewModel(
-													card: card,
-													addUpdateCard: { card in
-														model.cardDataStore.addCard(card)
-													}
-												)
-											)
-		) {
+		NavigationLink(value: card){
 			VStack(alignment: .leading){
 				if card.description != "" {
 					Text(card.description)
