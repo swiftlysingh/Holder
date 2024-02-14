@@ -10,6 +10,7 @@ import SwiftUI
 class HomeViewModel : ObservableObject {
 
 	@Published var showingPopover = false
+	@Published var selectedCard: CardData?
 	@Bindable var cardDataStore = CardDataStore()
 
 	var appName: String? {

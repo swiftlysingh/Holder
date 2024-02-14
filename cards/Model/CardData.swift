@@ -7,7 +7,7 @@
 
 import Foundation
 
-struct CardData : Identifiable, Codable {
+struct CardData : Identifiable, Codable, Hashable {
 	var id: UUID
 	var number : String
 	var cvv : String
