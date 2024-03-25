@@ -21,6 +21,9 @@ struct CreditCard: App {
                     ])
 
                 }
+				.onAppear {
+					TelemetryDeck.shared.appDidFinshLaunching()
+				}
 				.environment(
 					\.whatsNew,
 					 WhatsNewEnvironment(
