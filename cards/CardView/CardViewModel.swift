@@ -28,7 +28,11 @@ class CardViewModel: ObservableObject {
 	func authenticateUser() {
 		let context = LAContext()
 		var error: NSError?
-
+		
+		if !UserSettings.shared.isAuthEnabled {
+			isAuthenticated = true
+			return
+		}
 		// Check if the device supports biometric authentication
 		if context.canEvaluatePolicy(.deviceOwnerAuthenticationWithBiometrics, error: &error) {
 			let reason = "Please authenticate to view your card details."

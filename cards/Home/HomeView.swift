@@ -53,6 +53,14 @@ struct HomeView: View {
 					Image(systemName: "gear")
 				}
 			}
+			.alert("Enable Biometrics",isPresented: model.$isFirstLaunch, actions: {
+				Button("Yes", role: .cancel) { 
+					UserSettings.shared.isAuthEnabled = true
+				}
+				Button("No", role: .destructive) { 
+					UserSettings.shared.isAuthEnabled = false
+				}
+			})
 		} detail: {
 			if let card = model.selectedCard {
 				CardView(model: CardViewModel(
