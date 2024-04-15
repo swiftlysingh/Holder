@@ -71,6 +71,9 @@ struct CardView: View {
 			.bold()
 		}
 		.toolbar {
+			ShareLink(item: model.card.toShareString()) {
+				Label("Click to share", systemImage: "square.and.arrow.up")
+			}
 			Button(action: {
 				model.isEditing.toggle()
 				// if user is not editing, then he is done editing when button press
@@ -80,8 +83,8 @@ struct CardView: View {
 			}) {
 				Text(model.isEditing ? "Done" : "Edit")
 			}
-			.disabled(!$model.isAuthenticated.wrappedValue)
 		}
+		.disabled(!$model.isAuthenticated.wrappedValue)
 		.toolbar {
 			if model.card.number.isEmpty {
 				ToolbarItem(placement: .topBarLeading){
