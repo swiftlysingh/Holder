@@ -119,7 +119,7 @@ struct CardView: View {
 			}
 		}
 		.onChange(of: scenePhase) {
-			if scenePhase == .background {
+			if scenePhase == .background && UserSettings.shared.isAuthEnabled {
 				DispatchQueue.main.asyncAfter(deadline: .now() + .seconds(UserSettings.shared.authTimeout)) {
 					if scenePhase == .background {
 						self.model.$isAuthenticated.wrappedValue = false
