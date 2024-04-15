@@ -13,6 +13,7 @@ struct SettingsView: View {
 
 	var body: some View {
 			Form {
+				Toggle("Biometrics Enabled", isOn: UserSettings.shared.$isAuthEnabled)
 				VStack(alignment: .trailing){
 					Text("Time Before You Need to Reauth In Again (in seconds)")
 						TextField("Sup", value: UserSettings.shared.$authTimeout, formatter: NumberFormatter())

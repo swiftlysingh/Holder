@@ -13,4 +13,5 @@ class UserSettings : ObservableObject {
 	
 	@AppStorage("username") var showNumber = 4.0
 	@AppStorage("timeout") var authTimeout = 10
+	@AppStorage("isAuthEnabled") var isAuthEnabled = true
 }
