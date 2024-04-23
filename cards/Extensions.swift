@@ -21,11 +21,14 @@ extension String {
 	}
 	func getCardNetwork() -> CardNetwork {
 		guard let number = UInt(self) else {return .other}
-
+		
+		let first2Digits = number.firstDigits(count: 2)
 		if number.firstDigits(count: 1) == 4 {
 			return .visa
-		} else if number.firstDigits(count: 2) == 34 || number.firstDigits(count: 2) == 37 {
+		} else if first2Digits == 34 || first2Digits == 37 {
 			return .amex
+		} else if first2Digits == 36 || first2Digits == 38 || first2Digits == 30 {
+			return .diners
 		} else {
 			return .master
 		}
