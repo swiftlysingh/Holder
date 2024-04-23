@@ -17,7 +17,7 @@ struct CardData : Identifiable, Codable, Hashable {
 	var type : CardType
 	var network: CardNetwork
 
-	init(id: UUID, number: String, cvv: String, expiration: String, name: String, description: String, type: CardType) {
+	init(id: UUID, number: String, cvv: String, expiration: String, name: String, description: String, type: CardType, network: CardNetwork? = nil) {
 		self.id = id
 		self.number = number
 		self.cvv = cvv
@@ -25,7 +25,7 @@ struct CardData : Identifiable, Codable, Hashable {
 		self.name = name
 		self.description = description
 		self.type = type
-		self.network = number.getCardNetwork()
+		self.network = network ?? number.getCardNetwork()
 	}
 	func toShareString() -> String {
 		return "Name: \(self.name) \nNumber: \(number) \nExpiration: \(expiration) \nSecurity Code: \(cvv)"
@@ -56,6 +56,7 @@ enum CardNetwork: String, CaseIterable, Identifiable, Codable {
 	case visa = "Visa"
 	case master = "Mastercard"
 	case amex = "Amex"
+	case diners = "Diners"
 	case other = "Other"
 
 }
