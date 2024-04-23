@@ -28,7 +28,11 @@ struct CardView: View {
 				SecureField("", text: value)
 					.multilineTextAlignment(.trailing)
 			} else {
-				TextField("", text: value)
+				TextField("", text: value, onCommit: {
+					if heading == "Number" {
+						model.card.network = .visa
+					}
+				})
 					.multilineTextAlignment(.trailing)
 					.disabled(!model.isEditing)
 					.foregroundColor(model.isEditing ? .blue : .accentColor)
@@ -54,17 +58,24 @@ struct CardView: View {
 		let tip = DoubleTapTip()
 
 		return List {
-			itemView(heading: "Name", value: $model.card.name, .alphabet)
-			itemView(heading: "Number", value: $model.card.number,.numberPad)
-				.if(!model.isEditing) { viewy in
-					viewy.popoverTip(tip,arrowEdge: .top)
+			Group {
+				itemView(heading: "Name", value: $model.card.name, .alphabet)
+				itemView(heading: "Number", value: $model.card.number,.numbersAndPunctuation)
+					.if(!model.isEditing) { viewy in
+						viewy.popoverTip(tip,arrowEdge: .top)
+					}
+				itemView(heading: "Expiration", value: $model.card.expiration, .numberPad)
+				itemView(heading: "Security Code", value: $model.card.cvv, .numberPad)
+				itemView(heading: "Description", value: $model.card.description, .alphabet)
+				Picker("Card Network", selection: $model.card.network){
+					ForEach(CardNetwork.allCases) { pref in
+						Text(pref.rawValue)
+					}
 				}
-			itemView(heading: "Expiration", value: $model.card.expiration, .numberPad)
-			itemView(heading: "Security Code", value: $model.card.cvv, .numberPad)
-			itemView(heading: "Description", value: $model.card.description, .alphabet)
-			Picker("Card Type", selection: $model.card.type){
-				ForEach(CardType.allCases) { pref in
-					Text(pref.rawValue)
+				Picker("Card Type", selection: $model.card.type){
+					ForEach(CardType.allCases) { pref in
+						Text(pref.rawValue)
+					}
 				}
 			}
 			.disabled(!model.isEditing)

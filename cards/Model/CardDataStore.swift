@@ -24,6 +24,7 @@ class CardDataStore {
 	}
 
 	func loadCards() {
+		migrateToNewSchema(for: Bundle.main.bundleIdentifier ?? "com.myApp.defaultService")
 		migrateOldEntriesforiCloud(for: Bundle.main.bundleIdentifier ?? "com.myApp.defaultService")
 		var retrievedCard = retrieveAllCardData(service: Bundle.main.bundleIdentifier ?? "com.myApp.defaultService") ?? []
 
@@ -174,6 +175,42 @@ class CardDataStore {
 			let updateStatus = SecItemUpdate(uniqueQuery as CFDictionary, updateAttributes as CFDictionary)
 			if updateStatus != errSecSuccess {
 				print("Failed to migrate item for iCloud: \(updateStatus)")
+			}
+		}
+	}
+	private func migrateToNewSchema(for service: String) {
+		let query: [String: Any] = [
+			kSecClass as String: kSecClassGenericPassword,
+			kSecAttrService as String: service,
+			kSecMatchLimit as String: kSecMatchLimitAll,
+			kSecReturnAttributes as String: kCFBooleanTrue!,
+			kSecReturnData as String: kCFBooleanTrue!,
+			kSecAttrSynchronizable as String: kCFBooleanTrue!
+		]
+
+		var items: CFTypeRef?
+		let status = SecItemCopyMatching(query as CFDictionary, &items)
+
+		guard status == errSecSuccess else {
+			print("Error retrieving old from Keychain: \(status)")
+			return
+		}
+
+		guard let existingItems = items as? [[String: Any]] else {
+			print("No items found in the Keychain")
+			return
+		}
+
+		for item in existingItems {
+
+			if let data = item[kSecValueData as String] as? Data {
+				do {
+					let oldCardData = try JSONDecoder().decode(OldCardData.self, from: data)
+					_ = saveOrUpdateCardData(oldCardData.transferToNewSchema())
+				} catch {
+					print("Error decoding CardData: \(error)")
+						// Optionally handle the error, e.g., continue with next item
+				}
 			}
 		}
 	}

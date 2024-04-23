@@ -78,13 +78,20 @@ struct HomeView: View {
 
 	private func getRowforCards(with card: CardData) -> some View {
 		NavigationLink(value: card){
-			VStack(alignment: .leading){
-				if card.description != "" {
-					Text(card.description)
-				} else {
-					Text(card.name)
+			HStack{
+				Image(card.network.rawValue)
+					.resizable()
+					.scaledToFit()
+					.frame(width: 36,height: 36)
+
+				VStack(alignment: .leading){
+					if card.description != "" {
+						Text(card.description)
+					} else {
+						Text(card.name)
+					}
+					Text(card.number.toSecureCard())
 				}
-				Text(card.number.toSecureCard())
 			}
 		}
 	}
