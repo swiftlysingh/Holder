@@ -15,10 +15,6 @@ struct CardData : Identifiable, Codable, Hashable {
 	var name : String
     var description: String
 	var type : CardType
-
-	func toShareString() -> String {
-		return "Name: \(self.name) \nNumber: \(number) \nExpiration: \(expiration) \nSecurity Code: \(cvv)"
-	}
 }
 
 enum CardType: String, CaseIterable, Identifiable, Codable {

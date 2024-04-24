@@ -33,7 +33,7 @@ struct SettingsView: View {
 						Text("10")
 
 					}
-					Text("You may need to restart the app when updating this setting")
+					Text("You may need to reboot the app when updating this setting")
 						.font(.caption)
 				}
 				Section{
