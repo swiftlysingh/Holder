@@ -25,7 +25,6 @@ class CardDataStore {
 
 	func loadCards() {
 		migrateToNewSchema(for: Bundle.main.bundleIdentifier ?? "com.myApp.defaultService")
-		migrateOldEntriesforiCloud(for: Bundle.main.bundleIdentifier ?? "com.myApp.defaultService")
 		var retrievedCard = retrieveAllCardData(service: Bundle.main.bundleIdentifier ?? "com.myApp.defaultService") ?? []
 
 //		Add default data for simulator
@@ -140,44 +139,6 @@ class CardDataStore {
 		return cardDataArray
 	}
 
-	private func migrateOldEntriesforiCloud(for service: String) {
-		let query: [String: Any] = [
-			kSecClass as String: kSecClassGenericPassword,
-			kSecAttrService as String: service,
-			kSecMatchLimit as String: kSecMatchLimitAll,
-			kSecReturnAttributes as String: kCFBooleanTrue as Any,
-			kSecReturnData as String: kCFBooleanTrue as Any,
-			kSecAttrSynchronizable as String: kCFBooleanFalse as Any // Look for non-synchronizable items
-		]
-
-		var items: CFTypeRef?
-		let status = SecItemCopyMatching(query as CFDictionary, &items)
-
-		guard status == errSecSuccess, let existingItems = items as? [[String: Any]] else {
-			print("Error retrieving from Keychain for migration: \(status)")
-			return
-		}
-
-		for item in existingItems {
-			guard let account = item[kSecAttrAccount as String] as? String else {
-				continue
-			}
-
-			let uniqueQuery: [String: Any] = [
-				kSecClass as String: kSecClassGenericPassword,
-				kSecAttrService as String: service,
-				kSecAttrAccount as String: account,
-				kSecAttrSynchronizable as String: kCFBooleanFalse as Any // Specify non-synchronizable to match the item
-			]
-
-			let updateAttributes: [String: Any] = [kSecAttrSynchronizable as String: kCFBooleanTrue as Any]
-
-			let updateStatus = SecItemUpdate(uniqueQuery as CFDictionary, updateAttributes as CFDictionary)
-			if updateStatus != errSecSuccess {
-				print("Failed to migrate item for iCloud: \(updateStatus)")
-			}
-		}
-	}
 	private func migrateToNewSchema(for service: String) {
 		let query: [String: Any] = [
 			kSecClass as String: kSecClassGenericPassword,
