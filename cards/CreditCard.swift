@@ -44,6 +44,31 @@ extension CreditCard: WhatsNewCollectionProvider {
 	/// Declare your WhatsNew instances per version
 	var whatsNewCollection: WhatsNewCollection {
 		return [
+            WhatsNew(
+                version: "1.4",
+                title: "Discover What's New in Holder!",
+                features: [
+                    WhatsNew.Feature(
+                        image: .init(systemName: "creditcard.and.123"),
+                        title: "Network Images are here!",
+                        subtitle: "Now, it's easy to identify cards using there network!"
+                    ),
+                    WhatsNew.Feature(
+                        image: .init(systemName: "ant.fill"),
+                        title: "Bug Squashing Party 🐜🔨",
+                        subtitle: "We threw a party for bugs, and none made it out alive. Enjoy the smoother experience!"
+                    )
+                ],
+                primaryAction: WhatsNew.PrimaryAction(
+                    title: "Dive In 🚀",
+                    backgroundColor: .accentColor,
+                    foregroundColor: .white,
+                    hapticFeedback: .notification(.success),
+                    onDismiss: {
+                        print("Ready to explore the new features!")
+                    }
+                )
+            ),
 			WhatsNew(
 				version: "1.3",
 				title: "Discover What's New in Holder!",
