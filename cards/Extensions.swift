@@ -29,7 +29,9 @@ extension String {
 			return .amex
 		} else if first2Digits == 36 || first2Digits == 38 || first2Digits == 30 {
 			return .diners
-		} else {
+		} else if first2Digits == 60 || first2Digits == 65 || first2Digits == 81 || first2Digits == 82 {
+            return .rupay
+        } else {
 			return .master
 		}
 	}

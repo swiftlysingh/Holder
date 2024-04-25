@@ -28,11 +28,7 @@ struct CardView: View {
 				SecureField("", text: value)
 					.multilineTextAlignment(.trailing)
 			} else {
-				TextField("", text: value, onCommit: {
-					if heading == "Number" {
-						model.card.network = .visa
-					}
-				})
+				TextField("", text: value)
 					.multilineTextAlignment(.trailing)
 					.disabled(!model.isEditing)
 					.foregroundColor(model.isEditing ? .blue : .accentColor)
@@ -47,12 +43,12 @@ struct CardView: View {
 					})
 			}
 		}
-		.if (!model.isEditing, transform: { view in
-			view.onTapGesture {
-					model.copyAction(with: value.wrappedValue)
-				}
-		})
-	}
+        .if (!model.isEditing, transform: { view in
+            view.onTapGesture(count: 2, perform: {
+                model.copyAction(with: value.wrappedValue)
+            })
+        })
+    }
 
 	fileprivate func getCardListView() -> some View {
 		let tip = DoubleTapTip()
@@ -67,19 +63,23 @@ struct CardView: View {
 				itemView(heading: "Expiration", value: $model.card.expiration, .numberPad)
 				itemView(heading: "Security Code", value: $model.card.cvv, .numberPad)
 				itemView(heading: "Description", value: $model.card.description, .alphabet)
-				Picker("Card Network", selection: $model.card.network){
-					ForEach(CardNetwork.allCases) { pref in
-						Text(pref.rawValue)
-					}
-				}
+                HStack {
+                    Text("Card Network")
+                        .bold()
+                    Spacer()
+                    Text($model.card.networkTitle.wrappedValue)
+                        .multilineTextAlignment(.trailing)
+                        .foregroundStyle(.secondary)
+                        .font(.body)
+                }
 				Picker("Card Type", selection: $model.card.type){
 					ForEach(CardType.allCases) { pref in
 						Text(pref.rawValue)
 					}
 				}
+                .disabled(!model.isEditing)
+                .bold()
 			}
-			.disabled(!model.isEditing)
-			.bold()
 		}
 		.toolbar {
 			ShareLink(item: model.card.toShareString()) {

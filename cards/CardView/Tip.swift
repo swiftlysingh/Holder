@@ -13,10 +13,10 @@ struct DoubleTapTip: Tip {
 	}
 
 	var title: Text {
-		Text("Tap to Copy")
+		Text("Long Press to Copy")
 	}
 
 	var message: Text? {
-		Text("You can tap to copy details")
+		Text("You can long press to copy details")
 	}
 }
