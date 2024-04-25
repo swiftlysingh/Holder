@@ -63,15 +63,15 @@ struct CardView: View {
 				itemView(heading: "Expiration", value: $model.card.expiration, .numberPad)
 				itemView(heading: "Security Code", value: $model.card.cvv, .numberPad)
 				itemView(heading: "Description", value: $model.card.description, .alphabet)
-                HStack {
-                    Text("Card Network")
-                        .bold()
-                    Spacer()
-                    Text($model.card.networkTitle.wrappedValue)
-                        .multilineTextAlignment(.trailing)
-                        .foregroundStyle(.secondary)
-                        .font(.body)
-                }
+//                HStack {
+//                    Text("Card Network")
+//                        .bold()
+//                    Spacer()
+//                    Text($model.card.networkTitle.wrappedValue)
+//                        .multilineTextAlignment(.trailing)
+//                        .foregroundStyle(.secondary)
+//                        .font(.body)
+//                }
 				Picker("Card Type", selection: $model.card.type){
 					ForEach(CardType.allCases) { pref in
 						Text(pref.rawValue)
