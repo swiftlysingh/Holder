@@ -6,16 +6,9 @@
 //
 
 import Foundation
-import StoreKit
-
 
 class SettingsViewModel {
 
 	let appVersion : String = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? ""
-
-	func requestReview() {
-		guard let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene else { return }
-		SKStoreReviewController.requestReview(in: windowScene)
-	}
 
 }
