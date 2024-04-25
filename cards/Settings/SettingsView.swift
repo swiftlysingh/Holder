@@ -39,9 +39,10 @@ struct SettingsView: View {
 				}
 				Section{
 					LabeledContent("App Version", value: model.appVersion)
-					Link("Follow me on twitter @swiftlysingh", destination: URL(string: "https://twitter.com/swiftlysingh")!)
+					Link("Twitter @swiftlysingh", destination: URL(string: "https://twitter.com/swiftlysingh")!)
+                    Link("Look at the source code", destination: URL(string: "https://github.com/swiftlysingh/holder/")!)
 					Button("Rate the App") {
-						model.requestReview()
+                        UserSettings.shared.requestReview()
 					}
 				}
 			header: {
