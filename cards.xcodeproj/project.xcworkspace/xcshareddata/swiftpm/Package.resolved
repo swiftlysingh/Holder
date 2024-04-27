@@ -1,5 +1,5 @@
 {
-  "originHash" : "5e8d2e948158f8aa6fe1eac33e27c62e76002bd84e79b8a6dde25be922ab031a",
+  "originHash" : "6e300a49e01a23311c6d4088b30e37b837d7b70a2197df3bc619425e37da6f17",
   "pins" : [
     {
       "identity" : "ios-card-scan",
@@ -17,6 +17,15 @@
       "state" : {
         "revision" : "377455779103d45f537ae202b2dbb8575575dc92",
         "version" : "1.0.5"
+      }
+    },
+    {
+      "identity" : "swiftboilerplate",
+      "kind" : "remoteSourceControl",
+      "location" : "git@github.com:swiftlysingh/SwiftBoilerplate.git",
+      "state" : {
+        "branch" : "main",
+        "revision" : "f67a7ae68ec8735427e46ce5cd29053ef87c8f0f"
       }
     },
     {

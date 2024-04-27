@@ -3,7 +3,7 @@
 	archiveVersion = 1;
 	classes = {
 	};
-	objectVersion = 60;
+	objectVersion = 56;
 	objects = {
 
 /* Begin PBXBuildFile section */
@@ -26,6 +26,7 @@
 		EEBB52EE2B238D6800035B92 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = EEBB52ED2B238D6800035B92 /* Assets.xcassets */; };
 		EEBB52F12B238D6800035B92 /* Preview Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = EEBB52F02B238D6800035B92 /* Preview Assets.xcassets */; };
 		EEBED8C82B6D7F6F00BEBE87 /* CardScanViewStyle.swift in Sources */ = {isa = PBXBuildFile; fileRef = EEBED8C72B6D7F6F00BEBE87 /* CardScanViewStyle.swift */; };
+		EEEAFCF52BDD91B200292E92 /* Boilerplate in Frameworks */ = {isa = PBXBuildFile; productRef = EEEAFCF42BDD91B200292E92 /* Boilerplate */; };
 		EEFAB0972BDD84E30017DB23 /* Boilerplate in Frameworks */ = {isa = PBXBuildFile; productRef = EEFAB0962BDD84E30017DB23 /* Boilerplate */; };
 /* End PBXBuildFile section */
 
@@ -58,6 +59,7 @@
 			files = (
 				EEABD0D12B6D8AD600FF34E6 /* WhatsNewKit in Frameworks */,
 				EE3406CE2B6D0FF8007E7DD2 /* SharkCardScan in Frameworks */,
+				EEEAFCF52BDD91B200292E92 /* Boilerplate in Frameworks */,
 				EEFAB0972BDD84E30017DB23 /* Boilerplate in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -174,6 +176,7 @@
 				EE3406CD2B6D0FF8007E7DD2 /* SharkCardScan */,
 				EEABD0D02B6D8AD600FF34E6 /* WhatsNewKit */,
 				EEFAB0962BDD84E30017DB23 /* Boilerplate */,
+				EEEAFCF42BDD91B200292E92 /* Boilerplate */,
 			);
 			productName = "credit-card";
 			productReference = EEBB52E62B238D6600035B92 /* Holder: A Secure Card Vault.app */;
@@ -206,7 +209,7 @@
 			packageReferences = (
 				EE3406CC2B6D0FF8007E7DD2 /* XCRemoteSwiftPackageReference "ios-card-scan" */,
 				EEABD0CF2B6D8AD600FF34E6 /* XCRemoteSwiftPackageReference "WhatsNewKit" */,
-				EEFAB0952BDD84E30017DB23 /* XCLocalSwiftPackageReference "../Boilerplate" */,
+				EEEAFCF32BDD91B200292E92 /* XCRemoteSwiftPackageReference "SwiftBoilerplate" */,
 			);
 			productRefGroup = EEBB52E72B238D6600035B92 /* Products */;
 			projectDirPath = "";
@@ -566,13 +569,6 @@
 		};
 /* End XCConfigurationList section */
 
-/* Begin XCLocalSwiftPackageReference section */
-		EEFAB0952BDD84E30017DB23 /* XCLocalSwiftPackageReference "../Boilerplate" */ = {
-			isa = XCLocalSwiftPackageReference;
-			relativePath = ../Boilerplate;
-		};
-/* End XCLocalSwiftPackageReference section */
-
 /* Begin XCRemoteSwiftPackageReference section */
 		EE3406CC2B6D0FF8007E7DD2 /* XCRemoteSwiftPackageReference "ios-card-scan" */ = {
 			isa = XCRemoteSwiftPackageReference;
@@ -590,6 +586,14 @@
 				minimumVersion = 2.2.0;
 			};
 		};
+		EEEAFCF32BDD91B200292E92 /* XCRemoteSwiftPackageReference "SwiftBoilerplate" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "git@github.com:swiftlysingh/SwiftBoilerplate.git";
+			requirement = {
+				branch = main;
+				kind = branch;
+			};
+		};
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
@@ -602,6 +606,11 @@
 			isa = XCSwiftPackageProductDependency;
 			package = EEABD0CF2B6D8AD600FF34E6 /* XCRemoteSwiftPackageReference "WhatsNewKit" */;
 			productName = WhatsNewKit;
+		};
+		EEEAFCF42BDD91B200292E92 /* Boilerplate */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = EEEAFCF32BDD91B200292E92 /* XCRemoteSwiftPackageReference "SwiftBoilerplate" */;
+			productName = Boilerplate;
 		};
 		EEFAB0962BDD84E30017DB23 /* Boilerplate */ = {
 			isa = XCSwiftPackageProductDependency;
