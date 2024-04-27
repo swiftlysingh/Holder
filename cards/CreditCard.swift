@@ -8,6 +8,7 @@
 import SwiftUI
 import TipKit
 import WhatsNewKit
+import Boilerplate
 
 @main
 struct CreditCard: App {
@@ -19,10 +20,9 @@ struct CreditCard: App {
                         .displayFrequency(.immediate),
                         .datastoreLocation(.applicationDefault)
                     ])
-
                 }
 				.onAppear {
-					TelemetryDeck.shared.appDidFinshLaunching()
+					TDeckClient.shared.appDidFinshLaunching()
 				}
 				.environment(
 					\.whatsNew,
@@ -34,6 +34,7 @@ struct CreditCard: App {
 						whatsNewCollection: self
 					 )
 				)
+				.environment(BoilerPlate(delegate: self))
 
         }
     }
@@ -163,4 +164,12 @@ extension CreditCard: WhatsNewCollectionProvider {
 
 	}
 
+}
+
+extension CreditCard: BoilerPlated {
+	var appID: String {
+		 let path = Bundle.main.path(forResource: "Secrets", ofType: "plist")
+		let dict = NSDictionary(contentsOfFile: path!) as? [String: AnyObject]
+		return dict!["TDeck"] as! String
+	}
 }

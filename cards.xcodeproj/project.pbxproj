@@ -3,7 +3,7 @@
 	archiveVersion = 1;
 	classes = {
 	};
-	objectVersion = 56;
+	objectVersion = 60;
 	objects = {
 
 /* Begin PBXBuildFile section */
@@ -12,13 +12,12 @@
 		EE1D3E982B69379E009733A5 /* SettingsViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE1D3E972B69379E009733A5 /* SettingsViewModel.swift */; };
 		EE1D3E9D2B6AC7BC009733A5 /* SharkCardScanViewRepresentable.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE1D3E9C2B6AC7BC009733A5 /* SharkCardScanViewRepresentable.swift */; };
 		EE3406CE2B6D0FF8007E7DD2 /* SharkCardScan in Frameworks */ = {isa = PBXBuildFile; productRef = EE3406CD2B6D0FF8007E7DD2 /* SharkCardScan */; };
+		EE35CCDD2BDD898F0074502B /* Secrets.plist in Resources */ = {isa = PBXBuildFile; fileRef = EE35CCDC2BDD898F0074502B /* Secrets.plist */; };
 		EE599BAC2B23900A002F49F8 /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE599BAB2B23900A002F49F8 /* SettingsView.swift */; };
 		EE599BAE2B2398DF002F49F8 /* UserSettings.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE599BAD2B2398DF002F49F8 /* UserSettings.swift */; };
 		EE599BB02B239F28002F49F8 /* CardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE599BAF2B239F27002F49F8 /* CardView.swift */; };
 		EE599BB22B24465A002F49F8 /* Extensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE599BB12B24465A002F49F8 /* Extensions.swift */; };
 		EE599BB62B24495F002F49F8 /* CardData.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE599BB52B24495F002F49F8 /* CardData.swift */; };
-		EE6495A32BB16309008B71D7 /* TelemetryClient in Frameworks */ = {isa = PBXBuildFile; productRef = EE6495A22BB16309008B71D7 /* TelemetryClient */; };
-		EE6495A52BB16337008B71D7 /* TelemetryDeck.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE6495A42BB16337008B71D7 /* TelemetryDeck.swift */; };
 		EE8ADBEF2B66A5B600F0DC29 /* HomeViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE8ADBEE2B66A5B600F0DC29 /* HomeViewModel.swift */; };
 		EE960C4F2B4AC00B00B67805 /* CardDataStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE960C4E2B4AC00B00B67805 /* CardDataStore.swift */; };
 		EEABD0D12B6D8AD600FF34E6 /* WhatsNewKit in Frameworks */ = {isa = PBXBuildFile; productRef = EEABD0D02B6D8AD600FF34E6 /* WhatsNewKit */; };
@@ -27,6 +26,7 @@
 		EEBB52EE2B238D6800035B92 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = EEBB52ED2B238D6800035B92 /* Assets.xcassets */; };
 		EEBB52F12B238D6800035B92 /* Preview Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = EEBB52F02B238D6800035B92 /* Preview Assets.xcassets */; };
 		EEBED8C82B6D7F6F00BEBE87 /* CardScanViewStyle.swift in Sources */ = {isa = PBXBuildFile; fileRef = EEBED8C72B6D7F6F00BEBE87 /* CardScanViewStyle.swift */; };
+		EEFAB0972BDD84E30017DB23 /* Boilerplate in Frameworks */ = {isa = PBXBuildFile; productRef = EEFAB0962BDD84E30017DB23 /* Boilerplate */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -34,12 +34,12 @@
 		EE1D3E912B66AE83009733A5 /* CardViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CardViewModel.swift; sourceTree = "<group>"; };
 		EE1D3E972B69379E009733A5 /* SettingsViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsViewModel.swift; sourceTree = "<group>"; };
 		EE1D3E9C2B6AC7BC009733A5 /* SharkCardScanViewRepresentable.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SharkCardScanViewRepresentable.swift; sourceTree = "<group>"; };
+		EE35CCDC2BDD898F0074502B /* Secrets.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; path = Secrets.plist; sourceTree = "<group>"; };
 		EE599BAB2B23900A002F49F8 /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
 		EE599BAD2B2398DF002F49F8 /* UserSettings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UserSettings.swift; sourceTree = "<group>"; };
 		EE599BAF2B239F27002F49F8 /* CardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CardView.swift; sourceTree = "<group>"; };
 		EE599BB12B24465A002F49F8 /* Extensions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Extensions.swift; sourceTree = "<group>"; };
 		EE599BB52B24495F002F49F8 /* CardData.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CardData.swift; sourceTree = "<group>"; };
-		EE6495A42BB16337008B71D7 /* TelemetryDeck.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TelemetryDeck.swift; sourceTree = "<group>"; };
 		EE7AF3E82B4C3A1300F2F7C0 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
 		EE8ADBEE2B66A5B600F0DC29 /* HomeViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeViewModel.swift; sourceTree = "<group>"; };
 		EE960C4E2B4AC00B00B67805 /* CardDataStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CardDataStore.swift; sourceTree = "<group>"; };
@@ -57,8 +57,8 @@
 			buildActionMask = 2147483647;
 			files = (
 				EEABD0D12B6D8AD600FF34E6 /* WhatsNewKit in Frameworks */,
-				EE6495A32BB16309008B71D7 /* TelemetryClient in Frameworks */,
 				EE3406CE2B6D0FF8007E7DD2 /* SharkCardScan in Frameworks */,
+				EEFAB0972BDD84E30017DB23 /* Boilerplate in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -122,8 +122,8 @@
 		EEBB52E82B238D6600035B92 /* cards */ = {
 			isa = PBXGroup;
 			children = (
-				EE6495A42BB16337008B71D7 /* TelemetryDeck.swift */,
 				EE7AF3E82B4C3A1300F2F7C0 /* Info.plist */,
+				EE35CCDC2BDD898F0074502B /* Secrets.plist */,
 				EEBB52E92B238D6600035B92 /* CreditCard.swift */,
 				EE1D3E8D2B66AE2A009733A5 /* Home */,
 				EE1D3E932B66B133009733A5 /* CardView */,
@@ -173,7 +173,7 @@
 			packageProductDependencies = (
 				EE3406CD2B6D0FF8007E7DD2 /* SharkCardScan */,
 				EEABD0D02B6D8AD600FF34E6 /* WhatsNewKit */,
-				EE6495A22BB16309008B71D7 /* TelemetryClient */,
+				EEFAB0962BDD84E30017DB23 /* Boilerplate */,
 			);
 			productName = "credit-card";
 			productReference = EEBB52E62B238D6600035B92 /* Holder: A Secure Card Vault.app */;
@@ -206,7 +206,7 @@
 			packageReferences = (
 				EE3406CC2B6D0FF8007E7DD2 /* XCRemoteSwiftPackageReference "ios-card-scan" */,
 				EEABD0CF2B6D8AD600FF34E6 /* XCRemoteSwiftPackageReference "WhatsNewKit" */,
-				EE6495A12BB16309008B71D7 /* XCRemoteSwiftPackageReference "SwiftClient" */,
+				EEFAB0952BDD84E30017DB23 /* XCLocalSwiftPackageReference "../Boilerplate" */,
 			);
 			productRefGroup = EEBB52E72B238D6600035B92 /* Products */;
 			projectDirPath = "";
@@ -223,6 +223,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				EEBB52F12B238D6800035B92 /* Preview Assets.xcassets in Resources */,
+				EE35CCDD2BDD898F0074502B /* Secrets.plist in Resources */,
 				EEBB52EE2B238D6800035B92 /* Assets.xcassets in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -242,7 +243,6 @@
 				EE599BAE2B2398DF002F49F8 /* UserSettings.swift in Sources */,
 				EE960C4F2B4AC00B00B67805 /* CardDataStore.swift in Sources */,
 				EEBB52EC2B238D6600035B92 /* HomeView.swift in Sources */,
-				EE6495A52BB16337008B71D7 /* TelemetryDeck.swift in Sources */,
 				EE599BB62B24495F002F49F8 /* CardData.swift in Sources */,
 				EE1D3E902B66AE66009733A5 /* Tip.swift in Sources */,
 				EEBB52EA2B238D6600035B92 /* CreditCard.swift in Sources */,
@@ -336,7 +336,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 1.4;
+				MARKETING_VERSION = 1.5;
 				PRODUCT_BUNDLE_IDENTIFIER = com.swiftlysingh.cards.beta;
 				PRODUCT_NAME = "Holder: A Secure Card Vault";
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator xros xrsimulator";
@@ -492,7 +492,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 1.4;
+				MARKETING_VERSION = 1.5;
 				PRODUCT_BUNDLE_IDENTIFIER = com.swiftlysingh.cards.debug;
 				PRODUCT_NAME = "Holder: A Secure Card Vault";
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator xros xrsimulator";
@@ -529,7 +529,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 1.4;
+				MARKETING_VERSION = 1.5;
 				PRODUCT_BUNDLE_IDENTIFIER = com.swiftlysingh.cards;
 				PRODUCT_NAME = "Holder: A Secure Card Vault";
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator xros xrsimulator";
@@ -566,6 +566,13 @@
 		};
 /* End XCConfigurationList section */
 
+/* Begin XCLocalSwiftPackageReference section */
+		EEFAB0952BDD84E30017DB23 /* XCLocalSwiftPackageReference "../Boilerplate" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = ../Boilerplate;
+		};
+/* End XCLocalSwiftPackageReference section */
+
 /* Begin XCRemoteSwiftPackageReference section */
 		EE3406CC2B6D0FF8007E7DD2 /* XCRemoteSwiftPackageReference "ios-card-scan" */ = {
 			isa = XCRemoteSwiftPackageReference;
@@ -573,14 +580,6 @@
 			requirement = {
 				branch = master;
 				kind = branch;
-			};
-		};
-		EE6495A12BB16309008B71D7 /* XCRemoteSwiftPackageReference "SwiftClient" */ = {
-			isa = XCRemoteSwiftPackageReference;
-			repositoryURL = "https://github.com/TelemetryDeck/SwiftClient";
-			requirement = {
-				kind = upToNextMajorVersion;
-				minimumVersion = 1.5.1;
 			};
 		};
 		EEABD0CF2B6D8AD600FF34E6 /* XCRemoteSwiftPackageReference "WhatsNewKit" */ = {
@@ -599,15 +598,14 @@
 			package = EE3406CC2B6D0FF8007E7DD2 /* XCRemoteSwiftPackageReference "ios-card-scan" */;
 			productName = SharkCardScan;
 		};
-		EE6495A22BB16309008B71D7 /* TelemetryClient */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = EE6495A12BB16309008B71D7 /* XCRemoteSwiftPackageReference "SwiftClient" */;
-			productName = TelemetryClient;
-		};
 		EEABD0D02B6D8AD600FF34E6 /* WhatsNewKit */ = {
 			isa = XCSwiftPackageProductDependency;
 			package = EEABD0CF2B6D8AD600FF34E6 /* XCRemoteSwiftPackageReference "WhatsNewKit" */;
 			productName = WhatsNewKit;
+		};
+		EEFAB0962BDD84E30017DB23 /* Boilerplate */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = Boilerplate;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};
