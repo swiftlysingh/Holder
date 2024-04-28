@@ -2,7 +2,7 @@
 
 Welcome to Holder: Your Trusted, Secure Card Vault. In a world transitioning rapidly to digital transactions, Holder emerges as a vital tool, especially for those in countries without Apple Pay. Designed to ease the burden of online transactions, Holder is a beacon of convenience and security.
 
-![App Store Screenshots Component ](https://github.com/swiftlysingh/Holder/assets/47032662/52c03cfe-4eef-4c8d-bfad-f9a843cc44b3)
+![Component 2 (1)](https://github.com/swiftlysingh/Holder/assets/47032662/e18b663a-73a2-43ff-8d10-f1aa24af82c2)
 
 <p align="center">
 <a href="https://apps.apple.com/us/app/holder-a-secure-card-vault/id6475649492?itsct=apps_box_badge&amp;itscg=30200" style="display: inline-block; overflow: hidden; border-radius: 13px; width: 250px; height: 83px;"><img src="https://tools.applemediaservices.com/api/badges/download-on-the-app-store/black/en-us?size=250x83&amp;releaseDate=1706313600" alt="Download on the App Store" style="border-radius: 13px; width: 75%; height: 83px;"></a>
