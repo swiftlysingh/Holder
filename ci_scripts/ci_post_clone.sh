@@ -5,6 +5,13 @@
 # Ensure the script exits on any error
 set -e
 
+# Determine the project path
+if [ -z "$CI_PRIMARY_REPOSITORY_PATH" ]; then
+    # Fallback to current directory if CI_PRIMARY_REPOSITORY_PATH is not set
+    REPO_PATH="."
+else
+    REPO_PATH="$CI_PRIMARY_REPOSITORY_PATH"
+fi
 
 # Use CI_XCODE_PROJECT if set, otherwise find the .xcodeproj in the current directory
 if [ -z "$CI_XCODE_PROJECT" ]; then
@@ -24,7 +31,7 @@ else
 fi
 
 # Define the path to where Secrets.plist should be stored in your project
-SECRETS_PLIST_PATH="./$APP_NAME/Secrets.plist"
+SECRETS_PLIST_PATH="$REPO_PATH/$APP_NAME/Secrets.plist"
 
 # Your GitHub repository URL for Secrets.plist
 # Replace `your_username` and `your_repo` with your actual GitHub account and repository details
