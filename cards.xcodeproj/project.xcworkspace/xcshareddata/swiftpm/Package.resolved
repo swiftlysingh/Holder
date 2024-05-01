@@ -25,7 +25,7 @@
       "location" : "git@github.com:swiftlysingh/SwiftBoilerplate.git",
       "state" : {
         "branch" : "main",
-        "revision" : "03f34d631af6ad658b04daf11ff0bd331caa6294"
+        "revision" : "216160f2c43ec6634b37a5f4128c0289e5c7f1f9"
       }
     },
     {
@@ -42,8 +42,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/SvenTiigi/WhatsNewKit.git",
       "state" : {
-        "revision" : "a81f41ea63870205f281b8d051b264f7b303f6d4",
-        "version" : "2.2.0"
+        "revision" : "6157c77e8be9b3d2310bc680681b61a8d9e290ac",
+        "version" : "2.2.1"
       }
     }
   ],
