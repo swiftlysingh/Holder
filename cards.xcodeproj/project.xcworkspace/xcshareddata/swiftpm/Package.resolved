@@ -1,5 +1,5 @@
 {
-  "originHash" : "6e300a49e01a23311c6d4088b30e37b837d7b70a2197df3bc619425e37da6f17",
+  "originHash" : "02b9e42011de8cabe456ee1a611a91bd482fa0c1d37683754fab5b49e5b55f8c",
   "pins" : [
     {
       "identity" : "ios-card-scan",
@@ -25,7 +25,7 @@
       "location" : "git@github.com:swiftlysingh/SwiftBoilerplate.git",
       "state" : {
         "branch" : "main",
-        "revision" : "f67a7ae68ec8735427e46ce5cd29053ef87c8f0f"
+        "revision" : "03f34d631af6ad658b04daf11ff0bd331caa6294"
       }
     },
     {
