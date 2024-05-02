@@ -6,9 +6,12 @@
 //
 
 import Foundation
+import Settings
 
-class SettingsViewModel {
+class SettingsViewModel: SettingsViewModelProtocol {
 
-	let appVersion : String = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? ""
+    var appVersion : String = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? ""
+    
+    var privacyPolicy = "https://docs.google.com/document/d/1OD3foirDwAsmZ8Mp6cYJlDpUjAyDpvgX7rvzosnNQes"
 
 }

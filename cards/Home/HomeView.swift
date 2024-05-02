@@ -7,6 +7,7 @@
 
 import SwiftUI
 import WhatsNewKit
+import Settings
 
 struct HomeView: View {
 
@@ -49,7 +50,7 @@ struct HomeView: View {
 				}
 			.navigationTitle("Cards")
 			.toolbar{
-				NavigationLink(destination: SettingsView()){
+                NavigationLink(destination: SettingsView(model: SettingsViewModel())){
 					Image(systemName: "gear")
 				}
 			}
