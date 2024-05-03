@@ -24,8 +24,8 @@
       "kind" : "remoteSourceControl",
       "location" : "git@github.com:swiftlysingh/SwiftBoilerplate.git",
       "state" : {
-        "branch" : "main",
-        "revision" : "216160f2c43ec6634b37a5f4128c0289e5c7f1f9"
+        "revision" : "081fc1cf18e1fdcc4899bfd69360d02ec8f50c86",
+        "version" : "1.0.1"
       }
     },
     {

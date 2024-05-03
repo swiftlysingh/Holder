@@ -8,6 +8,7 @@
 import Settings
 import UIKit
 import SwiftUI
+import StoreKit
 
 class SettingsViewModel: SettingsViewModelProtocol {
     var appVersion : String = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? ""
@@ -16,7 +17,10 @@ class SettingsViewModel: SettingsViewModelProtocol {
 
     var sourceCode: String? = "https://github.com/swiftlysingh/holder/"
     
-    var windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene
-    
     var appSettings: AnyView? = AppSettingsView().body
+    
+    func rateTheAppAction() {
+        guard let windowScene =  UIApplication.shared.connectedScenes.first as? UIWindowScene else { return }
+        SKStoreReviewController.requestReview(in: windowScene)
+    }
 }
