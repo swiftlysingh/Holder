@@ -5,9 +5,9 @@
 //  Created by Pushpinder Pal Singh on 30/01/24.
 //
 
-import Foundation
 import Settings
 import UIKit
+import SwiftUI
 
 class SettingsViewModel: SettingsViewModelProtocol {
     var appVersion : String = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? ""
@@ -17,4 +17,6 @@ class SettingsViewModel: SettingsViewModelProtocol {
     var sourceCode: String? = "https://github.com/swiftlysingh/holder/"
     
     var windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene
+    
+    var appSettings: AnyView? = AppSettingsView().body
 }
