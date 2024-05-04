@@ -36,6 +36,19 @@ struct WNCollection: WhatsNewCollectionProvider {
     
     var whatsNewCollection: WhatsNewCollection {
         return [
+			WhatsNew(
+				version: "1.5",
+				title: title,
+				features: [
+					WhatsNew.Feature(
+						image: .init(systemName: "gear.badge.checkmark"),
+						title: "New and improved settings",
+						subtitle: "Configurations are easier and beautiful than ever!"
+					),
+					bugFixFeature
+				],
+				primaryAction: primaryAction
+			),
             WhatsNew(
                 version: "1.4",
                 title: title,
