@@ -1,4 +1,5 @@
 {
+  "originHash" : "02b9e42011de8cabe456ee1a611a91bd482fa0c1d37683754fab5b49e5b55f8c",
   "pins" : [
     {
       "identity" : "ios-card-scan",
@@ -19,14 +20,32 @@
       }
     },
     {
+      "identity" : "swiftboilerplate",
+      "kind" : "remoteSourceControl",
+      "location" : "git@github.com:swiftlysingh/SwiftBoilerplate.git",
+      "state" : {
+        "revision" : "081fc1cf18e1fdcc4899bfd69360d02ec8f50c86",
+        "version" : "1.0.1"
+      }
+    },
+    {
+      "identity" : "swiftclient",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/TelemetryDeck/SwiftClient",
+      "state" : {
+        "revision" : "d20ccc4b8266cf739eede58cdfc7e9c6ffb41cda",
+        "version" : "1.5.1"
+      }
+    },
+    {
       "identity" : "whatsnewkit",
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/SvenTiigi/WhatsNewKit.git",
       "state" : {
-        "revision" : "a81f41ea63870205f281b8d051b264f7b303f6d4",
-        "version" : "2.2.0"
+        "revision" : "6157c77e8be9b3d2310bc680681b61a8d9e290ac",
+        "version" : "2.2.1"
       }
     }
   ],
-  "version" : 2
+  "version" : 3
 }

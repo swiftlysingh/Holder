@@ -7,6 +7,7 @@
 
 import SwiftUI
 import WhatsNewKit
+import Settings
 
 struct HomeView: View {
 
@@ -49,10 +50,18 @@ struct HomeView: View {
 				}
 			.navigationTitle("Cards")
 			.toolbar{
-				NavigationLink(destination: SettingsView()){
+                NavigationLink(destination: SettingsView(model: SettingsViewModel())){
 					Image(systemName: "gear")
 				}
 			}
+			.alert("Enable Biometrics",isPresented: model.$isFirstLaunch, actions: {
+				Button("Yes", role: .cancel) { 
+					UserSettings.shared.isAuthEnabled = true
+				}
+				Button("No", role: .destructive) { 
+					UserSettings.shared.isAuthEnabled = false
+				}
+			})
 		} detail: {
 			if let card = model.selectedCard {
 				CardView(model: CardViewModel(
@@ -70,13 +79,20 @@ struct HomeView: View {
 
 	private func getRowforCards(with card: CardData) -> some View {
 		NavigationLink(value: card){
-			VStack(alignment: .leading){
-				if card.description != "" {
-					Text(card.description)
-				} else {
-					Text(card.name)
+			HStack{
+				Image(card.network.rawValue)
+					.resizable()
+					.scaledToFit()
+					.frame(width: 36,height: 36)
+
+				VStack(alignment: .leading){
+					if card.description != "" {
+						Text(card.description)
+					} else {
+						Text(card.name)
+					}
+					Text(card.number.toSecureCard())
 				}
-				Text(card.number.toSecureCard())
 			}
 		}
 	}

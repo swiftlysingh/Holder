@@ -12,7 +12,7 @@
 		EE1D3E982B69379E009733A5 /* SettingsViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE1D3E972B69379E009733A5 /* SettingsViewModel.swift */; };
 		EE1D3E9D2B6AC7BC009733A5 /* SharkCardScanViewRepresentable.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE1D3E9C2B6AC7BC009733A5 /* SharkCardScanViewRepresentable.swift */; };
 		EE3406CE2B6D0FF8007E7DD2 /* SharkCardScan in Frameworks */ = {isa = PBXBuildFile; productRef = EE3406CD2B6D0FF8007E7DD2 /* SharkCardScan */; };
-		EE599BAC2B23900A002F49F8 /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE599BAB2B23900A002F49F8 /* SettingsView.swift */; };
+		EE599BAC2B23900A002F49F8 /* AppSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE599BAB2B23900A002F49F8 /* AppSettingsView.swift */; };
 		EE599BAE2B2398DF002F49F8 /* UserSettings.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE599BAD2B2398DF002F49F8 /* UserSettings.swift */; };
 		EE599BB02B239F28002F49F8 /* CardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE599BAF2B239F27002F49F8 /* CardView.swift */; };
 		EE599BB22B24465A002F49F8 /* Extensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE599BB12B24465A002F49F8 /* Extensions.swift */; };
@@ -25,6 +25,13 @@
 		EEBB52EE2B238D6800035B92 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = EEBB52ED2B238D6800035B92 /* Assets.xcassets */; };
 		EEBB52F12B238D6800035B92 /* Preview Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = EEBB52F02B238D6800035B92 /* Preview Assets.xcassets */; };
 		EEBED8C82B6D7F6F00BEBE87 /* CardScanViewStyle.swift in Sources */ = {isa = PBXBuildFile; fileRef = EEBED8C72B6D7F6F00BEBE87 /* CardScanViewStyle.swift */; };
+		EEFAB0972BDD84E30017DB23 /* Boilerplate in Frameworks */ = {isa = PBXBuildFile; productRef = EEFAB0962BDD84E30017DB23 /* Boilerplate */; };
+		FF584F492BE434D40036F3DD /* Boilerplate in Frameworks */ = {isa = PBXBuildFile; productRef = FF584F482BE434D40036F3DD /* Boilerplate */; };
+		FF584F4B2BE434D40036F3DD /* Settings in Frameworks */ = {isa = PBXBuildFile; productRef = FF584F4A2BE434D40036F3DD /* Settings */; };
+		FF9212BE2BE57A50005DF48E /* Boilerplate in Frameworks */ = {isa = PBXBuildFile; productRef = FF9212BD2BE57A50005DF48E /* Boilerplate */; };
+		FF9212C02BE57A50005DF48E /* Settings in Frameworks */ = {isa = PBXBuildFile; productRef = FF9212BF2BE57A50005DF48E /* Settings */; };
+		FF9452F92BDE314E00731D8B /* Secrets.plist in Resources */ = {isa = PBXBuildFile; fileRef = FF9452F82BDE314E00731D8B /* Secrets.plist */; };
+		FF9452FB2BE1F68700731D8B /* WNCollection.swift in Sources */ = {isa = PBXBuildFile; fileRef = FF9452FA2BE1F68700731D8B /* WNCollection.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -32,7 +39,7 @@
 		EE1D3E912B66AE83009733A5 /* CardViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CardViewModel.swift; sourceTree = "<group>"; };
 		EE1D3E972B69379E009733A5 /* SettingsViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsViewModel.swift; sourceTree = "<group>"; };
 		EE1D3E9C2B6AC7BC009733A5 /* SharkCardScanViewRepresentable.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SharkCardScanViewRepresentable.swift; sourceTree = "<group>"; };
-		EE599BAB2B23900A002F49F8 /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
+		EE599BAB2B23900A002F49F8 /* AppSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppSettingsView.swift; sourceTree = "<group>"; };
 		EE599BAD2B2398DF002F49F8 /* UserSettings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UserSettings.swift; sourceTree = "<group>"; };
 		EE599BAF2B239F27002F49F8 /* CardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CardView.swift; sourceTree = "<group>"; };
 		EE599BB12B24465A002F49F8 /* Extensions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Extensions.swift; sourceTree = "<group>"; };
@@ -46,6 +53,8 @@
 		EEBB52ED2B238D6800035B92 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		EEBB52F02B238D6800035B92 /* Preview Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = "Preview Assets.xcassets"; sourceTree = "<group>"; };
 		EEBED8C72B6D7F6F00BEBE87 /* CardScanViewStyle.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CardScanViewStyle.swift; sourceTree = "<group>"; };
+		FF9452F82BDE314E00731D8B /* Secrets.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Secrets.plist; sourceTree = "<group>"; };
+		FF9452FA2BE1F68700731D8B /* WNCollection.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WNCollection.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -53,8 +62,13 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				FF9212C02BE57A50005DF48E /* Settings in Frameworks */,
 				EEABD0D12B6D8AD600FF34E6 /* WhatsNewKit in Frameworks */,
+				FF584F4B2BE434D40036F3DD /* Settings in Frameworks */,
+				FF9212BE2BE57A50005DF48E /* Boilerplate in Frameworks */,
 				EE3406CE2B6D0FF8007E7DD2 /* SharkCardScan in Frameworks */,
+				FF584F492BE434D40036F3DD /* Boilerplate in Frameworks */,
+				EEFAB0972BDD84E30017DB23 /* Boilerplate in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -73,7 +87,7 @@
 		EE1D3E8E2B66AE36009733A5 /* Settings */ = {
 			isa = PBXGroup;
 			children = (
-				EE599BAB2B23900A002F49F8 /* SettingsView.swift */,
+				EE599BAB2B23900A002F49F8 /* AppSettingsView.swift */,
 				EE599BAD2B2398DF002F49F8 /* UserSettings.swift */,
 				EE1D3E972B69379E009733A5 /* SettingsViewModel.swift */,
 			);
@@ -119,6 +133,7 @@
 			isa = PBXGroup;
 			children = (
 				EE7AF3E82B4C3A1300F2F7C0 /* Info.plist */,
+				FF9452F82BDE314E00731D8B /* Secrets.plist */,
 				EEBB52E92B238D6600035B92 /* CreditCard.swift */,
 				EE1D3E8D2B66AE2A009733A5 /* Home */,
 				EE1D3E932B66B133009733A5 /* CardView */,
@@ -126,6 +141,7 @@
 				EE1D3E8E2B66AE36009733A5 /* Settings */,
 				EE1D3E942B66B156009733A5 /* Model */,
 				EE599BB12B24465A002F49F8 /* Extensions.swift */,
+				FF9452FA2BE1F68700731D8B /* WNCollection.swift */,
 				EEBB52ED2B238D6800035B92 /* Assets.xcassets */,
 				EEBB52EF2B238D6800035B92 /* Preview Content */,
 			);
@@ -168,6 +184,11 @@
 			packageProductDependencies = (
 				EE3406CD2B6D0FF8007E7DD2 /* SharkCardScan */,
 				EEABD0D02B6D8AD600FF34E6 /* WhatsNewKit */,
+				EEFAB0962BDD84E30017DB23 /* Boilerplate */,
+				FF584F482BE434D40036F3DD /* Boilerplate */,
+				FF584F4A2BE434D40036F3DD /* Settings */,
+				FF9212BD2BE57A50005DF48E /* Boilerplate */,
+				FF9212BF2BE57A50005DF48E /* Settings */,
 			);
 			productName = "credit-card";
 			productReference = EEBB52E62B238D6600035B92 /* Holder: A Secure Card Vault.app */;
@@ -200,6 +221,7 @@
 			packageReferences = (
 				EE3406CC2B6D0FF8007E7DD2 /* XCRemoteSwiftPackageReference "ios-card-scan" */,
 				EEABD0CF2B6D8AD600FF34E6 /* XCRemoteSwiftPackageReference "WhatsNewKit" */,
+				FF9212BC2BE57A50005DF48E /* XCRemoteSwiftPackageReference "SwiftBoilerplate" */,
 			);
 			productRefGroup = EEBB52E72B238D6600035B92 /* Products */;
 			projectDirPath = "";
@@ -216,6 +238,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				EEBB52F12B238D6800035B92 /* Preview Assets.xcassets in Resources */,
+				FF9452F92BDE314E00731D8B /* Secrets.plist in Resources */,
 				EEBB52EE2B238D6800035B92 /* Assets.xcassets in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -228,12 +251,13 @@
 			buildActionMask = 2147483647;
 			files = (
 				EE1D3E922B66AE83009733A5 /* CardViewModel.swift in Sources */,
-				EE599BAC2B23900A002F49F8 /* SettingsView.swift in Sources */,
+				EE599BAC2B23900A002F49F8 /* AppSettingsView.swift in Sources */,
 				EE8ADBEF2B66A5B600F0DC29 /* HomeViewModel.swift in Sources */,
 				EE1D3E9D2B6AC7BC009733A5 /* SharkCardScanViewRepresentable.swift in Sources */,
 				EE599BB22B24465A002F49F8 /* Extensions.swift in Sources */,
 				EE599BAE2B2398DF002F49F8 /* UserSettings.swift in Sources */,
 				EE960C4F2B4AC00B00B67805 /* CardDataStore.swift in Sources */,
+				FF9452FB2BE1F68700731D8B /* WNCollection.swift in Sources */,
 				EEBB52EC2B238D6600035B92 /* HomeView.swift in Sources */,
 				EE599BB62B24495F002F49F8 /* CardData.swift in Sources */,
 				EE1D3E902B66AE66009733A5 /* Tip.swift in Sources */,
@@ -328,7 +352,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 1.2.1;
+				MARKETING_VERSION = 1.5;
 				PRODUCT_BUNDLE_IDENTIFIER = com.swiftlysingh.cards.beta;
 				PRODUCT_NAME = "Holder: A Secure Card Vault";
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator xros xrsimulator";
@@ -484,7 +508,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 1.2.1;
+				MARKETING_VERSION = 1.5;
 				PRODUCT_BUNDLE_IDENTIFIER = com.swiftlysingh.cards.debug;
 				PRODUCT_NAME = "Holder: A Secure Card Vault";
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator xros xrsimulator";
@@ -521,7 +545,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 1.2.1;
+				MARKETING_VERSION = 1.5;
 				PRODUCT_BUNDLE_IDENTIFIER = com.swiftlysingh.cards;
 				PRODUCT_NAME = "Holder: A Secure Card Vault";
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator xros xrsimulator";
@@ -575,6 +599,14 @@
 				minimumVersion = 2.2.0;
 			};
 		};
+		FF9212BC2BE57A50005DF48E /* XCRemoteSwiftPackageReference "SwiftBoilerplate" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "git@github.com:swiftlysingh/SwiftBoilerplate.git";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 1.0.0;
+			};
+		};
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
@@ -587,6 +619,28 @@
 			isa = XCSwiftPackageProductDependency;
 			package = EEABD0CF2B6D8AD600FF34E6 /* XCRemoteSwiftPackageReference "WhatsNewKit" */;
 			productName = WhatsNewKit;
+		};
+		EEFAB0962BDD84E30017DB23 /* Boilerplate */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = Boilerplate;
+		};
+		FF584F482BE434D40036F3DD /* Boilerplate */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = Boilerplate;
+		};
+		FF584F4A2BE434D40036F3DD /* Settings */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = Settings;
+		};
+		FF9212BD2BE57A50005DF48E /* Boilerplate */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = FF9212BC2BE57A50005DF48E /* XCRemoteSwiftPackageReference "SwiftBoilerplate" */;
+			productName = Boilerplate;
+		};
+		FF9212BF2BE57A50005DF48E /* Settings */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = FF9212BC2BE57A50005DF48E /* XCRemoteSwiftPackageReference "SwiftBoilerplate" */;
+			productName = Settings;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};

@@ -36,6 +36,7 @@ struct CardView: View {
 					.contextMenu(menuItems: {
 						Button(action: {
 							model.copyAction(with: value.wrappedValue)
+                            UserSettings.shared.requestReview()
 						}) {
 							Text("Copy to clipboard")
 							Image(systemName: "doc.on.doc")
@@ -43,34 +44,46 @@ struct CardView: View {
 					})
 			}
 		}
-		.if (!model.isEditing, transform: { view in
-			view.onTapGesture {
-					model.copyAction(with: value.wrappedValue)
-				}
-		})
-	}
+        .if (!model.isEditing, transform: { view in
+            view.onTapGesture(count: 2, perform: {
+                model.copyAction(with: value.wrappedValue)
+            })
+        })
+    }
 
 	fileprivate func getCardListView() -> some View {
 		let tip = DoubleTapTip()
 
 		return List {
-			itemView(heading: "Name", value: $model.card.name, .alphabet)
-			itemView(heading: "Number", value: $model.card.number,.numberPad)
-				.if(!model.isEditing) { viewy in
-					viewy.popoverTip(tip,arrowEdge: .top)
+			Group {
+				itemView(heading: "Name", value: $model.card.name, .alphabet)
+				itemView(heading: "Number", value: $model.card.number,.numbersAndPunctuation)
+					.if(!model.isEditing) { viewy in
+						viewy.popoverTip(tip,arrowEdge: .top)
+					}
+				itemView(heading: "Expiration", value: $model.card.expiration, .numberPad)
+				itemView(heading: "Security Code", value: $model.card.cvv, .numberPad)
+				itemView(heading: "Description", value: $model.card.description, .alphabet)
+                Picker("Card Network", selection: $model.card.network){
+                    ForEach(CardNetwork.allCases) { pref in
+                        Text(pref.rawValue)
+                    }
+                }
+                .disabled(true)
+                .bold()
+				Picker("Card Type", selection: $model.card.type){
+					ForEach(CardType.allCases) { pref in
+						Text(pref.rawValue)
+					}
 				}
-			itemView(heading: "Expiration", value: $model.card.expiration, .numberPad)
-			itemView(heading: "Security Code", value: $model.card.cvv, .numberPad)
-			itemView(heading: "Description", value: $model.card.description, .alphabet)
-			Picker("Card Type", selection: $model.card.type){
-				ForEach(CardType.allCases) { pref in
-					Text(pref.rawValue)
-				}
+                .disabled(!model.isEditing)
+                .bold()
 			}
-			.disabled(!model.isEditing)
-			.bold()
 		}
 		.toolbar {
+			ShareLink(item: model.card.toShareString()) {
+				Label("Click to share", systemImage: "square.and.arrow.up")
+			}
 			Button(action: {
 				model.isEditing.toggle()
 				// if user is not editing, then he is done editing when button press
@@ -80,8 +93,8 @@ struct CardView: View {
 			}) {
 				Text(model.isEditing ? "Done" : "Edit")
 			}
-			.disabled(!$model.isAuthenticated.wrappedValue)
 		}
+		.disabled(!$model.isAuthenticated.wrappedValue)
 		.toolbar {
 			if model.card.number.isEmpty {
 				ToolbarItem(placement: .topBarLeading){
@@ -116,7 +129,7 @@ struct CardView: View {
 			}
 		}
 		.onChange(of: scenePhase) {
-			if scenePhase == .background {
+			if scenePhase == .background && UserSettings.shared.isAuthEnabled {
 				DispatchQueue.main.asyncAfter(deadline: .now() + .seconds(UserSettings.shared.authTimeout)) {
 					if scenePhase == .background {
 						self.model.$isAuthenticated.wrappedValue = false
