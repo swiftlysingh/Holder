@@ -36,7 +36,7 @@ struct CardView: View {
 					.contextMenu(menuItems: {
 						Button(action: {
 							model.copyAction(with: value.wrappedValue)
-                            UserSettings.shared.requestReview()
+                            SettingsViewModel().rateTheAppAction()
 						}) {
 							Text("Copy to clipboard")
 							Image(systemName: "doc.on.doc")

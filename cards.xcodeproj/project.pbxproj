@@ -30,9 +30,44 @@
 		FF584F4B2BE434D40036F3DD /* Settings in Frameworks */ = {isa = PBXBuildFile; productRef = FF584F4A2BE434D40036F3DD /* Settings */; };
 		FF9212BE2BE57A50005DF48E /* Boilerplate in Frameworks */ = {isa = PBXBuildFile; productRef = FF9212BD2BE57A50005DF48E /* Boilerplate */; };
 		FF9212C02BE57A50005DF48E /* Settings in Frameworks */ = {isa = PBXBuildFile; productRef = FF9212BF2BE57A50005DF48E /* Settings */; };
+		FF9212C82BE57F38005DF48E /* WidgetKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = FF9212C72BE57F37005DF48E /* WidgetKit.framework */; };
+		FF9212CA2BE57F38005DF48E /* SwiftUI.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = FF9212C92BE57F38005DF48E /* SwiftUI.framework */; };
+		FF9212CD2BE57F38005DF48E /* FavouriteCardsWigetBundle.swift in Sources */ = {isa = PBXBuildFile; fileRef = FF9212CC2BE57F38005DF48E /* FavouriteCardsWigetBundle.swift */; };
+		FF9212CF2BE57F38005DF48E /* FavouriteCardsWiget.swift in Sources */ = {isa = PBXBuildFile; fileRef = FF9212CE2BE57F38005DF48E /* FavouriteCardsWiget.swift */; };
+		FF9212D12BE57F3A005DF48E /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = FF9212D02BE57F3A005DF48E /* Assets.xcassets */; };
+		FF9212D52BE57F3A005DF48E /* FavouriteCardsWigetExtension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = FF9212C52BE57F37005DF48E /* FavouriteCardsWigetExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		FF9452F92BDE314E00731D8B /* Secrets.plist in Resources */ = {isa = PBXBuildFile; fileRef = FF9452F82BDE314E00731D8B /* Secrets.plist */; };
 		FF9452FB2BE1F68700731D8B /* WNCollection.swift in Sources */ = {isa = PBXBuildFile; fileRef = FF9452FA2BE1F68700731D8B /* WNCollection.swift */; };
+		FFC4AC1C2BE6056800E84BF4 /* Extensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE599BB12B24465A002F49F8 /* Extensions.swift */; };
+		FFC4AC1D2BE6057700E84BF4 /* CardData.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE599BB52B24495F002F49F8 /* CardData.swift */; };
+		FFC4AC1E2BE6057B00E84BF4 /* CardDataStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE960C4E2B4AC00B00B67805 /* CardDataStore.swift */; };
+		FFC4AC1F2BE605AA00E84BF4 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = EEBB52ED2B238D6800035B92 /* Assets.xcassets */; };
+		FFC4AC202BE605EF00E84BF4 /* UserSettings.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE599BAD2B2398DF002F49F8 /* UserSettings.swift */; };
 /* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		FF9212D32BE57F3A005DF48E /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = EEBB52DE2B238D6600035B92 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = FF9212C42BE57F37005DF48E;
+			remoteInfo = FavouriteCardsWigetExtension;
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXCopyFilesBuildPhase section */
+		FF9212DA2BE57F3A005DF48E /* Embed Foundation Extensions */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 13;
+			files = (
+				FF9212D52BE57F3A005DF48E /* FavouriteCardsWigetExtension.appex in Embed Foundation Extensions */,
+			);
+			name = "Embed Foundation Extensions";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
 		EE1D3E8F2B66AE66009733A5 /* Tip.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Tip.swift; sourceTree = "<group>"; };
@@ -53,6 +88,13 @@
 		EEBB52ED2B238D6800035B92 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		EEBB52F02B238D6800035B92 /* Preview Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = "Preview Assets.xcassets"; sourceTree = "<group>"; };
 		EEBED8C72B6D7F6F00BEBE87 /* CardScanViewStyle.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CardScanViewStyle.swift; sourceTree = "<group>"; };
+		FF9212C52BE57F37005DF48E /* FavouriteCardsWigetExtension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = FavouriteCardsWigetExtension.appex; sourceTree = BUILT_PRODUCTS_DIR; };
+		FF9212C72BE57F37005DF48E /* WidgetKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = WidgetKit.framework; path = System/Library/Frameworks/WidgetKit.framework; sourceTree = SDKROOT; };
+		FF9212C92BE57F38005DF48E /* SwiftUI.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = SwiftUI.framework; path = System/Library/Frameworks/SwiftUI.framework; sourceTree = SDKROOT; };
+		FF9212CC2BE57F38005DF48E /* FavouriteCardsWigetBundle.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FavouriteCardsWigetBundle.swift; sourceTree = "<group>"; };
+		FF9212CE2BE57F38005DF48E /* FavouriteCardsWiget.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FavouriteCardsWiget.swift; sourceTree = "<group>"; };
+		FF9212D02BE57F3A005DF48E /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		FF9212D22BE57F3A005DF48E /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		FF9452F82BDE314E00731D8B /* Secrets.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Secrets.plist; sourceTree = "<group>"; };
 		FF9452FA2BE1F68700731D8B /* WNCollection.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WNCollection.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
@@ -69,6 +111,15 @@
 				EE3406CE2B6D0FF8007E7DD2 /* SharkCardScan in Frameworks */,
 				FF584F492BE434D40036F3DD /* Boilerplate in Frameworks */,
 				EEFAB0972BDD84E30017DB23 /* Boilerplate in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		FF9212C22BE57F37005DF48E /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				FF9212CA2BE57F38005DF48E /* SwiftUI.framework in Frameworks */,
+				FF9212C82BE57F38005DF48E /* WidgetKit.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -117,6 +168,8 @@
 			isa = PBXGroup;
 			children = (
 				EEBB52E82B238D6600035B92 /* cards */,
+				FF9212CB2BE57F38005DF48E /* FavouriteCardsWiget */,
+				FF9212C62BE57F37005DF48E /* Frameworks */,
 				EEBB52E72B238D6600035B92 /* Products */,
 			);
 			sourceTree = "<group>";
@@ -125,6 +178,7 @@
 			isa = PBXGroup;
 			children = (
 				EEBB52E62B238D6600035B92 /* Holder: A Secure Card Vault.app */,
+				FF9212C52BE57F37005DF48E /* FavouriteCardsWigetExtension.appex */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -165,6 +219,26 @@
 			path = ScanView;
 			sourceTree = "<group>";
 		};
+		FF9212C62BE57F37005DF48E /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+				FF9212C72BE57F37005DF48E /* WidgetKit.framework */,
+				FF9212C92BE57F38005DF48E /* SwiftUI.framework */,
+			);
+			name = Frameworks;
+			sourceTree = "<group>";
+		};
+		FF9212CB2BE57F38005DF48E /* FavouriteCardsWiget */ = {
+			isa = PBXGroup;
+			children = (
+				FF9212CC2BE57F38005DF48E /* FavouriteCardsWigetBundle.swift */,
+				FF9212CE2BE57F38005DF48E /* FavouriteCardsWiget.swift */,
+				FF9212D02BE57F3A005DF48E /* Assets.xcassets */,
+				FF9212D22BE57F3A005DF48E /* Info.plist */,
+			);
+			path = FavouriteCardsWiget;
+			sourceTree = "<group>";
+		};
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
@@ -175,10 +249,12 @@
 				EEBB52E22B238D6600035B92 /* Sources */,
 				EEBB52E32B238D6600035B92 /* Frameworks */,
 				EEBB52E42B238D6600035B92 /* Resources */,
+				FF9212DA2BE57F3A005DF48E /* Embed Foundation Extensions */,
 			);
 			buildRules = (
 			);
 			dependencies = (
+				FF9212D42BE57F3A005DF48E /* PBXTargetDependency */,
 			);
 			name = cards;
 			packageProductDependencies = (
@@ -194,6 +270,23 @@
 			productReference = EEBB52E62B238D6600035B92 /* Holder: A Secure Card Vault.app */;
 			productType = "com.apple.product-type.application";
 		};
+		FF9212C42BE57F37005DF48E /* FavouriteCardsWigetExtension */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = FF9212D62BE57F3A005DF48E /* Build configuration list for PBXNativeTarget "FavouriteCardsWigetExtension" */;
+			buildPhases = (
+				FF9212C12BE57F37005DF48E /* Sources */,
+				FF9212C22BE57F37005DF48E /* Frameworks */,
+				FF9212C32BE57F37005DF48E /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = FavouriteCardsWigetExtension;
+			productName = FavouriteCardsWigetExtension;
+			productReference = FF9212C52BE57F37005DF48E /* FavouriteCardsWigetExtension.appex */;
+			productType = "com.apple.product-type.app-extension";
+		};
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
@@ -201,11 +294,14 @@
 			isa = PBXProject;
 			attributes = {
 				BuildIndependentTargetsInParallel = 1;
-				LastSwiftUpdateCheck = 1500;
+				LastSwiftUpdateCheck = 1530;
 				LastUpgradeCheck = 1500;
 				TargetAttributes = {
 					EEBB52E52B238D6600035B92 = {
 						CreatedOnToolsVersion = 15.0;
+					};
+					FF9212C42BE57F37005DF48E = {
+						CreatedOnToolsVersion = 15.3;
 					};
 				};
 			};
@@ -228,6 +324,7 @@
 			projectRoot = "";
 			targets = (
 				EEBB52E52B238D6600035B92 /* cards */,
+				FF9212C42BE57F37005DF48E /* FavouriteCardsWigetExtension */,
 			);
 		};
 /* End PBXProject section */
@@ -240,6 +337,15 @@
 				EEBB52F12B238D6800035B92 /* Preview Assets.xcassets in Resources */,
 				FF9452F92BDE314E00731D8B /* Secrets.plist in Resources */,
 				EEBB52EE2B238D6800035B92 /* Assets.xcassets in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		FF9212C32BE57F37005DF48E /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				FFC4AC1F2BE605AA00E84BF4 /* Assets.xcassets in Resources */,
+				FF9212D12BE57F3A005DF48E /* Assets.xcassets in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -268,7 +374,28 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		FF9212C12BE57F37005DF48E /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				FF9212CF2BE57F38005DF48E /* FavouriteCardsWiget.swift in Sources */,
+				FFC4AC202BE605EF00E84BF4 /* UserSettings.swift in Sources */,
+				FFC4AC1D2BE6057700E84BF4 /* CardData.swift in Sources */,
+				FFC4AC1C2BE6056800E84BF4 /* Extensions.swift in Sources */,
+				FF9212CD2BE57F38005DF48E /* FavouriteCardsWigetBundle.swift in Sources */,
+				FFC4AC1E2BE6057B00E84BF4 /* CardDataStore.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		FF9212D42BE57F3A005DF48E /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = FF9212C42BE57F37005DF48E /* FavouriteCardsWigetExtension */;
+			targetProxy = FF9212D32BE57F3A005DF48E /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
 
 /* Begin XCBuildConfiguration section */
 		EE1D3E952B692C9F009733A5 /* Beta */ = {
@@ -330,6 +457,7 @@
 		EE1D3E962B692C9F009733A5 /* Beta */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = YES;
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_STYLE = Automatic;
@@ -486,6 +614,7 @@
 		EEBB52F52B238D6800035B92 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = YES;
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_STYLE = Automatic;
@@ -523,6 +652,7 @@
 		EEBB52F62B238D6800035B92 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = YES;
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_STYLE = Automatic;
@@ -557,6 +687,90 @@
 			};
 			name = Release;
 		};
+		FF9212D72BE57F3A005DF48E /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				ASSETCATALOG_COMPILER_WIDGET_BACKGROUND_COLOR_NAME = WidgetBackground;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 6;
+				DEVELOPMENT_TEAM = 4WMQY24R33;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = FavouriteCardsWiget/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = FavouriteCardsWiget;
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				IPHONEOS_DEPLOYMENT_TARGET = 17.4;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.swiftlysingh.cards.debug.FavouriteCardsWiget;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		FF9212D82BE57F3A005DF48E /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				ASSETCATALOG_COMPILER_WIDGET_BACKGROUND_COLOR_NAME = WidgetBackground;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 6;
+				DEVELOPMENT_TEAM = 4WMQY24R33;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = FavouriteCardsWiget/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = FavouriteCardsWiget;
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				IPHONEOS_DEPLOYMENT_TARGET = 17.4;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.swiftlysingh.cards.FavouriteCardsWiget;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Release;
+		};
+		FF9212D92BE57F3A005DF48E /* Beta */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				ASSETCATALOG_COMPILER_WIDGET_BACKGROUND_COLOR_NAME = WidgetBackground;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 6;
+				DEVELOPMENT_TEAM = 4WMQY24R33;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = FavouriteCardsWiget/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = FavouriteCardsWiget;
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				IPHONEOS_DEPLOYMENT_TARGET = 17.4;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.swiftlysingh.cards.FavouriteCardsWiget;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Beta;
+		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
@@ -576,6 +790,16 @@
 				EEBB52F52B238D6800035B92 /* Debug */,
 				EEBB52F62B238D6800035B92 /* Release */,
 				EE1D3E962B692C9F009733A5 /* Beta */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		FF9212D62BE57F3A005DF48E /* Build configuration list for PBXNativeTarget "FavouriteCardsWigetExtension" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				FF9212D72BE57F3A005DF48E /* Debug */,
+				FF9212D82BE57F3A005DF48E /* Release */,
+				FF9212D92BE57F3A005DF48E /* Beta */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
