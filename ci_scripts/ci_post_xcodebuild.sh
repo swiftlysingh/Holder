@@ -2,6 +2,25 @@
 
 set -e
 
+# Adds testflight notes
+if [[ -d "$CI_APP_STORE_SIGNED_APP_PATH" ]]; then
+  TESTFLIGHT_DIR_PATH="../TestFlight"
+  mkdir -p "$TESTFLIGHT_DIR_PATH"
+
+  # Fetch the branch name
+  BRANCH_NAME=$(git rev-parse --abbrev-ref HEAD)
+
+  # Ensure you have enough commit history
+  git fetch --deepen=3
+
+  # Write the branch name as the heading
+  echo "Branch: $BRANCH_NAME" > "$TESTFLIGHT_DIR_PATH/WhatToTest.en-US.txt"
+
+  # Append the last 3 commits with hyphens
+  git log -3 --pretty=format:" - %s" >> "$TESTFLIGHT_DIR_PATH/WhatToTest.en-US.txt"
+fi
+
+# Emerge Tools
 required_env_vars=(
     "CI_ARCHIVE_PATH"
     "CI_BRANCH"
