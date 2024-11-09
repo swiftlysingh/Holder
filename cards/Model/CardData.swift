@@ -39,6 +39,7 @@ enum CardType: String, CaseIterable, Identifiable, Codable {
 
 	case creditCard = "Credit Card"
 	case debitCard = "Debit Card"
+	case otherCard = "Other Card"
 
 	static func < (lhs: CardType, rhs: CardType) -> Bool {
 		// credit card
@@ -58,7 +59,7 @@ enum CardNetwork: String, CaseIterable, Identifiable, Codable {
 	case amex = "Amex"
 	case diners = "Diners"
     case rupay = "Rupay"
-	case other = "Other"
+	case other = "unavailable"
 
 }
 
