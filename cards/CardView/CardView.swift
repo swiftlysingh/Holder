@@ -62,6 +62,13 @@ struct CardView: View {
 						viewy.popoverTip(tip,arrowEdge: .top)
 					}
 				itemView(heading: "Expiration", value: $model.card.expiration, .numberPad)
+					.onChange(of: model.card.expiration) { newValue in
+						if newValue.count == 2 && !newValue.contains("/") {
+							model.card.expiration = newValue + "/"
+						} else if newValue.count > 5 {
+							model.card.expiration = String(newValue.prefix(5))
+						}
+					}
 				itemView(heading: "Security Code", value: $model.card.cvv, .numberPad)
 				itemView(heading: "Description", value: $model.card.description, .alphabet)
                 Picker("Card Network", selection: $model.card.network){
