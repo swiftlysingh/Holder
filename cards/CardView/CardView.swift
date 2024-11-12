@@ -56,35 +56,51 @@ struct CardView: View {
 
 		return List {
 			Group {
-				itemView(heading: "Name", value: $model.card.name, .alphabet)
-				itemView(heading: "Number", value: $model.card.number,.numbersAndPunctuation)
-					.if(!model.isEditing) { viewy in
-						viewy.popoverTip(tip,arrowEdge: .top)
-					}
-				itemView(heading: "Expiration", value: $model.card.expiration, .numberPad)
-					.onChange(of: model.card.expiration) { newValue in
-						if newValue.count == 2 && !newValue.contains("/") {
-							model.card.expiration = newValue + "/"
-						} else if newValue.count > 5 {
-							model.card.expiration = String(newValue.prefix(5))
+			let fields: [(String, Binding<String>, UIKeyboardType)] = [
+				("Name", $model.card.name, .alphabet),
+				("Number", $model.card.number, .numbersAndPunctuation),
+				("Expiration", $model.card.expiration, .numberPad),
+				("Security Code", $model.card.cvv, .numberPad),
+				("Description", $model.card.description, .alphabet)
+			]
+			
+			ForEach(fields, id: \.0) { heading, value, keyboardType in
+				if !value.wrappedValue.isEmpty || model.isEditing {
+					let view = itemView(heading: heading, value: value, keyboardType)
+					
+					if heading == "Number" && !model.isEditing {
+						view.popoverTip(tip, arrowEdge: .top)
+					} else if heading == "Expiration" {
+						view.onChange(of: model.card.expiration) { newValue in
+							if newValue.count == 2 && !newValue.contains("/") {
+								model.card.expiration = newValue + "/"
+							} else if newValue.count > 5 {
+								model.card.expiration = String(newValue.prefix(5))
+							}
 						}
+					} else {
+						view
 					}
-				itemView(heading: "Security Code", value: $model.card.cvv, .numberPad)
-				itemView(heading: "Description", value: $model.card.description, .alphabet)
-                Picker("Card Network", selection: $model.card.network){
-                    ForEach(CardNetwork.allCases) { pref in
-                        Text(pref.rawValue)
-                    }
-                }
-                .disabled(true)
-                .bold()
-				Picker("Card Type", selection: $model.card.type){
+
+				}
+			}
+			
+			Group {
+				Picker("Card Network", selection: $model.card.network) {
+					ForEach(CardNetwork.allCases) { pref in
+						Text(pref.rawValue)
+					}
+				}
+				.disabled(!model.isEditing)
+				.bold()
+				Picker("Card Type", selection: $model.card.type) {
 					ForEach(CardType.allCases) { pref in
 						Text(pref.rawValue)
 					}
 				}
-                .disabled(!model.isEditing)
-                .bold()
+				.disabled(!model.isEditing)
+				.bold()
+			}
 			}
 		}
 		.toolbar {
