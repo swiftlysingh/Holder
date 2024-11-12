@@ -65,7 +65,6 @@ contentsOf: [
 	func addCard(_ card: CardData) {
 		//TODO: Add error handling here
 		_ = saveOrUpdateCardData(card)
-		loadCards()
 	}
 
 	func deleteCard(with id: UUID) -> Bool {
