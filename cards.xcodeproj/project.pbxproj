@@ -12,6 +12,7 @@
 		EE1D3E982B69379E009733A5 /* SettingsViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE1D3E972B69379E009733A5 /* SettingsViewModel.swift */; };
 		EE1D3E9D2B6AC7BC009733A5 /* SharkCardScanViewRepresentable.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE1D3E9C2B6AC7BC009733A5 /* SharkCardScanViewRepresentable.swift */; };
 		EE3406CE2B6D0FF8007E7DD2 /* SharkCardScan in Frameworks */ = {isa = PBXBuildFile; productRef = EE3406CD2B6D0FF8007E7DD2 /* SharkCardScan */; };
+		EE4CBEA82CEA98E900635DFC /* OnboardingKit in Frameworks */ = {isa = PBXBuildFile; productRef = EE4CBEA72CEA98E900635DFC /* OnboardingKit */; };
 		EE599BAC2B23900A002F49F8 /* AppSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE599BAB2B23900A002F49F8 /* AppSettingsView.swift */; };
 		EE599BAE2B2398DF002F49F8 /* UserSettings.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE599BAD2B2398DF002F49F8 /* UserSettings.swift */; };
 		EE599BB02B239F28002F49F8 /* CardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE599BAF2B239F27002F49F8 /* CardView.swift */; };
@@ -62,6 +63,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				EE4CBEA82CEA98E900635DFC /* OnboardingKit in Frameworks */,
 				FF9212C02BE57A50005DF48E /* Settings in Frameworks */,
 				EEABD0D12B6D8AD600FF34E6 /* WhatsNewKit in Frameworks */,
 				FF584F4B2BE434D40036F3DD /* Settings in Frameworks */,
@@ -189,6 +191,7 @@
 				FF584F4A2BE434D40036F3DD /* Settings */,
 				FF9212BD2BE57A50005DF48E /* Boilerplate */,
 				FF9212BF2BE57A50005DF48E /* Settings */,
+				EE4CBEA72CEA98E900635DFC /* OnboardingKit */,
 			);
 			productName = "credit-card";
 			productReference = EEBB52E62B238D6600035B92 /* Holder: A Secure Card Vault.app */;
@@ -222,6 +225,7 @@
 				EE3406CC2B6D0FF8007E7DD2 /* XCRemoteSwiftPackageReference "ios-card-scan" */,
 				EEABD0CF2B6D8AD600FF34E6 /* XCRemoteSwiftPackageReference "WhatsNewKit" */,
 				FF9212BC2BE57A50005DF48E /* XCRemoteSwiftPackageReference "SwiftBoilerplate" */,
+				EE4CBEA62CEA98E900635DFC /* XCRemoteSwiftPackageReference "OnboardingKit" */,
 			);
 			productRefGroup = EEBB52E72B238D6600035B92 /* Products */;
 			projectDirPath = "";
@@ -591,6 +595,14 @@
 				kind = branch;
 			};
 		};
+		EE4CBEA62CEA98E900635DFC /* XCRemoteSwiftPackageReference "OnboardingKit" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/JamesSedlacek/OnboardingKit.git";
+			requirement = {
+				branch = main;
+				kind = branch;
+			};
+		};
 		EEABD0CF2B6D8AD600FF34E6 /* XCRemoteSwiftPackageReference "WhatsNewKit" */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/SvenTiigi/WhatsNewKit.git";
@@ -614,6 +626,11 @@
 			isa = XCSwiftPackageProductDependency;
 			package = EE3406CC2B6D0FF8007E7DD2 /* XCRemoteSwiftPackageReference "ios-card-scan" */;
 			productName = SharkCardScan;
+		};
+		EE4CBEA72CEA98E900635DFC /* OnboardingKit */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = EE4CBEA62CEA98E900635DFC /* XCRemoteSwiftPackageReference "OnboardingKit" */;
+			productName = OnboardingKit;
 		};
 		EEABD0D02B6D8AD600FF34E6 /* WhatsNewKit */ = {
 			isa = XCSwiftPackageProductDependency;
