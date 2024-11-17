@@ -16,6 +16,7 @@ struct CardData : Identifiable, Codable, Hashable {
     var description: String
 	var type : CardType
 	var network: CardNetwork
+	var cardImage: Data?
 
 	init(
 		id: UUID,
@@ -25,7 +26,8 @@ struct CardData : Identifiable, Codable, Hashable {
 		name: String,
 		description: String,
 		type: CardType,
-		network: CardNetwork = .other
+		network: CardNetwork = .other,
+		cardImage: Data? = nil
 	) {
 		self.id = id
 		
@@ -55,6 +57,7 @@ struct CardData : Identifiable, Codable, Hashable {
 		self.description = description
 		self.type = type
 		self.network = network
+		self.cardImage = cardImage
 	}
 	func toShareString() -> String {
 		return "Name: \(self.name) \nNumber: \(number) \nExpiration: \(expiration) \nSecurity Code: \(cvv)"

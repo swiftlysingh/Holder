@@ -6,11 +6,15 @@
 //
 
 import SwiftUI
+import PhotosUI
 
 struct CardView: View {
 	
 	@ObservedObject var model: CardViewModel
 	@Environment(\.scenePhase) var scenePhase
+
+	@State private var showingImagePicker = false
+	@State private var selectedItem: PhotosPickerItem?
 
 	var body: some View {
 		getCardListView()
@@ -55,52 +59,95 @@ struct CardView: View {
 		let tip = DoubleTapTip()
 
 		return List {
-			Group {
-			let fields: [(String, Binding<String>, UIKeyboardType)] = [
-				("Name", $model.card.name, .alphabet),
-				("Number", $model.card.number, .numbersAndPunctuation),
-				("Expiration", $model.card.expiration, .numberPad),
-				("Security Code", $model.card.cvv, .numberPad),
-				("Description", $model.card.description, .alphabet)
-			]
-			
-			ForEach(fields, id: \.0) { heading, value, keyboardType in
-				if !value.wrappedValue.isEmpty || model.isEditing {
-					let view = itemView(heading: heading, value: value, keyboardType)
-					
-					if heading == "Number" && !model.isEditing {
-						view.popoverTip(tip, arrowEdge: .top)
-					} else if heading == "Expiration" {
-						view.onChange(of: model.card.expiration) { newValue in
-							if newValue.count == 2 && !newValue.contains("/") {
-								model.card.expiration = newValue + "/"
-							} else if newValue.count > 5 {
-								model.card.expiration = String(newValue.prefix(5))
+			Section {
+
+				let fields: [(String, Binding<String>, UIKeyboardType)] = [
+					("Name", $model.card.name, .alphabet),
+					("Number", $model.card.number, .numbersAndPunctuation),
+					("Expiration", $model.card.expiration, .numberPad),
+					("Security Code", $model.card.cvv, .numberPad),
+					("Description", $model.card.description, .alphabet)
+				]
+
+				ForEach(fields, id: \.0) { heading, value, keyboardType in
+					if !value.wrappedValue.isEmpty || model.isEditing {
+						let view = itemView(heading: heading, value: value, keyboardType)
+
+						if heading == "Number" && !model.isEditing {
+							view.popoverTip(tip, arrowEdge: .top)
+						} else if heading == "Expiration" {
+							view.onChange(of: model.card.expiration) { newValue in
+								if newValue.count == 2 && !newValue.contains("/") {
+									model.card.expiration = newValue + "/"
+								} else if newValue.count > 5 {
+									model.card.expiration = String(newValue.prefix(5))
+								}
+							}
+						} else {
+							view
+						}
+
+					}
+				}
+
+				Group {
+					Picker("Card Network", selection: $model.card.network) {
+						ForEach(CardNetwork.allCases) { pref in
+							Text(pref.rawValue)
+						}
+					}
+					.disabled(!model.isEditing)
+					.bold()
+					Picker("Card Type", selection: $model.card.type) {
+						ForEach(CardType.allCases) { pref in
+							Text(pref.rawValue)
+						}
+					}
+					.disabled(!model.isEditing)
+					.bold()
+				}
+			}
+
+			if let imageData = model.card.cardImage,
+				let uiImage = UIImage(data: imageData) {
+				Section {
+					Image(uiImage: uiImage)
+						.resizable()
+						.scaledToFit()
+				}
+			}
+
+			if model.isEditing {
+				Section {
+					PhotosPicker(selection: $selectedItem,
+								 matching: .images) {
+						HStack {
+							Image(systemName: "photo")
+							Text(model.card.cardImage == nil ? "Add Card Image" : "Change Card Image")
+						}
+					}
+								 .onChange(of: selectedItem) { newItem in
+									 Task {
+
+										 if let data = try? await newItem?.loadTransferable(type: Data.self) {
+											 model.card.cardImage = data
+											 model.addUpdateCard(model.card)
+										 }
+									 }
+								 }
+
+					if model.card.cardImage != nil {
+						Button(role: .destructive) {
+							model.card.cardImage = nil
+							model.addUpdateCard(model.card)
+						} label: {
+							HStack {
+								Image(systemName: "trash")
+								Text("Remove Image")
 							}
 						}
-					} else {
-						view
-					}
-
-				}
-			}
-			
-			Group {
-				Picker("Card Network", selection: $model.card.network) {
-					ForEach(CardNetwork.allCases) { pref in
-						Text(pref.rawValue)
 					}
 				}
-				.disabled(!model.isEditing)
-				.bold()
-				Picker("Card Type", selection: $model.card.type) {
-					ForEach(CardType.allCases) { pref in
-						Text(pref.rawValue)
-					}
-				}
-				.disabled(!model.isEditing)
-				.bold()
-			}
 			}
 		}
 		.toolbar {
