@@ -13,9 +13,6 @@ struct CardView: View {
 	@ObservedObject var model: CardViewModel
 	@Environment(\.scenePhase) var scenePhase
 
-	@State private var showingImagePicker = false
-	@State private var selectedItem: PhotosPickerItem?
-
 	var body: some View {
 		getCardListView()
 			.onAppear {
@@ -108,10 +105,9 @@ struct CardView: View {
 				}
 			}
 
-			if let imageData = model.card.cardImage,
-				let uiImage = UIImage(data: imageData) {
+			if let image = model.cardImage {
 				Section {
-					Image(uiImage: uiImage)
+					Image(uiImage: image)
 						.resizable()
 						.scaledToFit()
 				}
@@ -119,27 +115,37 @@ struct CardView: View {
 
 			if model.isEditing {
 				Section {
-					PhotosPicker(selection: $selectedItem,
+				  PhotosPicker(selection: $model.selectedItem,
 								 matching: .images) {
 						HStack {
 							Image(systemName: "photo")
-							Text(model.card.cardImage == nil ? "Add Card Image" : "Change Card Image")
+							Text(model.cardImage == nil ? "Add Card Image" : "Change Card Image")
 						}
 					}
-								 .onChange(of: selectedItem) { _ , newItem in
-									 Task {
-
-										 if let data = try? await newItem?.loadTransferable(type: Data.self) {
-											 model.card.cardImage = data
-											 model.addUpdateCard(model.card)
-										 }
+								 .onChange(of: model.selectedItem) {
+								   Task {
+									 if let data = try? await model.selectedItem?.loadTransferable(
+									  type: Data.self
+									 ) {
+									   if let uiImage = UIImage(data: data) {
+										 model.cardImage = uiImage
+										 print(ICloudDataManager.shared
+										   .saveImage(
+											uiImage,
+											for: model.card.id
+										   ))
+									   } else {
+										 print("Failed")
+									   }
 									 }
+								   }
 								 }
 
-					if model.card.cardImage != nil {
+					if model.cardImage != nil {
 						Button(role: .destructive) {
-							model.card.cardImage = nil
-							model.addUpdateCard(model.card)
+							model.cardImage = nil
+							ICloudDataManager.shared
+								.deleteImage(for: model.card.id)
 						} label: {
 							HStack {
 								Image(systemName: "trash")
