@@ -33,7 +33,6 @@
 		FF9212BE2BE57A50005DF48E /* Boilerplate in Frameworks */ = {isa = PBXBuildFile; productRef = FF9212BD2BE57A50005DF48E /* Boilerplate */; };
 		FF9212C02BE57A50005DF48E /* Settings in Frameworks */ = {isa = PBXBuildFile; productRef = FF9212BF2BE57A50005DF48E /* Settings */; };
 		FF9452F92BDE314E00731D8B /* Secrets.plist in Resources */ = {isa = PBXBuildFile; fileRef = FF9452F82BDE314E00731D8B /* Secrets.plist */; };
-		FF9452FB2BE1F68700731D8B /* WNCollection.swift in Sources */ = {isa = PBXBuildFile; fileRef = FF9452FA2BE1F68700731D8B /* WNCollection.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -58,7 +57,6 @@
 		EEBB52F02B238D6800035B92 /* Preview Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = "Preview Assets.xcassets"; sourceTree = "<group>"; };
 		EEBED8C72B6D7F6F00BEBE87 /* CardScanViewStyle.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CardScanViewStyle.swift; sourceTree = "<group>"; };
 		FF9452F82BDE314E00731D8B /* Secrets.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Secrets.plist; sourceTree = "<group>"; };
-		FF9452FA2BE1F68700731D8B /* WNCollection.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WNCollection.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -147,7 +145,6 @@
 				EE1D3E8E2B66AE36009733A5 /* Settings */,
 				EE1D3E942B66B156009733A5 /* Model */,
 				EE599BB12B24465A002F49F8 /* Extensions.swift */,
-				FF9452FA2BE1F68700731D8B /* WNCollection.swift */,
 				EE4CBEAA2CEEC8E900635DFC /* ICloudDataManager.swift */,
 				EEBB52ED2B238D6800035B92 /* Assets.xcassets */,
 				EEBB52EF2B238D6800035B92 /* Preview Content */,
@@ -267,7 +264,6 @@
 				EE599BAE2B2398DF002F49F8 /* UserSettings.swift in Sources */,
 				EE960C4F2B4AC00B00B67805 /* CardDataStore.swift in Sources */,
 				EE4CBEAB2CEEC8E900635DFC /* ICloudDataManager.swift in Sources */,
-				FF9452FB2BE1F68700731D8B /* WNCollection.swift in Sources */,
 				EEBB52EC2B238D6600035B92 /* HomeView.swift in Sources */,
 				EE599BB62B24495F002F49F8 /* CardData.swift in Sources */,
 				EE1D3E902B66AE66009733A5 /* Tip.swift in Sources */,

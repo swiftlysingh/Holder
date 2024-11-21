@@ -88,13 +88,16 @@ struct CardView: View {
 				}
 
 				Group {
+				  if model.card.type != .otherCard {
 					Picker("Card Network", selection: $model.card.network) {
-						ForEach(CardNetwork.allCases) { pref in
-							Text(pref.rawValue)
-						}
+					  ForEach(CardNetwork.allCases) { pref in
+						Text(pref.rawValue)
+					  }
 					}
+
 					.disabled(!model.isEditing)
 					.bold()
+				  }
 					Picker("Card Type", selection: $model.card.type) {
 						ForEach(CardType.allCases) { pref in
 							Text(pref.rawValue)
@@ -105,7 +108,7 @@ struct CardView: View {
 				}
 			}
 
-			if let image = model.cardImage {
+			if let image = model.cardImage, model.card.type == .otherCard {
 				Section {
 					Image(uiImage: image)
 						.resizable()
@@ -113,13 +116,20 @@ struct CardView: View {
 				}
 			}
 
-			if model.isEditing {
+			if model.isEditing && model.card.type == .otherCard {
 				Section {
 				  PhotosPicker(selection: $model.selectedItem,
 								 matching: .images) {
-						HStack {
-							Image(systemName: "photo")
-							Text(model.cardImage == nil ? "Add Card Image" : "Change Card Image")
+					VStack(alignment: .leading){
+						  HStack {
+							  Image(systemName: "photo")
+							  Text(model.cardImage == nil ? "Add Card Image" : "Change Card Image")
+						  }
+						  .padding(.bottom)
+
+					  Text("Images are stored in iCloud storage instead of more secure Keychain, please be mindful while adding sensitive images")
+						.font(.footnote)
+						.foregroundStyle(.gray)
 						}
 					}
 								 .onChange(of: model.selectedItem) {
@@ -163,7 +173,7 @@ struct CardView: View {
 			Button(action: {
 				model.isEditing.toggle()
 				// if user is not editing, then he is done editing when button press
-				if !$model.isEditing.wrappedValue && !model.card.number.isEmpty {
+				if !$model.isEditing.wrappedValue && (model.card.type == .otherCard || !model.card.number.isEmpty){
 					model.addUpdateCard(model.card)
 				}
 			}) {
