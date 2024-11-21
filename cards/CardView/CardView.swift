@@ -76,7 +76,7 @@ struct CardView: View {
 						if heading == "Number" && !model.isEditing {
 							view.popoverTip(tip, arrowEdge: .top)
 						} else if heading == "Expiration" {
-							view.onChange(of: model.card.expiration) { newValue in
+							view.onChange(of: model.card.expiration) { _ , newValue in
 								if newValue.count == 2 && !newValue.contains("/") {
 									model.card.expiration = newValue + "/"
 								} else if newValue.count > 5 {
@@ -126,7 +126,7 @@ struct CardView: View {
 							Text(model.card.cardImage == nil ? "Add Card Image" : "Change Card Image")
 						}
 					}
-								 .onChange(of: selectedItem) { newItem in
+								 .onChange(of: selectedItem) { _ , newItem in
 									 Task {
 
 										 if let data = try? await newItem?.loadTransferable(type: Data.self) {
