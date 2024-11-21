@@ -18,6 +18,11 @@ class CardViewModel: ObservableObject {
 	@Published var isShowingScanner = false
 
 	@Published var selectedItem: PhotosPickerItem?
+    @Published var selectedSymbol: String = "" {
+        didSet {
+            card.customSymbol = selectedSymbol
+        }
+    }
 
 	var isAddNewFlow : Bool
 	var addUpdateCard: (CardData) -> Void

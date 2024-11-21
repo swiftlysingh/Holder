@@ -1,5 +1,5 @@
 {
-  "originHash" : "1965cb0f111ed4cd9429906b964d6c189370bc3e8a66d987b35203e5b6144d47",
+  "originHash" : "fa077d3bbe42930619aca0ddadecf1c12471675876df058560df1fec8206676d",
   "pins" : [
     {
       "identity" : "ios-card-scan",
@@ -26,6 +26,15 @@
       "state" : {
         "branch" : "main",
         "revision" : "e0e0e199a9cb74711308c6037bd6905873eae599"
+      }
+    },
+    {
+      "identity" : "sfsymbolspickerforswiftui",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/alessiorubicini/SFSymbolsPickerForSwiftUI",
+      "state" : {
+        "revision" : "73c909b8a7fc77a30dd04208e33f759f8b52c4c8",
+        "version" : "1.0.6"
       }
     },
     {

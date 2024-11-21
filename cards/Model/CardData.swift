@@ -16,6 +16,7 @@ struct CardData : Identifiable, Codable, Hashable {
     var description: String
 	var type : CardType
 	var network: CardNetwork
+    var customSymbol: String?
 
 	init(
 		id: UUID,

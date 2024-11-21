@@ -82,14 +82,22 @@ struct HomeView: View {
 	}
 
 	private func getRowforCards(with card: CardData) -> some View {
-		NavigationLink(value: card){
-			HStack{
-				Image(card.network.rawValue)
-					.resizable()
-					.scaledToFit()
-					.frame(width: 36,height: 36)
+		NavigationLink(value: card) {
+			HStack {
+			  if let customSymbol = card.customSymbol, !customSymbol.isEmpty {
+					Image(systemName: "car")
+						.resizable()
+						.scaledToFit()
+						.frame(width: 36, height: 36)
+						.foregroundColor(.accentColor)
+				} else {
+					Image(card.network.rawValue)
+						.resizable()
+						.scaledToFit()
+						.frame(width: 36, height: 36)
+				}
 
-				VStack(alignment: .leading){
+				VStack(alignment: .leading) {
 					if card.description != "" {
 						Text(card.description)
 					} else {

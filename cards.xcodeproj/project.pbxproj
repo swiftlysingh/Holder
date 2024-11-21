@@ -14,6 +14,7 @@
 		EE3406CE2B6D0FF8007E7DD2 /* SharkCardScan in Frameworks */ = {isa = PBXBuildFile; productRef = EE3406CD2B6D0FF8007E7DD2 /* SharkCardScan */; };
 		EE4CBEA82CEA98E900635DFC /* OnboardingKit in Frameworks */ = {isa = PBXBuildFile; productRef = EE4CBEA72CEA98E900635DFC /* OnboardingKit */; };
 		EE4CBEAB2CEEC8E900635DFC /* ICloudDataManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE4CBEAA2CEEC8E900635DFC /* ICloudDataManager.swift */; };
+		EE4CBEAF2CEEE1BE00635DFC /* SFSymbolsPicker in Frameworks */ = {isa = PBXBuildFile; productRef = EE4CBEAE2CEEE1BE00635DFC /* SFSymbolsPicker */; };
 		EE599BAC2B23900A002F49F8 /* AppSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE599BAB2B23900A002F49F8 /* AppSettingsView.swift */; };
 		EE599BAE2B2398DF002F49F8 /* UserSettings.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE599BAD2B2398DF002F49F8 /* UserSettings.swift */; };
 		EE599BB02B239F28002F49F8 /* CardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE599BAF2B239F27002F49F8 /* CardView.swift */; };
@@ -68,6 +69,7 @@
 				FF9212C02BE57A50005DF48E /* Settings in Frameworks */,
 				EEABD0D12B6D8AD600FF34E6 /* WhatsNewKit in Frameworks */,
 				FF584F4B2BE434D40036F3DD /* Settings in Frameworks */,
+				EE4CBEAF2CEEE1BE00635DFC /* SFSymbolsPicker in Frameworks */,
 				FF9212BE2BE57A50005DF48E /* Boilerplate in Frameworks */,
 				EE3406CE2B6D0FF8007E7DD2 /* SharkCardScan in Frameworks */,
 				FF584F492BE434D40036F3DD /* Boilerplate in Frameworks */,
@@ -194,6 +196,7 @@
 				FF9212BD2BE57A50005DF48E /* Boilerplate */,
 				FF9212BF2BE57A50005DF48E /* Settings */,
 				EE4CBEA72CEA98E900635DFC /* OnboardingKit */,
+				EE4CBEAE2CEEE1BE00635DFC /* SFSymbolsPicker */,
 			);
 			productName = "credit-card";
 			productReference = EEBB52E62B238D6600035B92 /* Holder: A Secure Card Vault.app */;
@@ -228,6 +231,7 @@
 				EEABD0CF2B6D8AD600FF34E6 /* XCRemoteSwiftPackageReference "WhatsNewKit" */,
 				FF9212BC2BE57A50005DF48E /* XCRemoteSwiftPackageReference "SwiftBoilerplate" */,
 				EE4CBEA62CEA98E900635DFC /* XCRemoteSwiftPackageReference "OnboardingKit" */,
+				EE4CBEAD2CEEE1BE00635DFC /* XCRemoteSwiftPackageReference "SFSymbolsPickerForSwiftUI" */,
 			);
 			productRefGroup = EEBB52E72B238D6600035B92 /* Products */;
 			projectDirPath = "";
@@ -608,6 +612,14 @@
 				kind = branch;
 			};
 		};
+		EE4CBEAD2CEEE1BE00635DFC /* XCRemoteSwiftPackageReference "SFSymbolsPickerForSwiftUI" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/alessiorubicini/SFSymbolsPickerForSwiftUI";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 1.0.6;
+			};
+		};
 		EEABD0CF2B6D8AD600FF34E6 /* XCRemoteSwiftPackageReference "WhatsNewKit" */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/SvenTiigi/WhatsNewKit.git";
@@ -636,6 +648,11 @@
 			isa = XCSwiftPackageProductDependency;
 			package = EE4CBEA62CEA98E900635DFC /* XCRemoteSwiftPackageReference "OnboardingKit" */;
 			productName = OnboardingKit;
+		};
+		EE4CBEAE2CEEE1BE00635DFC /* SFSymbolsPicker */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = EE4CBEAD2CEEE1BE00635DFC /* XCRemoteSwiftPackageReference "SFSymbolsPickerForSwiftUI" */;
+			productName = SFSymbolsPicker;
 		};
 		EEABD0D02B6D8AD600FF34E6 /* WhatsNewKit */ = {
 			isa = XCSwiftPackageProductDependency;

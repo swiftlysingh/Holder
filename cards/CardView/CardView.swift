@@ -7,11 +7,14 @@
 
 import SwiftUI
 import PhotosUI
+import SFSymbolsPicker
 
 struct CardView: View {
 	
 	@ObservedObject var model: CardViewModel
 	@Environment(\.scenePhase) var scenePhase
+
+	@State private var showingSymbolPicker = false
 
 	var body: some View {
 		getCardListView()
@@ -105,6 +108,31 @@ struct CardView: View {
 					}
 					.disabled(!model.isEditing)
 					.bold()
+				  HStack{
+					Text("Card Icon")
+					  .fontWeight(.bold)
+					  .foregroundStyle(.primary)
+					  Button(action: {
+						showingSymbolPicker = true
+					  }) {
+						HStack {
+						Spacer()
+						  if !model.selectedSymbol.isEmpty {
+							Image(systemName: model.selectedSymbol)
+							  .foregroundColor(.accentColor)
+						  }
+						}
+					  }
+				  }
+					.disabled(!model.isEditing)
+					.foregroundStyle(.primary)
+					.sheet(isPresented: $showingSymbolPicker) {
+					  SymbolsPicker(
+						selection: $model.selectedSymbol,
+						title: "Pick a symbol",
+						autoDismiss: true
+					  )
+					}
 				}
 			}
 
