@@ -113,6 +113,10 @@ struct CardView: View {
 					Image(uiImage: image)
 						.resizable()
 						.scaledToFit()
+						.if(!model.isAuthenticated, transform: { view in
+							view
+							  .blur(radius: 10, opaque: true)
+						})
 				}
 			}
 
