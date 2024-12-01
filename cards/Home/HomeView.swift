@@ -42,6 +42,7 @@ struct HomeView: View {
 									addUpdateCard: { card in
 										model.cardDataStore.addCard(card)
 										model.showingPopover = false
+										model.cardDataStore.loadCards()
 									})
 								)
 							}
@@ -49,6 +50,9 @@ struct HomeView: View {
 					}
 				}
 			.navigationTitle("Cards")
+			.onAppear {
+				model.cardDataStore.loadCards()
+			}
 			.toolbar{
                 NavigationLink(destination: SettingsView(model: SettingsViewModel())){
 					Image(systemName: "gear")

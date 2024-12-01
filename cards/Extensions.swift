@@ -20,19 +20,35 @@ extension String {
 		}
 	}
 	func getCardNetwork() -> CardNetwork {
-		guard let number = UInt(self) else {return .other}
+		guard let number = UInt(self.replacingOccurrences(of: " ", with: "")) else {return .other}
 		
 		let first2Digits = number.firstDigits(count: 2)
+		let first4Digits = number.firstDigits(count: 4)
+		
+		// Visa: Starts with 4
 		if number.firstDigits(count: 1) == 4 {
 			return .visa
-		} else if first2Digits == 34 || first2Digits == 37 {
+		}
+		// American Express: Starts with 34 or 37
+		else if first2Digits == 34 || first2Digits == 37 {
 			return .amex
-		} else if first2Digits == 36 || first2Digits == 38 || first2Digits == 30 {
+		}
+		// Diners Club: Starts with 30, 36, 38, or 39
+		else if first2Digits == 36 || first2Digits == 38 || first2Digits == 30 || first2Digits == 39 {
 			return .diners
-		} else if first2Digits == 60 || first2Digits == 65 || first2Digits == 81 || first2Digits == 82 {
-            return .rupay
-        } else {
+		}
+		// RuPay: Starts with 60, 65, 81, 82, or ranges 508500-508999
+		else if first2Digits == 60 || first2Digits == 65 || first2Digits == 81 || first2Digits == 82 ||
+			(first4Digits >= 5085 && first4Digits <= 5089) {
+			return .rupay
+		}
+		// Mastercard: Starts with 51-55, or 2221-2720
+		else if (first2Digits >= 51 && first2Digits <= 55) ||
+			(first4Digits >= 2221 && first4Digits <= 2720) {
 			return .master
+		}
+		else {
+			return .other
 		}
 	}
 }

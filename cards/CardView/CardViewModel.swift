@@ -7,13 +7,17 @@
 
 import SwiftUI
 import LocalAuthentication
+import PhotosUI
 
 class CardViewModel: ObservableObject {
 
 	@Published var card : CardData
 	@Published var isEditing = false
+	@Published var cardImage : UIImage?
 	@AppStorage("auth") var isAuthenticated = false
 	@Published var isShowingScanner = false
+
+	@Published var selectedItem: PhotosPickerItem?
 
 	var isAddNewFlow : Bool
 	var addUpdateCard: (CardData) -> Void
@@ -23,6 +27,7 @@ class CardViewModel: ObservableObject {
 		self.isEditing = isEditing
 		self.addUpdateCard = addUpdateCard
 		self.isAddNewFlow = addNewFlow
+		cardImage = ICloudDataManager.shared.loadImage(for: card.id)
 	}
 
 	func authenticateUser() {

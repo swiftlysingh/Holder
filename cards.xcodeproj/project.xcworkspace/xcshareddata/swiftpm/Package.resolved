@@ -1,5 +1,5 @@
 {
-  "originHash" : "02b9e42011de8cabe456ee1a611a91bd482fa0c1d37683754fab5b49e5b55f8c",
+  "originHash" : "66092e724ab8cbdaf897e67510246333e5ecedf88227daf8f736bb8abcdb3986",
   "pins" : [
     {
       "identity" : "ios-card-scan",
@@ -17,6 +17,15 @@
       "state" : {
         "revision" : "377455779103d45f537ae202b2dbb8575575dc92",
         "version" : "1.0.5"
+      }
+    },
+    {
+      "identity" : "onboardingkit",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/JamesSedlacek/OnboardingKit.git",
+      "state" : {
+        "branch" : "main",
+        "revision" : "e0e0e199a9cb74711308c6037bd6905873eae599"
       }
     },
     {
