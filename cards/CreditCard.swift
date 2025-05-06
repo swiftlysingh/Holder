@@ -16,6 +16,7 @@ struct CreditCard: App {
     var body: some Scene {
         WindowGroup {
             HomeView()
+                .accessibilityIdentifier("HomeView")
                 .task {
                     try? Tips.configure([
                         .displayFrequency(.immediate),

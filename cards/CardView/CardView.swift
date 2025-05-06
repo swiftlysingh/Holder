@@ -24,10 +24,14 @@ struct CardView: View {
 		return HStack{
 			Text(heading)
 				.bold()
+				.accessibilityLabel(Text(heading))
 			Spacer()
 			if !model.isAuthenticated {
 				SecureField("", text: value)
 					.multilineTextAlignment(.trailing)
+					.accessibilityLabel(Text(heading))
+					.accessibilityHint(Text("Secure field"))
+					.accessibilityIdentifier("\(heading.lowercased())SecureField")
 			} else {
 				TextField("", text: value)
 					.multilineTextAlignment(.trailing)
@@ -43,6 +47,9 @@ struct CardView: View {
 							Image(systemName: "doc.on.doc")
 						}
 					})
+					.accessibilityLabel(Text(heading))
+					.accessibilityHint(Text(model.isEditing ? "Editable field" : "Read only"))
+					.accessibilityIdentifier("\(heading.lowercased())TextField")
 			}
 		}
         .if (!model.isEditing, transform: { view in
@@ -50,6 +57,8 @@ struct CardView: View {
                 model.copyAction(with: value.wrappedValue)
             })
         })
+        .accessibilityElement(children: .combine)
+        .accessibilityIdentifier("\(heading.lowercased())ItemView")
     }
 
 	fileprivate func getCardListView() -> some View {
@@ -72,6 +81,7 @@ struct CardView: View {
 
 						if heading == "Number" && !model.isEditing {
 							view.popoverTip(tip, arrowEdge: .top)
+								.accessibilityHint(Text("Double tap to copy card number"))
 						} else if heading == "Expiration" {
 							view.onChange(of: model.card.expiration) { _ , newValue in
 								if newValue.count == 2 && !newValue.contains("/") {
@@ -92,19 +102,27 @@ struct CardView: View {
 					Picker("Card Network", selection: $model.card.network) {
 					  ForEach(CardNetwork.allCases) { pref in
 						Text(pref.rawValue)
+							.accessibilityLabel(Text(pref.rawValue))
 					  }
 					}
 
 					.disabled(!model.isEditing)
 					.bold()
+					.accessibilityLabel(Text("Card Network"))
+					.accessibilityHint(Text(model.isEditing ? "Select card network" : "Card network"))
+					.accessibilityIdentifier("cardNetworkPicker")
 				  }
 					Picker("Card Type", selection: $model.card.type) {
 						ForEach(CardType.allCases) { pref in
 							Text(pref.rawValue)
+								.accessibilityLabel(Text(pref.rawValue))
 						}
 					}
 					.disabled(!model.isEditing)
 					.bold()
+					.accessibilityLabel(Text("Card Type"))
+					.accessibilityHint(Text(model.isEditing ? "Select card type" : "Card type"))
+					.accessibilityIdentifier("cardTypePicker")
 				}
 			}
 
@@ -117,6 +135,9 @@ struct CardView: View {
 							view
 							  .blur(radius: 10, opaque: true)
 						})
+						.accessibilityLabel(Text("Card image"))
+						.accessibilityHint(Text(model.isAuthenticated ? "Card image preview" : "Card image is blurred until authenticated"))
+						.accessibilityIdentifier("cardImage")
 				}
 			}
 
@@ -127,7 +148,9 @@ struct CardView: View {
 					VStack(alignment: .leading){
 						  HStack {
 							  Image(systemName: "photo")
+								  .accessibilityHidden(true)
 							  Text(model.cardImage == nil ? "Add Card Image" : "Change Card Image")
+								  .accessibilityLabel(Text(model.cardImage == nil ? "Add Card Image" : "Change Card Image"))
 						  }
 						  .padding(.bottom)
 
@@ -163,9 +186,14 @@ struct CardView: View {
 						} label: {
 							HStack {
 								Image(systemName: "trash")
+									.accessibilityHidden(true)
 								Text("Remove Image")
+									.accessibilityLabel(Text("Remove Image"))
 							}
 						}
+						.accessibilityLabel(Text("Remove Image"))
+						.accessibilityHint(Text("Removes the selected card image"))
+						.accessibilityIdentifier("removeImageButton")
 					}
 				}
 			}
@@ -174,6 +202,9 @@ struct CardView: View {
 			ShareLink(item: model.card.toShareString()) {
 				Label("Click to share", systemImage: "square.and.arrow.up")
 			}
+			.accessibilityLabel(Text("Share card details"))
+			.accessibilityHint(Text("Shares your card details"))
+			.accessibilityIdentifier("shareLink")
 			Button(action: {
 				model.isEditing.toggle()
 				// if user is not editing, then he is done editing when button press
@@ -183,6 +214,9 @@ struct CardView: View {
 			}) {
 				Text(model.isEditing ? "Done" : "Edit")
 			}
+			.accessibilityLabel(Text(model.isEditing ? "Done editing" : "Edit card"))
+			.accessibilityHint(Text(model.isEditing ? "Finish editing card details" : "Edit card details"))
+			.accessibilityIdentifier("editDoneButton")
 		}
 		.disabled(!$model.isAuthenticated.wrappedValue)
 		.toolbar {
@@ -192,10 +226,14 @@ struct CardView: View {
 						model.isShowingScanner = true
 					}, label: {
 						Image(systemName: "camera.on.rectangle")
+							.accessibilityHidden(true)
 					})
 					.if(!model.isAddNewFlow, transform: { view in
 						view.hidden()
 					})
+					.accessibilityLabel(Text("Scan card"))
+					.accessibilityHint(Text("Opens camera to scan your card"))
+					.accessibilityIdentifier("scanCardButton")
 
 					// .screen was causing issues with camera session not closing
 					.fullScreenCover(isPresented: $model.isShowingScanner) {
