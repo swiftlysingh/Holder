@@ -13,8 +13,8 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
-      - name: Run Accessibility Bot
-        uses: ./
+      - name: SwiftUI Accessibility Bot
+        uses: swiftlysingh/swiftui-accessibility-bot@v1.0.0
         env:
           GH_TOKEN: ${{ github.token }}
         with:
