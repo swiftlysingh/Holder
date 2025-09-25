@@ -88,6 +88,9 @@ enum CardNetwork: String, CaseIterable, Identifiable, Codable {
 	case amex = "Amex"
 	case diners = "Diners"
     case rupay = "Rupay"
+    case discover = "Discover"
+    case jcb = "JCB"
+    case unionPay = "UnionPay"
 	case other = "Unknown"
 
 }

@@ -22,30 +22,49 @@ extension String {
 	func getCardNetwork() -> CardNetwork {
 		guard let number = UInt(self.replacingOccurrences(of: " ", with: "")) else {return .other}
 		
+		let first1 = number.firstDigits(count: 1)
 		let first2Digits = number.firstDigits(count: 2)
+		let first3Digits = number.firstDigits(count: 3)
 		let first4Digits = number.firstDigits(count: 4)
+		let first6Digits = number.firstDigits(count: 6)
 		
 		// Visa: Starts with 4
-		if number.firstDigits(count: 1) == 4 {
+		if first1 == 4 {
 			return .visa
 		}
 		// American Express: Starts with 34 or 37
 		else if first2Digits == 34 || first2Digits == 37 {
 			return .amex
 		}
-		// Diners Club: Starts with 30, 36, 38, or 39
-		else if first2Digits == 36 || first2Digits == 38 || first2Digits == 30 || first2Digits == 39 {
-			return .diners
-		}
-		// RuPay: Starts with 60, 65, 81, 82, or ranges 508500-508999
-		else if first2Digits == 60 || first2Digits == 65 || first2Digits == 81 || first2Digits == 82 ||
-			(first4Digits >= 5085 && first4Digits <= 5089) {
-			return .rupay
-		}
-		// Mastercard: Starts with 51-55, or 2221-2720
+		// Mastercard: 51–55 or 2221–2720
 		else if (first2Digits >= 51 && first2Digits <= 55) ||
 			(first4Digits >= 2221 && first4Digits <= 2720) {
 			return .master
+		}
+		// Discover: 6011, 65, 644–649, 622126–622925
+		else if first4Digits == 6011 || first2Digits == 65 ||
+			(first3Digits >= 644 && first3Digits <= 649) ||
+			(first6Digits >= 622126 && first6Digits <= 622925) {
+			return .discover
+		}
+		// JCB: 3528–3589
+		else if first4Digits >= 3528 && first4Digits <= 3589 {
+			return .jcb
+		}
+		// Diners Club: 300–305, 309, 36, 38–39
+		else if (first3Digits >= 300 && first3Digits <= 305) || first3Digits == 309 ||
+			first2Digits == 36 || (first2Digits >= 38 && first2Digits <= 39) {
+			return .diners
+		}
+		// UnionPay: Starts with 62 (avoid clash with Discover 622126–622925 handled above)
+		else if first2Digits == 62 {
+			return .unionPay
+		}
+		// RuPay: 60 (not 6011), 5085–5089, 81, 82
+		else if (first2Digits == 60 && first4Digits != 6011) ||
+			(first4Digits >= 5085 && first4Digits <= 5089) ||
+			first2Digits == 81 || first2Digits == 82 {
+			return .rupay
 		}
 		else {
 			return .other
