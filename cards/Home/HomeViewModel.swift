@@ -9,7 +9,7 @@ import SwiftUI
 
 class HomeViewModel : ObservableObject {
 
-	@Published var showingPopover = false
+	@Published var addingType: CardType?
 	@Published var selectedCard: CardData?
 	@Bindable var cardDataStore = CardDataStore()
 	@AppStorage("isFirstLaunch") var isFirstLaunch = true
