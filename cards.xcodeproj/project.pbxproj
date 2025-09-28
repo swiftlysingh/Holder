@@ -422,7 +422,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 1.6;
+				MARKETING_VERSION = 1.7;
 				PRODUCT_BUNDLE_IDENTIFIER = com.swiftlysingh.cards.beta;
 				PRODUCT_NAME = "Holder: A Secure Card Vault";
 				REGISTER_APP_GROUPS = YES;
@@ -588,7 +588,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 1.6;
+				MARKETING_VERSION = 1.7;
 				PRODUCT_BUNDLE_IDENTIFIER = com.swiftlysingh.cards.debug;
 				PRODUCT_NAME = "Holder: A Secure Card Vault";
 				REGISTER_APP_GROUPS = YES;
@@ -631,7 +631,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 1.6;
+				MARKETING_VERSION = 1.7;
 				PRODUCT_BUNDLE_IDENTIFIER = com.swiftlysingh.cards;
 				PRODUCT_NAME = "Holder: A Secure Card Vault";
 				REGISTER_APP_GROUPS = YES;
