@@ -1,0 +1,21 @@
+name: SwiftUI Accessibility Bot
+
+on:
+  workflow_dispatch:
+
+jobs:
+  accessibility:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: SwiftUI Accessibility Bot
+        uses: swiftlysingh/swiftui-accessibility-bot@v1.0.0
+        env:
+          GH_TOKEN: ${{ github.token }}
+        with:
+          openai_api_key: ${{ secrets.OPENAI_API_KEY }}

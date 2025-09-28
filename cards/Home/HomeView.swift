@@ -24,28 +24,7 @@ struct HomeView: View {
 							model.deleteCard(at: offsets, inSection: type)
 						}
 						Button("Add a new \(type.rawValue)") {
-							model.showingPopover.toggle()
-						}
-						.sheet(isPresented: $model.showingPopover) {
-							NavigationView {
-								CardView(model: CardViewModel(
-									card: .init(id: UUID(),
-												number: "",
-												cvv: "",
-												expiration: "",
-												name: "",
-												description: "",
-												type: type
-											   ),
-									isEditing: true,
-									addNewFlow: true,
-									addUpdateCard: { card in
-										model.cardDataStore.addCard(card)
-										model.showingPopover = false
-										model.cardDataStore.loadCards()
-									})
-								)
-							}
+							model.addingType = type
 						}
 					}
 				}
@@ -79,6 +58,27 @@ struct HomeView: View {
 			}
 		}
 		.whatsNewSheet()
+		.sheet(item: $model.addingType) { type in
+			NavigationView {
+				CardView(model: CardViewModel(
+					card: .init(id: UUID(),
+							number: "",
+							cvv: "",
+							expiration: "",
+							name: "",
+							description: "",
+							type: type
+					   ),
+					isEditing: true,
+					addNewFlow: true,
+					addUpdateCard: { card in
+						model.cardDataStore.addCard(card)
+						model.addingType = nil
+						model.cardDataStore.loadCards()
+					})
+				)
+			}
+		}
 	}
 
 	private func getRowforCards(with card: CardData) -> some View {
