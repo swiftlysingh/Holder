@@ -1,5 +1,5 @@
 {
-  "originHash" : "66092e724ab8cbdaf897e67510246333e5ecedf88227daf8f736bb8abcdb3986",
+  "originHash" : "0be06d0359319f812e686af38b91880a54595a556cc20ddd857cd4dbed9d9386",
   "pins" : [
     {
       "identity" : "ios-card-scan",
@@ -29,12 +29,21 @@
       }
     },
     {
-      "identity" : "swiftboilerplate",
+      "identity" : "purchases-ios",
       "kind" : "remoteSourceControl",
-      "location" : "git@github.com:swiftlysingh/SwiftBoilerplate.git",
+      "location" : "https://github.com/RevenueCat/purchases-ios.git",
       "state" : {
-        "revision" : "081fc1cf18e1fdcc4899bfd69360d02ec8f50c86",
-        "version" : "1.0.1"
+        "revision" : "6238361173aa15a02b99de0d6c003b24fa5fa444",
+        "version" : "5.52.1"
+      }
+    },
+    {
+      "identity" : "singhdevelopmentkit",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/swiftlysingh/SinghDevelopmentKit.git",
+      "state" : {
+        "revision" : "e2a0ca9933d8d4432287eebec2fdf9e3b0803b0f",
+        "version" : "1.1.1"
       }
     },
     {
@@ -42,8 +51,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/TelemetryDeck/SwiftClient",
       "state" : {
-        "revision" : "d20ccc4b8266cf739eede58cdfc7e9c6ffb41cda",
-        "version" : "1.5.1"
+        "revision" : "8f332c1c256ba26cc46f74c9e5af94f7b1c37a9c",
+        "version" : "2.11.0"
       }
     },
     {

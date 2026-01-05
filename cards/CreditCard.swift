@@ -8,11 +8,17 @@
 import SwiftUI
 import TipKit
 import WhatsNewKit
-import Boilerplate
+import Analytics
 import OnboardingKit
 
 @main
 struct CreditCard: App {
+    private var appID: String {
+        let path = Bundle.main.path(forResource: "Secrets", ofType: "plist")
+        let dict = NSDictionary(contentsOfFile: path!) as? [String: AnyObject]
+        return dict!["TDeck"] as! String
+    }
+
     var body: some Scene {
         WindowGroup {
             HomeView()
@@ -22,29 +28,21 @@ struct CreditCard: App {
                         .datastoreLocation(.applicationDefault)
                     ])
                 }
-				.onAppear {
-					TDeckClient.shared.appDidFinshLaunching()
-				}
-				.environment(
-					\.whatsNew,
-					 WhatsNewEnvironment(
-						versionStore: UserDefaultsWhatsNewVersionStore(),
-						whatsNewCollection: self
-					 )
-				)
-				.environment(BoilerPlate(delegate: self))
-				.showOnboardingIfNeeded(using: .prod)
+                .task {
+                    await AnalyticsManager.shared.configure(with: appID)
+                    await AnalyticsManager.shared.appDidFinishLaunching()
+                }
+                .environment(
+                    \.whatsNew,
+                     WhatsNewEnvironment(
+                        versionStore: UserDefaultsWhatsNewVersionStore(),
+                        whatsNewCollection: self
+                     )
+                )
+                .showOnboardingIfNeeded(using: .prod)
 
         }
     }
-}
-
-extension CreditCard: BoilerPlated {
-	var appID: String {
-		 let path = Bundle.main.path(forResource: "Secrets", ofType: "plist")
-		let dict = NSDictionary(contentsOfFile: path!) as? [String: AnyObject]
-		return dict!["TDeck"] as! String
-	}
 }
 
 extension OnboardingConfiguration {
