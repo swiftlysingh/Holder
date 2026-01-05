@@ -5,11 +5,21 @@
 //  Created by Pushpinder Pal Singh on 07/01/24.
 //
 import SwiftUI
+import WidgetKit
 
 @Observable
 class CardDataStore {
 
 	var cardsByType: [CardType: [CardData]] = [:]
+
+	// MARK: - Widget Data Sharing
+
+	private let appGroupID = "group.com.swiftlysingh.cards"
+	private let widgetCardsKey = "widgetAvailableCards"
+
+	private var sharedDefaults: UserDefaults? {
+		UserDefaults(suiteName: appGroupID)
+	}
 
 	private var isDebugOrSimulator = {
 	#if DEBUG || BETA
@@ -60,11 +70,23 @@ class CardDataStore {
 		for type in CardType.allCases {
 			cardsByType[type] = retrievedCard.filter { $0.type == type }
 		}
+		syncCardsToWidget()
 	}
 
 	func addCard(_ card: CardData) {
 		//TODO: Add error handling here
 		_ = saveOrUpdateCardData(card)
+		syncCardsToWidget()
+	}
+
+	/// Finds a card by its UUID (used for deep linking from widgets)
+	func findCard(by id: UUID) -> CardData? {
+		for type in CardType.allCases {
+			if let cards = cardsByType[type], let card = cards.first(where: { $0.id == id }) {
+				return card
+			}
+		}
+		return nil
 	}
 
 	func deleteCard(with id: UUID) -> Bool {
@@ -76,7 +98,7 @@ class CardDataStore {
 		]
 
 		let status = SecItemDelete(query as CFDictionary)
-
+		syncCardsToWidget()
 		return status == errSecSuccess
 	}
 /// Returns if success
@@ -155,6 +177,30 @@ class CardDataStore {
 			}
 		}
 		return cardDataArray
+	}
+
+	// MARK: - Widget Sync
+
+	/// Syncs card data to widget via App Group (only safe display data, no sensitive info)
+	func syncCardsToWidget() {
+		let allCards = CardType.allCases.flatMap { cardsByType[$0] ?? [] }
+		let widgetCards = allCards.map { card -> [String: Any] in
+			let cleanNumber = card.number.replacingOccurrences(of: " ", with: "")
+			let lastFour = String(cleanNumber.suffix(4))
+			let displayName = card.description.isEmpty ? card.name : card.description
+			return [
+				"id": card.id.uuidString,
+				"displayName": displayName,
+				"lastFourDigits": lastFour,
+				"cardType": card.type.rawValue,
+				"network": card.network.rawValue
+			]
+		}
+
+		if let data = try? JSONSerialization.data(withJSONObject: widgetCards) {
+			sharedDefaults?.set(data, forKey: widgetCardsKey)
+		}
+		WidgetCenter.shared.reloadAllTimelines()
 	}
 
 	private func migrateToNewSchema(for service: String) {

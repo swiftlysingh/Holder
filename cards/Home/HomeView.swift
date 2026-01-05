@@ -58,6 +58,9 @@ struct HomeView: View {
 			}
 		}
 		.whatsNewSheet()
+		.onOpenURL { url in
+			model.handleDeepLink(url)
+		}
 		.sheet(item: $model.addingType) { type in
 			NavigationView {
 				CardView(model: CardViewModel(

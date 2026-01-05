@@ -28,4 +28,17 @@ class HomeViewModel : ObservableObject {
 			}
 		}
 	}
+
+	/// Handles deep link URL from widget (holder://card/{uuid})
+	func handleDeepLink(_ url: URL) {
+		guard url.scheme == "holder",
+			  url.host == "card",
+			  let cardIDString = url.pathComponents.last,
+			  let cardID = UUID(uuidString: cardIDString) else {
+			return
+		}
+		if let card = cardDataStore.findCard(by: cardID) {
+			selectedCard = card
+		}
+	}
 }
