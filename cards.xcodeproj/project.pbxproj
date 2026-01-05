@@ -23,7 +23,7 @@
 		EE960C4F2B4AC00B00B67805 /* CardDataStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE960C4E2B4AC00B00B67805 /* CardDataStore.swift */; };
 		EEABD0D12B6D8AD600FF34E6 /* WhatsNewKit in Frameworks */ = {isa = PBXBuildFile; productRef = EEABD0D02B6D8AD600FF34E6 /* WhatsNewKit */; };
 		EEBB52EA2B238D6600035B92 /* CreditCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = EEBB52E92B238D6600035B92 /* CreditCard.swift */; };
-		EE8ADF002F11000100ARCHIVE /* ArchivedCardsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE8ADF012F11000100ARCHIVE /* ArchivedCardsView.swift */; };
+		EE8ADF002F1100010000A1C0 /* ArchivedCardsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE8ADF012F1100010000A1C1 /* ArchivedCardsView.swift */; };
 		EEBB52EC2B238D6600035B92 /* HomeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = EEBB52EB2B238D6600035B92 /* HomeView.swift */; };
 		EEBB52EE2B238D6800035B92 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = EEBB52ED2B238D6800035B92 /* Assets.xcassets */; };
 		EEBB52F12B238D6800035B92 /* Preview Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = EEBB52F02B238D6800035B92 /* Preview Assets.xcassets */; };
@@ -80,7 +80,7 @@
 		EE960C4E2B4AC00B00B67805 /* CardDataStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CardDataStore.swift; sourceTree = "<group>"; };
 		EEBB52E62B238D6600035B92 /* Holder: A Secure Card Vault.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "Holder: A Secure Card Vault.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 		EEBB52E92B238D6600035B92 /* CreditCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CreditCard.swift; sourceTree = "<group>"; };
-		EE8ADF012F11000100ARCHIVE /* ArchivedCardsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ArchivedCardsView.swift; sourceTree = "<group>"; };
+		EE8ADF012F1100010000A1C1 /* ArchivedCardsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ArchivedCardsView.swift; sourceTree = "<group>"; };
 		EEBB52EB2B238D6600035B92 /* HomeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeView.swift; sourceTree = "<group>"; };
 		EEBB52ED2B238D6800035B92 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		EEBB52F02B238D6800035B92 /* Preview Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = "Preview Assets.xcassets"; sourceTree = "<group>"; };
@@ -138,7 +138,7 @@
 			children = (
 				EE8ADBEE2B66A5B600F0DC29 /* HomeViewModel.swift */,
 				EEBB52EB2B238D6600035B92 /* HomeView.swift */,
-				EE8ADF012F11000100ARCHIVE /* ArchivedCardsView.swift */,
+				EE8ADF012F1100010000A1C1 /* ArchivedCardsView.swift */,
 			);
 			path = Home;
 			sourceTree = "<group>";
@@ -368,7 +368,7 @@
 				EE960C4F2B4AC00B00B67805 /* CardDataStore.swift in Sources */,
 				EE4CBEAB2CEEC8E900635DFC /* ICloudDataManager.swift in Sources */,
 				EEBB52EC2B238D6600035B92 /* HomeView.swift in Sources */,
-				EE8ADF002F11000100ARCHIVE /* ArchivedCardsView.swift in Sources */,
+				EE8ADF002F1100010000A1C0 /* ArchivedCardsView.swift in Sources */,
 				EE599BB62B24495F002F49F8 /* CardData.swift in Sources */,
 				EE1D3E902B66AE66009733A5 /* Tip.swift in Sources */,
 				EEBB52EA2B238D6600035B92 /* CreditCard.swift in Sources */,
