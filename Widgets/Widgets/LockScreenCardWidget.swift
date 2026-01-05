@@ -18,14 +18,14 @@ struct LockScreenCardProvider: AppIntentTimelineProvider {
     func snapshot(for configuration: SelectCardIntent, in context: Context) async -> LockScreenCardEntry {
         let card = configuration.card.flatMap { entity in
             SharedDataManager.shared.getCard(by: entity.id)
-        }
+        } ?? SharedDataManager.shared.loadAvailableCards().first
         return LockScreenCardEntry(date: Date(), card: card, configuration: configuration)
     }
 
     func timeline(for configuration: SelectCardIntent, in context: Context) async -> Timeline<LockScreenCardEntry> {
         let card = configuration.card.flatMap { entity in
             SharedDataManager.shared.getCard(by: entity.id)
-        }
+        } ?? SharedDataManager.shared.loadAvailableCards().first
         let entry = LockScreenCardEntry(date: Date(), card: card, configuration: configuration)
         return Timeline(entries: [entry], policy: .never)
     }

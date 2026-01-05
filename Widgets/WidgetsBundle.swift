@@ -1,15 +1,15 @@
 //
-//  HolderWidgetsBundle.swift
-//  HolderWidgets
+//  WidgetsBundle.swift
+//  Widgets
 //
-//  Widget bundle entry point
+//  Created by Pushpinder on 1/5/26.
 //
 
 import WidgetKit
 import SwiftUI
 
 @main
-struct HolderWidgetsBundle: WidgetBundle {
+struct WidgetsBundle: WidgetBundle {
     var body: some Widget {
         SmallCardWidget()
         MediumCardWidget()

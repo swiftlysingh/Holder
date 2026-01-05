@@ -16,14 +16,20 @@ struct MediumCardProvider: AppIntentTimelineProvider {
     }
 
     func snapshot(for configuration: SelectMultipleCardsIntent, in context: Context) async -> MediumCardEntry {
-        let cardIDs = configuration.cards.map { $0.id }
-        let cards = SharedDataManager.shared.getCards(by: cardIDs)
+        let cardIDs = (configuration.cards ?? []).map { $0.id }
+        var cards = SharedDataManager.shared.getCards(by: cardIDs)
+        if cards.isEmpty {
+            cards = Array(SharedDataManager.shared.loadAvailableCards().prefix(4))
+        }
         return MediumCardEntry(date: Date(), cards: Array(cards.prefix(4)), configuration: configuration)
     }
 
     func timeline(for configuration: SelectMultipleCardsIntent, in context: Context) async -> Timeline<MediumCardEntry> {
-        let cardIDs = configuration.cards.map { $0.id }
-        let cards = SharedDataManager.shared.getCards(by: cardIDs)
+        let cardIDs = (configuration.cards ?? []).map { $0.id }
+        var cards = SharedDataManager.shared.getCards(by: cardIDs)
+        if cards.isEmpty {
+            cards = Array(SharedDataManager.shared.loadAvailableCards().prefix(4))
+        }
         let entry = MediumCardEntry(date: Date(), cards: Array(cards.prefix(4)), configuration: configuration)
         return Timeline(entries: [entry], policy: .never)
     }

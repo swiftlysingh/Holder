@@ -7,6 +7,7 @@
 
 import WidgetKit
 import SwiftUI
+import AppIntents
 
 // MARK: - Control Center Widget (iOS 18+)
 
@@ -17,7 +18,7 @@ struct ControlCenterCardWidget: ControlWidget {
     var body: some ControlWidgetConfiguration {
         AppIntentControlConfiguration(
             kind: Self.kind,
-            intent: SelectCardIntent.self
+            intent: ControlCenterCardIntent.self
         ) { configuration in
             ControlWidgetButton(action: OpenHolderCardIntent(cardID: configuration.card?.id)) {
                 let card = configuration.card.flatMap { entity in

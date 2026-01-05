@@ -72,6 +72,23 @@ struct SelectCardIntent: WidgetConfigurationIntent {
     }
 }
 
+// MARK: - Control Center Card Selection Intent (iOS 18+)
+
+@available(iOS 18.0, *)
+struct ControlCenterCardIntent: ControlConfigurationIntent {
+    static var title: LocalizedStringResource = "Select Card"
+    static var description = IntentDescription("Choose which card to display")
+
+    @Parameter(title: "Card")
+    var card: CardEntity?
+
+    init() {}
+
+    init(card: CardEntity?) {
+        self.card = card
+    }
+}
+
 // MARK: - Multiple Cards Selection Intent
 
 struct SelectMultipleCardsIntent: WidgetConfigurationIntent {
@@ -79,7 +96,7 @@ struct SelectMultipleCardsIntent: WidgetConfigurationIntent {
     static var description = IntentDescription("Choose cards to display (up to 4)")
 
     @Parameter(title: "Cards")
-    var cards: [CardEntity]
+    var cards: [CardEntity]?
 
     init() {
         self.cards = []

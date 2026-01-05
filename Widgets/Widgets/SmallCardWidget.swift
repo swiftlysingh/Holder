@@ -18,14 +18,14 @@ struct SmallCardProvider: AppIntentTimelineProvider {
     func snapshot(for configuration: SelectCardIntent, in context: Context) async -> SmallCardEntry {
         let card = configuration.card.flatMap { entity in
             SharedDataManager.shared.getCard(by: entity.id)
-        }
+        } ?? SharedDataManager.shared.loadAvailableCards().first
         return SmallCardEntry(date: Date(), card: card, configuration: configuration)
     }
 
     func timeline(for configuration: SelectCardIntent, in context: Context) async -> Timeline<SmallCardEntry> {
         let card = configuration.card.flatMap { entity in
             SharedDataManager.shared.getCard(by: entity.id)
-        }
+        } ?? SharedDataManager.shared.loadAvailableCards().first
         let entry = SmallCardEntry(date: Date(), card: card, configuration: configuration)
         return Timeline(entries: [entry], policy: .never)
     }
