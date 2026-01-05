@@ -107,24 +107,3 @@ struct SelectMultipleCardsIntent: WidgetConfigurationIntent {
     }
 }
 
-// MARK: - Open Card Intent (for deep linking)
-
-struct OpenCardIntent: AppIntent {
-    static var title: LocalizedStringResource = "Open Card"
-    static var openAppWhenRun: Bool = true
-
-    @Parameter(title: "Card ID")
-    var cardID: String
-
-    init() {
-        self.cardID = ""
-    }
-
-    init(cardID: UUID) {
-        self.cardID = cardID.uuidString
-    }
-
-    func perform() async throws -> some IntentResult {
-        return .result()
-    }
-}
