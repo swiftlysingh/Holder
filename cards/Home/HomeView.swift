@@ -61,6 +61,13 @@ struct HomeView: View {
 		.onOpenURL { url in
 			model.handleDeepLink(url)
 		}
+		.navigationDestination(item: $model.selectedCard) { card in
+			CardView(model: CardViewModel(
+				card: card,
+				addUpdateCard: { card in
+					model.cardDataStore.addCard(card)
+				}))
+		}
 		.sheet(item: $model.addingType) { type in
 			NavigationView {
 				CardView(model: CardViewModel(

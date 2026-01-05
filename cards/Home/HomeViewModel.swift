@@ -37,8 +37,17 @@ class HomeViewModel : ObservableObject {
 			  let cardID = UUID(uuidString: cardIDString) else {
 			return
 		}
-		if let card = cardDataStore.findCard(by: cardID) {
-			selectedCard = card
+
+		// Ensure cards are loaded before trying to find the card
+		if cardDataStore.cardsByType.values.allSatisfy({ $0.isEmpty }) {
+			cardDataStore.loadCards()
+		}
+
+		// Use DispatchQueue to ensure view is ready for navigation
+		DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) { [weak self] in
+			if let card = self?.cardDataStore.findCard(by: cardID) {
+				self?.selectedCard = card
+			}
 		}
 	}
 }
