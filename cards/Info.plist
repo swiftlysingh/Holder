@@ -4,5 +4,16 @@
 <dict>
 	<key>ITSAppUsesNonExemptEncryption</key>
 	<false/>
+	<key>CFBundleURLTypes</key>
+	<array>
+		<dict>
+			<key>CFBundleURLName</key>
+			<string>com.swiftlysingh.cards</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>holder</string>
+			</array>
+		</dict>
+	</array>
 </dict>
 </plist>

@@ -28,4 +28,26 @@ class HomeViewModel : ObservableObject {
 			}
 		}
 	}
+
+	/// Handles deep link URL from widget (holder://card/{uuid})
+	func handleDeepLink(_ url: URL) {
+		guard url.scheme == "holder",
+			  url.host == "card",
+			  let cardIDString = url.pathComponents.last,
+			  let cardID = UUID(uuidString: cardIDString) else {
+			return
+		}
+
+		// Ensure cards are loaded before trying to find the card
+		if cardDataStore.cardsByType.values.allSatisfy({ $0.isEmpty }) {
+			cardDataStore.loadCards()
+		}
+
+		// Use DispatchQueue to ensure view is ready for navigation
+		DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) { [weak self] in
+			if let card = self?.cardDataStore.findCard(by: cardID) {
+				self?.selectedCard = card
+			}
+		}
+	}
 }
