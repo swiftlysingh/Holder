@@ -11,6 +11,7 @@ import WidgetKit
 class CardDataStore {
 
 	var cardsByType: [CardType: [CardData]] = [:]
+	var archivedCards: [CardData] = []
 
 	// MARK: - Widget Data Sharing
 
@@ -67,8 +68,12 @@ class CardDataStore {
 			)
 
 		}
+		// Separate archived and active cards
+		archivedCards = retrievedCard.filter { $0.isArchived }
+		let activeCards = retrievedCard.filter { !$0.isArchived }
+
 		for type in CardType.allCases {
-			cardsByType[type] = retrievedCard.filter { $0.type == type }
+			cardsByType[type] = activeCards.filter { $0.type == type }
 		}
 		syncCardsToWidget()
 	}
@@ -100,6 +105,39 @@ class CardDataStore {
 		let status = SecItemDelete(query as CFDictionary)
 		syncCardsToWidget()
 		return status == errSecSuccess
+	}
+
+	// MARK: - Archive
+
+	func archiveCard(_ card: CardData) {
+		var archivedCard = card
+		archivedCard.isArchived = true
+		_ = saveOrUpdateCardData(archivedCard)
+
+		// Remove from active cards
+		if let index = cardsByType[card.type]?.firstIndex(where: { $0.id == card.id }) {
+			cardsByType[card.type]?.remove(at: index)
+		}
+		// Add to archived list
+		archivedCards.append(archivedCard)
+		syncCardsToWidget()
+	}
+
+	func unarchiveCard(_ card: CardData) {
+		var unarchivedCard = card
+		unarchivedCard.isArchived = false
+		_ = saveOrUpdateCardData(unarchivedCard)
+
+		// Remove from archived cards
+		if let index = archivedCards.firstIndex(where: { $0.id == card.id }) {
+			archivedCards.remove(at: index)
+		}
+		// Add back to active cards
+		if cardsByType[card.type] == nil {
+			cardsByType[card.type] = []
+		}
+		cardsByType[card.type]?.append(unarchivedCard)
+		syncCardsToWidget()
 	}
 /// Returns if success
 	private func saveOrUpdateCardData(_ cardData: CardData) -> Bool {

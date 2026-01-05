@@ -29,6 +29,22 @@ class HomeViewModel : ObservableObject {
 		}
 	}
 
+	func archiveCard(_ card: CardData) {
+		cardDataStore.archiveCard(card)
+	}
+
+	func unarchiveCard(_ card: CardData) {
+		cardDataStore.unarchiveCard(card)
+	}
+
+	func deleteArchivedCard(_ card: CardData) {
+		if cardDataStore.deleteCard(with: card.id) {
+			if let index = cardDataStore.archivedCards.firstIndex(where: { $0.id == card.id }) {
+				cardDataStore.archivedCards.remove(at: index)
+			}
+		}
+	}
+
 	/// Handles deep link URL from widget (holder://card/{uuid})
 	func handleDeepLink(_ url: URL) {
 		guard url.scheme == "holder",

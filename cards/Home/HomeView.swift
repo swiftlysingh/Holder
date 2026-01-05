@@ -15,19 +15,45 @@ struct HomeView: View {
 
 	var body: some View {
 		NavigationSplitView {
-			List(CardType.allCases, selection: $model.selectedCard){ type in
+			List(selection: $model.selectedCard) {
+				ForEach(CardType.allCases) { type in
 					Section(header: Text("\(type.rawValue)s")){
 						ForEach(model.cardDataStore.cardsByType[type] ?? [], id: \.id) { card in
 							getRowforCards(with: card)
-						}
-						.onDelete { offsets in
-							model.deleteCard(at: offsets, inSection: type)
+								.swipeActions(edge: .trailing, allowsFullSwipe: false) {
+									Button(role: .destructive) {
+										_ = model.cardDataStore.deleteCard(with: card.id)
+										model.cardDataStore.cardsByType[type]?.removeAll { $0.id == card.id }
+									} label: {
+										Label("Delete", systemImage: "trash")
+									}
+									Button {
+										model.archiveCard(card)
+									} label: {
+										Label("Archive", systemImage: "archivebox")
+									}
+									.tint(.orange)
+								}
 						}
 						Button("Add a new \(type.rawValue)") {
 							model.addingType = type
 						}
 					}
 				}
+				// Archived Cards Link
+				if !model.cardDataStore.archivedCards.isEmpty {
+					Section {
+						NavigationLink {
+							ArchivedCardsView(model: model)
+						} label: {
+							HStack {
+								Image(systemName: "archivebox")
+								Text("View Archived Cards (\(model.cardDataStore.archivedCards.count))")
+							}
+						}
+					}
+				}
+			}
 			.navigationTitle("Cards")
 			.onAppear {
 				model.cardDataStore.loadCards()
