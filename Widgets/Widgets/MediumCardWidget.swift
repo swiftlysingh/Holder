@@ -68,7 +68,11 @@ struct MediumCardWidgetView: View {
         } else {
             LazyVGrid(columns: columns, spacing: 12) {
                 ForEach(entry.cards.prefix(4)) { card in
-                    Link(destination: URL(string: "holder://card/\(card.id.uuidString)")!) {
+                    if let url = URL(string: "holder://card/\(card.id.uuidString)") {
+                        Link(destination: url) {
+                            CardCellView(card: card)
+                        }
+                    } else {
                         CardCellView(card: card)
                     }
                 }

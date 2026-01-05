@@ -110,6 +110,7 @@ struct LockScreenCardWidgetView: View {
     private var accessoryInlineView: some View {
         if let card = entry.card {
             Text("\(card.displayName) \(card.displayText)")
+                .widgetURL(URL(string: "holder://card/\(card.id.uuidString)"))
         } else {
             Text("No Card Selected")
         }
