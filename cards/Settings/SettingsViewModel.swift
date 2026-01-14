@@ -7,7 +7,6 @@
 
 import Settings
 import SwiftUI
-import StoreKit
 
 #if os(iOS)
 import UIKit

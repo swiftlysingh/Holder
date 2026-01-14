@@ -140,6 +140,9 @@ struct MenuBarView: View {
         NSApp.activate(ignoringOtherApps: true)
         if let window = NSApp.windows.first(where: { $0.canBecomeMain }) {
             window.makeKeyAndOrderFront(nil)
+        } else {
+            // If no window exists, create one by sending the newDocument action
+            NSApp.sendAction(#selector(NSDocumentController.newDocument(_:)), to: nil, from: nil)
         }
     }
 
@@ -356,8 +359,11 @@ struct MenuBarCardRow: View {
         let cleanNumber = card.number.replacingOccurrences(of: " ", with: "")
         if cleanNumber.count >= 4 {
             return "**** " + String(cleanNumber.suffix(4))
+        } else if !cleanNumber.isEmpty {
+            // For short numbers, mask all but show count
+            return String(repeating: "*", count: cleanNumber.count)
         }
-        return card.number.isEmpty ? "No number" : card.number
+        return "No number"
     }
 
     private func formatCardNumber(_ number: String) -> String {

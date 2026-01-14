@@ -6,7 +6,6 @@
 //
 
 import SwiftUI
-import StoreKit
 
 class UserSettings : ObservableObject {
 	static let shared = UserSettings()

@@ -65,7 +65,6 @@ class CardViewModel: ObservableObject {
 			HapticService.trigger(.error)
 			return
 		}
-		print("log: Copied With item: \(value)")
 		PasteboardService.copy(value)
 		HapticService.trigger(.success)
 	}
