@@ -58,7 +58,7 @@ struct HomeView: View {
 				}
 			}
 			.navigationTitle("Cards")
-			.onAppear {
+			.task {
 				model.cardDataStore.loadCards()
 			}
 			.toolbar{
@@ -113,7 +113,9 @@ struct HomeView: View {
 					addUpdateCard: { card in
 						model.cardDataStore.addCard(card)
 						model.addingType = nil
-						model.cardDataStore.loadCards()
+						Task { @MainActor in
+							model.cardDataStore.loadCards()
+						}
 					})
 				)
 			}

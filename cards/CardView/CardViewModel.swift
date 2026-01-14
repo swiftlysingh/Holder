@@ -38,25 +38,25 @@ class CardViewModel: ObservableObject {
 	func authenticateUser() {
 		let context = LAContext()
 		var error: NSError?
-		
+
 		if !UserSettings.shared.isAuthEnabled {
-			isAuthenticated = true
+			Task { @MainActor in
+				isAuthenticated = true
+			}
 			return
 		}
 		// Check if the device supports biometric authentication
 		if context.canEvaluatePolicy(.deviceOwnerAuthenticationWithBiometrics, error: &error) {
 			let reason = "Please authenticate to view your card details."
 			context.evaluatePolicy(.deviceOwnerAuthenticationWithBiometrics, localizedReason: reason) { success, authenticationError in
-				DispatchQueue.main.async {
-					if success {
-						self.isAuthenticated = true
-					} else {
-						self.isAuthenticated = false
-					}
+				Task { @MainActor in
+					self.isAuthenticated = success
 				}
 			}
 		} else {
-			isAuthenticated = false
+			Task { @MainActor in
+				isAuthenticated = false
+			}
 		}
 	}
 

@@ -58,15 +58,16 @@ class HomeViewModel: ObservableObject {
 			return
 		}
 
-		// Ensure cards are loaded before trying to find the card
-		if cardDataStore.cardsByType.values.allSatisfy({ $0.isEmpty }) {
-			cardDataStore.loadCards()
-		}
+		Task { @MainActor in
+			// Ensure cards are loaded before trying to find the card
+			if cardDataStore.cardsByType.values.allSatisfy({ $0.isEmpty }) {
+				cardDataStore.loadCards()
+			}
 
-		// Use DispatchQueue to ensure view is ready for navigation
-		DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) { [weak self] in
-			if let card = self?.cardDataStore.findCard(by: cardID) {
-				self?.selectedCard = card
+			// Small delay to ensure view is ready for navigation
+			try? await Task.sleep(nanoseconds: 100_000_000)
+			if let card = cardDataStore.findCard(by: cardID) {
+				selectedCard = card
 			}
 		}
 	}
