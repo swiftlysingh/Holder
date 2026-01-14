@@ -444,11 +444,18 @@ struct CardView: View {
 			VStack(alignment: .leading, spacing: 16) {
 				// Top row: Network logo and type
 				HStack {
-					Image(model.card.network.rawValue)
-						.renderingMode(.original)
-						.resizable()
-						.scaledToFit()
-						.frame(height: 36)
+					// Show network logo if available, otherwise show icon
+					if model.card.network != .other {
+						Image(model.card.network.rawValue)
+							.renderingMode(.original)
+							.resizable()
+							.scaledToFit()
+							.frame(height: 36)
+					} else {
+						Image(systemName: "creditcard.fill")
+							.font(.system(size: 24))
+							.foregroundStyle(.white.opacity(0.9))
+					}
 					Spacer()
 					Text(model.card.type.rawValue)
 						.font(.caption)

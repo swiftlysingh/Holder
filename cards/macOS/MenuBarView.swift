@@ -61,7 +61,7 @@ struct MenuBarView: View {
             .buttonStyle(.plain)
             .keyboardShortcut("o", modifiers: .command)
         }
-        .frame(width: 300)
+        .frame(width: 320)
     }
 
     private var allCards: [CardData] {
@@ -81,6 +81,9 @@ struct MenuBarCardRow: View {
     @State private var copiedField: String?
     @State private var isExpanded = false
 
+    private let iconWidth: CGFloat = 20
+    private let labelWidth: CGFloat = 70
+
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
             // Main card header - tap to expand/collapse
@@ -89,28 +92,19 @@ struct MenuBarCardRow: View {
                     isExpanded.toggle()
                 }
             } label: {
-                HStack(spacing: 10) {
-                    // Network logo
-                    if card.type != .otherCard {
-                        Image(card.network.rawValue)
-                            .resizable()
-                            .scaledToFit()
-                            .frame(width: 32, height: 24)
-                    } else {
-                        Image(systemName: "creditcard.fill")
-                            .font(.title3)
-                            .foregroundStyle(.secondary)
-                            .frame(width: 32)
-                    }
+                HStack(spacing: 12) {
+                    // Network logo or fallback icon
+                    networkImage
+                        .frame(width: 36, height: 24)
 
                     // Card name and masked number
                     VStack(alignment: .leading, spacing: 2) {
                         Text(cardDisplayName)
-                            .font(.headline)
+                            .font(.system(size: 13, weight: .semibold))
                             .foregroundStyle(.primary)
                             .lineLimit(1)
                         Text(maskedNumber)
-                            .font(.system(.caption, design: .monospaced))
+                            .font(.system(size: 11, design: .monospaced))
                             .foregroundStyle(.secondary)
                     }
 
@@ -118,7 +112,7 @@ struct MenuBarCardRow: View {
 
                     // Expand indicator
                     Image(systemName: isExpanded ? "chevron.up" : "chevron.down")
-                        .font(.caption)
+                        .font(.system(size: 10, weight: .medium))
                         .foregroundStyle(.tertiary)
                 }
                 .padding(.horizontal, 12)
@@ -129,89 +123,111 @@ struct MenuBarCardRow: View {
 
             // Expanded details
             if isExpanded {
-                VStack(spacing: 0) {
+                VStack(alignment: .leading, spacing: 1) {
                     // Card Number
-                    copyableRow(
-                        icon: "number",
-                        label: "Number",
-                        value: formatCardNumber(card.number),
-                        field: "number",
-                        actualValue: card.number
-                    )
+                    if !card.number.isEmpty {
+                        copyableDetailRow(
+                            icon: "number",
+                            label: "Number",
+                            displayValue: formatCardNumber(card.number),
+                            copyValue: card.number,
+                            field: "number"
+                        )
+                    }
 
                     // Expiration
                     if !card.expiration.isEmpty {
-                        Divider().padding(.leading, 44)
-                        copyableRow(
+                        copyableDetailRow(
                             icon: "calendar",
                             label: "Expires",
-                            value: card.expiration,
-                            field: "exp",
-                            actualValue: card.expiration
+                            displayValue: card.expiration,
+                            copyValue: card.expiration,
+                            field: "exp"
                         )
                     }
 
                     // CVV
                     if !card.cvv.isEmpty {
-                        Divider().padding(.leading, 44)
-                        copyableRow(
+                        copyableDetailRow(
                             icon: "lock.fill",
                             label: "CVV",
-                            value: "•••",
-                            field: "cvv",
-                            actualValue: card.cvv
+                            displayValue: "•••",
+                            copyValue: card.cvv,
+                            field: "cvv"
                         )
                     }
 
                     // Name on card
                     if !card.name.isEmpty {
-                        Divider().padding(.leading, 44)
-                        copyableRow(
+                        copyableDetailRow(
                             icon: "person.fill",
                             label: "Name",
-                            value: card.name,
-                            field: "name",
-                            actualValue: card.name
+                            displayValue: card.name,
+                            copyValue: card.name,
+                            field: "name"
                         )
                     }
                 }
-                .background(Color(nsColor: .controlBackgroundColor).opacity(0.5))
+                .padding(.leading, 60) // Align with card name (12 padding + 36 icon + 12 spacing)
+                .padding(.trailing, 12)
+                .padding(.bottom, 8)
+                .background(Color.primary.opacity(0.03))
             }
         }
     }
 
     @ViewBuilder
-    private func copyableRow(icon: String, label: String, value: String, field: String, actualValue: String) -> some View {
-        Button {
-            copyToClipboard(actualValue, field: field)
-        } label: {
-            HStack(spacing: 10) {
-                Image(systemName: icon)
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-                    .frame(width: 32)
+    private var networkImage: some View {
+        // Check if we have a valid network that's not "Unknown"
+        if card.type != .otherCard && card.network != .other {
+            Image(card.network.rawValue)
+                .renderingMode(.original)
+                .resizable()
+                .scaledToFit()
+        } else {
+            // Fallback to system icon for unknown networks or other card types
+            Image(systemName: "creditcard.fill")
+                .font(.system(size: 18))
+                .foregroundStyle(.secondary)
+        }
+    }
 
+    @ViewBuilder
+    private func copyableDetailRow(icon: String, label: String, displayValue: String, copyValue: String, field: String) -> some View {
+        Button {
+            copyToClipboard(copyValue, field: field)
+        } label: {
+            HStack(spacing: 0) {
+                // Icon
+                Image(systemName: icon)
+                    .font(.system(size: 11))
+                    .foregroundStyle(.tertiary)
+                    .frame(width: iconWidth, alignment: .leading)
+
+                // Label
                 Text(label)
-                    .font(.subheadline)
+                    .font(.system(size: 12))
                     .foregroundStyle(.secondary)
+                    .frame(width: labelWidth, alignment: .leading)
 
                 Spacer()
 
+                // Value or Copied indicator
                 if copiedField == field {
                     HStack(spacing: 4) {
                         Image(systemName: "checkmark")
                         Text("Copied!")
                     }
-                    .font(.caption)
+                    .font(.system(size: 12, weight: .medium))
                     .foregroundStyle(.green)
                 } else {
-                    Text(value)
-                        .font(.system(.subheadline, design: .monospaced))
+                    Text(displayValue)
+                        .font(.system(size: 12, design: .monospaced))
                         .foregroundStyle(.primary)
+                        .lineLimit(1)
                 }
             }
-            .padding(.horizontal, 12)
-            .padding(.vertical, 8)
+            .padding(.vertical, 6)
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
