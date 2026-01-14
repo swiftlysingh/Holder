@@ -7,17 +7,22 @@
 
 import SwiftUI
 import LocalAuthentication
+
+#if os(iOS)
 import PhotosUI
+#endif
 
 class CardViewModel: ObservableObject {
 
 	@Published var card : CardData
 	@Published var isEditing = false
-	@Published var cardImage : UIImage?
+	@Published var cardImage: PlatformImage?
 	@AppStorage("auth") var isAuthenticated = false
 	@Published var isShowingScanner = false
 
+	#if os(iOS)
 	@Published var selectedItem: PhotosPickerItem?
+	#endif
 
 	var isAddNewFlow : Bool
 	var addUpdateCard: (CardData) -> Void
@@ -56,13 +61,12 @@ class CardViewModel: ObservableObject {
 	}
 
 	func copyAction(with value: String) {
-		let generator = UINotificationFeedbackGenerator()
 		guard !value.isEmpty else {
-			generator.notificationOccurred(.error)
+			HapticService.trigger(.error)
 			return
 		}
 		print("log: Copied With item: \(value)")
-		UIPasteboard.general.string = value
-		generator.notificationOccurred(.success)
+		PasteboardService.copy(value)
+		HapticService.trigger(.success)
 	}
 }

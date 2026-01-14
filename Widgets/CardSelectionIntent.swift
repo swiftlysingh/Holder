@@ -72,6 +72,7 @@ struct SelectCardIntent: WidgetConfigurationIntent {
     }
 }
 
+#if os(iOS)
 // MARK: - Control Center Card Selection Intent (iOS 18+)
 
 @available(iOS 18.0, *)
@@ -88,6 +89,7 @@ struct ControlCenterCardIntent: ControlConfigurationIntent {
         self.card = card
     }
 }
+#endif
 
 // MARK: - Multiple Cards Selection Intent
 

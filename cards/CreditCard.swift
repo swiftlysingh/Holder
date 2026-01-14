@@ -13,6 +13,9 @@ import OnboardingKit
 
 @main
 struct CreditCard: App {
+    /// Shared card data store for menu bar access on macOS
+    @State private var cardDataStore = CardDataStore()
+
     private var appID: String {
         let path = Bundle.main.path(forResource: "Secrets", ofType: "plist")
         let dict = NSDictionary(contentsOfFile: path!) as? [String: AnyObject]
@@ -21,7 +24,7 @@ struct CreditCard: App {
 
     var body: some Scene {
         WindowGroup {
-            HomeView()
+            HomeView(cardDataStore: cardDataStore)
                 .task {
                     try? Tips.configure([
                         .displayFrequency(.immediate),
@@ -40,9 +43,20 @@ struct CreditCard: App {
                      )
                 )
                 .showOnboardingIfNeeded(using: .prod)
-
         }
+        #if os(macOS)
+        menuBarScene
+        #endif
     }
+
+    #if os(macOS)
+    var menuBarScene: some Scene {
+        MenuBarExtra("Holder", systemImage: "creditcard.fill") {
+            MenuBarView(cardStore: cardDataStore)
+        }
+        .menuBarExtraStyle(.window)
+    }
+    #endif
 }
 
 extension OnboardingConfiguration {
@@ -68,6 +82,7 @@ extension OnboardingConfiguration {
 
 extension CreditCard: WhatsNewCollectionProvider {
   var primaryAction: WhatsNew.PrimaryAction {
+	#if os(iOS)
 	WhatsNew.PrimaryAction(
 	  title: "Dive In 🚀",
 	  backgroundColor: .accentColor,
@@ -77,6 +92,16 @@ extension CreditCard: WhatsNewCollectionProvider {
 		print("Ready to explore the new features!")
 	  }
 	)
+	#else
+	WhatsNew.PrimaryAction(
+	  title: "Dive In 🚀",
+	  backgroundColor: .accentColor,
+	  foregroundColor: .white,
+	  onDismiss: {
+		print("Ready to explore the new features!")
+	  }
+	)
+	#endif
   }
 
   var title: WhatsNew.Title {

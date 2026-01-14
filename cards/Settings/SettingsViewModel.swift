@@ -6,9 +6,12 @@
 //
 
 import Settings
-import UIKit
 import SwiftUI
 import StoreKit
+
+#if os(iOS)
+import UIKit
+#endif
 
 struct SettingsViewModel: SettingsViewModelProtocol {
     var appVersion: String {
@@ -28,7 +31,6 @@ struct SettingsViewModel: SettingsViewModelProtocol {
     }
 
     func rateTheAppAction() {
-        guard let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene else { return }
-        SKStoreReviewController.requestReview(in: windowScene)
+        ReviewService.requestReview()
     }
 }

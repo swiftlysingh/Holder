@@ -10,8 +10,11 @@ import WhatsNewKit
 import Settings
 
 struct HomeView: View {
+	@ObservedObject var model: HomeViewModel
 
-	@ObservedObject var model = HomeViewModel()
+	init(cardDataStore: CardDataStore = CardDataStore()) {
+		self.model = HomeViewModel(cardDataStore: cardDataStore)
+	}
 
 	var body: some View {
 		NavigationSplitView {

@@ -6,7 +6,13 @@
 //
 
 import SwiftUI
+import UniformTypeIdentifiers
+
+#if os(iOS)
 import PhotosUI
+#elseif os(macOS)
+import AppKit
+#endif
 
 struct CardView: View {
 	
@@ -20,8 +26,9 @@ struct CardView: View {
 			}
 	}
 
-	fileprivate func itemView(heading : String, value : Binding<String>,_ type: UIKeyboardType) -> some View {
-		return HStack{
+	#if os(iOS)
+	fileprivate func itemView(heading: String, value: Binding<String>, _ type: UIKeyboardType) -> some View {
+		return HStack {
 			Text(heading)
 				.bold()
 			Spacer()
@@ -37,7 +44,7 @@ struct CardView: View {
 					.contextMenu(menuItems: {
 						Button(action: {
 							model.copyAction(with: value.wrappedValue)
-                            UserSettings.shared.requestReview()
+							UserSettings.shared.requestReview()
 						}) {
 							Text("Copy to clipboard")
 							Image(systemName: "doc.on.doc")
@@ -45,19 +52,51 @@ struct CardView: View {
 					})
 			}
 		}
-        .if (!model.isEditing, transform: { view in
-            view.onTapGesture(count: 2, perform: {
-                model.copyAction(with: value.wrappedValue)
-            })
-        })
-    }
+		.if(!model.isEditing, transform: { view in
+			view.onTapGesture(count: 2, perform: {
+				model.copyAction(with: value.wrappedValue)
+			})
+		})
+	}
+	#else
+	fileprivate func itemView(heading: String, value: Binding<String>) -> some View {
+		return HStack {
+			Text(heading)
+				.bold()
+			Spacer()
+			if !model.isAuthenticated {
+				SecureField("", text: value)
+					.multilineTextAlignment(.trailing)
+			} else {
+				TextField("", text: value)
+					.multilineTextAlignment(.trailing)
+					.disabled(!model.isEditing)
+					.foregroundColor(model.isEditing ? .blue : .accentColor)
+					.contextMenu(menuItems: {
+						Button(action: {
+							model.copyAction(with: value.wrappedValue)
+							UserSettings.shared.requestReview()
+						}) {
+							Text("Copy to clipboard")
+							Image(systemName: "doc.on.doc")
+						}
+					})
+			}
+		}
+		.if(!model.isEditing, transform: { view in
+			view.onTapGesture(count: 2, perform: {
+				model.copyAction(with: value.wrappedValue)
+			})
+		})
+	}
+	#endif
 
 	fileprivate func getCardListView() -> some View {
 		let tip = DoubleTapTip()
 
 		return List {
 			Section {
-
+				#if os(iOS)
 				let fields: [(String, Binding<String>, UIKeyboardType)] = [
 					("Name", $model.card.name, .alphabet),
 					("Number", $model.card.number, .numbersAndPunctuation),
@@ -73,7 +112,7 @@ struct CardView: View {
 						if heading == "Number" && !model.isEditing {
 							view.popoverTip(tip, arrowEdge: .top)
 						} else if heading == "Expiration" {
-							view.onChange(of: model.card.expiration) { _ , newValue in
+							view.onChange(of: model.card.expiration) { _, newValue in
 								if newValue.count == 2 && !newValue.contains("/") {
 									model.card.expiration = newValue + "/"
 								} else if newValue.count > 5 {
@@ -83,9 +122,37 @@ struct CardView: View {
 						} else {
 							view
 						}
-
 					}
 				}
+				#else
+				let fields: [(String, Binding<String>)] = [
+					("Name", $model.card.name),
+					("Number", $model.card.number),
+					("Expiration", $model.card.expiration),
+					("Security Code", $model.card.cvv),
+					("Description", $model.card.description)
+				]
+
+				ForEach(fields, id: \.0) { heading, value in
+					if !value.wrappedValue.isEmpty || model.isEditing {
+						let view = itemView(heading: heading, value: value)
+
+						if heading == "Number" && !model.isEditing {
+							view.popoverTip(tip, arrowEdge: .top)
+						} else if heading == "Expiration" {
+							view.onChange(of: model.card.expiration) { _, newValue in
+								if newValue.count == 2 && !newValue.contains("/") {
+									model.card.expiration = newValue + "/"
+								} else if newValue.count > 5 {
+									model.card.expiration = String(newValue.prefix(5))
+								}
+							}
+						} else {
+							view
+						}
+					}
+				}
+				#endif
 
 				Group {
 				  if model.card.type != .otherCard {
@@ -110,56 +177,57 @@ struct CardView: View {
 
 			if let image = model.cardImage, model.card.type == .otherCard {
 				Section {
+					#if os(iOS)
 					Image(uiImage: image)
 						.resizable()
 						.scaledToFit()
 						.if(!model.isAuthenticated, transform: { view in
-							view
-							  .blur(radius: 10, opaque: true)
+							view.blur(radius: 10, opaque: true)
 						})
+					#else
+					Image(nsImage: image)
+						.resizable()
+						.scaledToFit()
+						.if(!model.isAuthenticated, transform: { view in
+							view.blur(radius: 10, opaque: true)
+						})
+					#endif
 				}
 			}
 
+			#if os(iOS)
 			if model.isEditing && model.card.type == .otherCard {
 				Section {
-				  PhotosPicker(selection: $model.selectedItem,
-								 matching: .images) {
-					VStack(alignment: .leading){
-						  HStack {
-							  Image(systemName: "photo")
-							  Text(model.cardImage == nil ? "Add Card Image" : "Change Card Image")
-						  }
-						  .padding(.bottom)
+					PhotosPicker(selection: $model.selectedItem, matching: .images) {
+						VStack(alignment: .leading) {
+							HStack {
+								Image(systemName: "photo")
+								Text(model.cardImage == nil ? "Add Card Image" : "Change Card Image")
+							}
+							.padding(.bottom)
 
-					  Text("Images are stored in iCloud storage instead of more secure Keychain, please be mindful while adding sensitive images")
-						.font(.footnote)
-						.foregroundStyle(.gray)
+							Text("Images are stored in iCloud storage instead of more secure Keychain, please be mindful while adding sensitive images")
+								.font(.footnote)
+								.foregroundStyle(.gray)
 						}
 					}
-								 .onChange(of: model.selectedItem) {
-								   Task {
-									 if let data = try? await model.selectedItem?.loadTransferable(
-									  type: Data.self
-									 ) {
-									   if let uiImage = UIImage(data: data) {
-										 model.cardImage = uiImage
-										 print(ICloudDataManager.shared
-										   .saveImage(
-											uiImage,
-											for: model.card.id
-										   ))
-									   } else {
-										 print("Failed")
-									   }
-									 }
-								   }
-								 }
+					.onChange(of: model.selectedItem) {
+						Task {
+							if let data = try? await model.selectedItem?.loadTransferable(type: Data.self) {
+								if let uiImage = UIImage(data: data) {
+									model.cardImage = uiImage
+									print(ICloudDataManager.shared.saveImage(uiImage, for: model.card.id))
+								} else {
+									print("Failed")
+								}
+							}
+						}
+					}
 
 					if model.cardImage != nil {
 						Button(role: .destructive) {
 							model.cardImage = nil
-							ICloudDataManager.shared
-								.deleteImage(for: model.card.id)
+							ICloudDataManager.shared.deleteImage(for: model.card.id)
 						} label: {
 							HStack {
 								Image(systemName: "trash")
@@ -169,6 +237,40 @@ struct CardView: View {
 					}
 				}
 			}
+			#else
+			if model.isEditing && model.card.type == .otherCard {
+				Section {
+					Button {
+						selectImageFile()
+					} label: {
+						VStack(alignment: .leading) {
+							HStack {
+								Image(systemName: "photo")
+								Text(model.cardImage == nil ? "Add Card Image" : "Change Card Image")
+							}
+							.padding(.bottom)
+
+							Text("Images are stored in iCloud storage instead of more secure Keychain, please be mindful while adding sensitive images")
+								.font(.footnote)
+								.foregroundStyle(.gray)
+						}
+					}
+					.buttonStyle(.plain)
+
+					if model.cardImage != nil {
+						Button(role: .destructive) {
+							model.cardImage = nil
+							ICloudDataManager.shared.deleteImage(for: model.card.id)
+						} label: {
+							HStack {
+								Image(systemName: "trash")
+								Text("Remove Image")
+							}
+						}
+					}
+				}
+			}
+			#endif
 		}
 		.toolbar {
 			ShareLink(item: model.card.toShareString()) {
@@ -185,9 +287,10 @@ struct CardView: View {
 			}
 		}
 		.disabled(!$model.isAuthenticated.wrappedValue)
+		#if os(iOS)
 		.toolbar {
 			if model.card.number.isEmpty {
-				ToolbarItem(placement: .topBarLeading){
+				ToolbarItem(placement: .topBarLeading) {
 					Button(action: {
 						model.isShowingScanner = true
 					}, label: {
@@ -196,12 +299,9 @@ struct CardView: View {
 					.if(!model.isAddNewFlow, transform: { view in
 						view.hidden()
 					})
-
-					// .screen was causing issues with camera session not closing
 					.fullScreenCover(isPresented: $model.isShowingScanner) {
 						SharkCardScanViewRepresentable(
 							noPermissionAction: {
-								//TODO: Handle no permission case
 								print("Error No Permission")
 							},
 							successHandler: { response in
@@ -210,7 +310,7 @@ struct CardView: View {
 									model.card.name = response.holder ?? ""
 									model.card.expiration = response.expiry ?? ""
 									model.isShowingScanner = false
-									print(response.number,response.holder as Any,response.expiry as Any)
+									print(response.number, response.holder as Any, response.expiry as Any)
 								}
 							}
 						)
@@ -218,6 +318,7 @@ struct CardView: View {
 				}
 			}
 		}
+		#endif
 		.onChange(of: scenePhase) {
 			if scenePhase == .background && UserSettings.shared.isAuthEnabled {
 				DispatchQueue.main.asyncAfter(deadline: .now() + .seconds(UserSettings.shared.authTimeout)) {
@@ -231,4 +332,22 @@ struct CardView: View {
 			model.$isAuthenticated.wrappedValue = false
 		})
 	}
+
+	#if os(macOS)
+	private func selectImageFile() {
+		let panel = NSOpenPanel()
+		panel.allowedContentTypes = [.image]
+		panel.allowsMultipleSelection = false
+		panel.canChooseDirectories = false
+		panel.canCreateDirectories = false
+		panel.title = "Select Card Image"
+
+		if panel.runModal() == .OK, let url = panel.url {
+			if let image = NSImage(contentsOf: url) {
+				model.cardImage = image
+				_ = ICloudDataManager.shared.saveImage(image, for: model.card.id)
+			}
+		}
+	}
+	#endif
 }

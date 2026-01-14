@@ -15,7 +15,9 @@ struct AppSettingsView: View {
                 Text("Timeout (in seconds)")
                 Spacer()
                 TextField("", value: UserSettings.shared.$authTimeout, format: .number)
+                    #if os(iOS)
                     .keyboardType(.numberPad)
+                    #endif
                     .fixedSize()
             }
             VStack(alignment: .leading) {

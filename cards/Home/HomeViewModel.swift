@@ -7,12 +7,16 @@
 
 import SwiftUI
 
-class HomeViewModel : ObservableObject {
+class HomeViewModel: ObservableObject {
 
 	@Published var addingType: CardType?
 	@Published var selectedCard: CardData?
-	@Bindable var cardDataStore = CardDataStore()
+	@Bindable var cardDataStore: CardDataStore
 	@AppStorage("isFirstLaunch") var isFirstLaunch = true
+
+	init(cardDataStore: CardDataStore = CardDataStore()) {
+		self.cardDataStore = cardDataStore
+	}
 
 	var appName: String? {
 		Bundle.main.object(forInfoDictionaryKey: "CFBundleDisplayName") as? String
