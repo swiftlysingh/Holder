@@ -31,10 +31,7 @@
 		EED86E542F0BC2160063097F /* WidgetKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = EED86E532F0BC2160063097F /* WidgetKit.framework */; };
 		EED86E562F0BC2170063097F /* SwiftUI.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = EED86E552F0BC2170063097F /* SwiftUI.framework */; };
 		EED86E612F0BC2190063097F /* WidgetsExtension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = EED86E512F0BC2160063097F /* WidgetsExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
-		EEFAB0972BDD84E30017DB23 /* Boilerplate in Frameworks */ = {isa = PBXBuildFile; productRef = EEFAB0962BDD84E30017DB23 /* Boilerplate */; };
-		FF584F492BE434D40036F3DD /* Boilerplate in Frameworks */ = {isa = PBXBuildFile; productRef = FF584F482BE434D40036F3DD /* Boilerplate */; };
-		FF584F4B2BE434D40036F3DD /* Settings in Frameworks */ = {isa = PBXBuildFile; productRef = FF584F4A2BE434D40036F3DD /* Settings */; };
-		FF9212BE2BE57A50005DF48E /* Boilerplate in Frameworks */ = {isa = PBXBuildFile; productRef = FF9212BD2BE57A50005DF48E /* Boilerplate */; };
+		EE8ADF0B2F11A0A1C5000002 /* Analytics in Frameworks */ = {isa = PBXBuildFile; productRef = EE8ADF0A2F11A0A1C5000001 /* Analytics */; };
 		FF9212C02BE57A50005DF48E /* Settings in Frameworks */ = {isa = PBXBuildFile; productRef = FF9212BF2BE57A50005DF48E /* Settings */; };
 		FF9452F92BDE314E00731D8B /* Secrets.plist in Resources */ = {isa = PBXBuildFile; fileRef = FF9452F82BDE314E00731D8B /* Secrets.plist */; };
 /* End PBXBuildFile section */
@@ -112,12 +109,9 @@
 			files = (
 				EE4CBEA82CEA98E900635DFC /* OnboardingKit in Frameworks */,
 				FF9212C02BE57A50005DF48E /* Settings in Frameworks */,
+				EE8ADF0B2F11A0A1C5000002 /* Analytics in Frameworks */,
 				EEABD0D12B6D8AD600FF34E6 /* WhatsNewKit in Frameworks */,
-				FF584F4B2BE434D40036F3DD /* Settings in Frameworks */,
-				FF9212BE2BE57A50005DF48E /* Boilerplate in Frameworks */,
 				EE3406CE2B6D0FF8007E7DD2 /* SharkCardScan in Frameworks */,
-				FF584F492BE434D40036F3DD /* Boilerplate in Frameworks */,
-				EEFAB0972BDD84E30017DB23 /* Boilerplate in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -258,12 +252,9 @@
 			packageProductDependencies = (
 				EE3406CD2B6D0FF8007E7DD2 /* SharkCardScan */,
 				EEABD0D02B6D8AD600FF34E6 /* WhatsNewKit */,
-				EEFAB0962BDD84E30017DB23 /* Boilerplate */,
-				FF584F482BE434D40036F3DD /* Boilerplate */,
-				FF584F4A2BE434D40036F3DD /* Settings */,
-				FF9212BD2BE57A50005DF48E /* Boilerplate */,
 				FF9212BF2BE57A50005DF48E /* Settings */,
 				EE4CBEA72CEA98E900635DFC /* OnboardingKit */,
+				EE8ADF0A2F11A0A1C5000001 /* Analytics */,
 			);
 			productName = "credit-card";
 			productReference = EEBB52E62B238D6600035B92 /* Holder: A Secure Card Vault.app */;
@@ -321,7 +312,7 @@
 			packageReferences = (
 				EE3406CC2B6D0FF8007E7DD2 /* XCRemoteSwiftPackageReference "ios-card-scan" */,
 				EEABD0CF2B6D8AD600FF34E6 /* XCRemoteSwiftPackageReference "WhatsNewKit" */,
-				FF9212BC2BE57A50005DF48E /* XCRemoteSwiftPackageReference "SwiftBoilerplate" */,
+				FF9212BC2BE57A50005DF48E /* XCRemoteSwiftPackageReference "SinghDevelopmentKit" */,
 				EE4CBEA62CEA98E900635DFC /* XCRemoteSwiftPackageReference "OnboardingKit" */,
 			);
 			productRefGroup = EEBB52E72B238D6600035B92 /* Products */;
@@ -841,12 +832,12 @@
 				minimumVersion = 2.2.0;
 			};
 		};
-		FF9212BC2BE57A50005DF48E /* XCRemoteSwiftPackageReference "SwiftBoilerplate" */ = {
+		FF9212BC2BE57A50005DF48E /* XCRemoteSwiftPackageReference "SinghDevelopmentKit" */ = {
 			isa = XCRemoteSwiftPackageReference;
-			repositoryURL = "git@github.com:swiftlysingh/SwiftBoilerplate.git";
+			repositoryURL = "https://github.com/swiftlysingh/SinghDevelopmentKit.git";
 			requirement = {
 				kind = upToNextMajorVersion;
-				minimumVersion = 1.0.0;
+				minimumVersion = 1.1.1;
 			};
 		};
 /* End XCRemoteSwiftPackageReference section */
@@ -867,27 +858,15 @@
 			package = EEABD0CF2B6D8AD600FF34E6 /* XCRemoteSwiftPackageReference "WhatsNewKit" */;
 			productName = WhatsNewKit;
 		};
-		EEFAB0962BDD84E30017DB23 /* Boilerplate */ = {
-			isa = XCSwiftPackageProductDependency;
-			productName = Boilerplate;
-		};
-		FF584F482BE434D40036F3DD /* Boilerplate */ = {
-			isa = XCSwiftPackageProductDependency;
-			productName = Boilerplate;
-		};
-		FF584F4A2BE434D40036F3DD /* Settings */ = {
-			isa = XCSwiftPackageProductDependency;
-			productName = Settings;
-		};
-		FF9212BD2BE57A50005DF48E /* Boilerplate */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = FF9212BC2BE57A50005DF48E /* XCRemoteSwiftPackageReference "SwiftBoilerplate" */;
-			productName = Boilerplate;
-		};
 		FF9212BF2BE57A50005DF48E /* Settings */ = {
 			isa = XCSwiftPackageProductDependency;
-			package = FF9212BC2BE57A50005DF48E /* XCRemoteSwiftPackageReference "SwiftBoilerplate" */;
+			package = FF9212BC2BE57A50005DF48E /* XCRemoteSwiftPackageReference "SinghDevelopmentKit" */;
 			productName = Settings;
+		};
+		EE8ADF0A2F11A0A1C5000001 /* Analytics */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = FF9212BC2BE57A50005DF48E /* XCRemoteSwiftPackageReference "SinghDevelopmentKit" */;
+			productName = Analytics;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};
