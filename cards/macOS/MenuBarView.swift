@@ -39,7 +39,7 @@ struct MenuBarView: View {
                         }
                     }
                 }
-                .frame(maxHeight: 300)
+                .frame(maxHeight: 400)
             }
 
             Divider()
@@ -61,7 +61,7 @@ struct MenuBarView: View {
             .buttonStyle(.plain)
             .keyboardShortcut("o", modifiers: .command)
         }
-        .frame(width: 280)
+        .frame(width: 300)
     }
 
     private var allCards: [CardData] {
@@ -70,7 +70,6 @@ struct MenuBarView: View {
 
     private func openMainApp() {
         NSApp.activate(ignoringOtherApps: true)
-        // Open or bring forward the main window
         if let window = NSApp.windows.first(where: { $0.canBecomeMain }) {
             window.makeKeyAndOrderFront(nil)
         }
@@ -79,30 +78,136 @@ struct MenuBarView: View {
 
 struct MenuBarCardRow: View {
     let card: CardData
-    @State private var copied = false
+    @State private var copiedField: String?
+    @State private var isExpanded = false
 
     var body: some View {
-        Button {
-            copyCardNumber()
-        } label: {
-            HStack(spacing: 12) {
-                VStack(alignment: .leading, spacing: 2) {
-                    Text(card.description.isEmpty ? card.name : card.description)
-                        .font(.headline)
-                        .foregroundStyle(.primary)
-                        .lineLimit(1)
-                    Text(maskedNumber)
-                        .font(.system(.subheadline, design: .monospaced))
-                        .foregroundStyle(.secondary)
+        VStack(alignment: .leading, spacing: 0) {
+            // Main card header - tap to expand/collapse
+            Button {
+                withAnimation(.easeInOut(duration: 0.2)) {
+                    isExpanded.toggle()
                 }
-                Spacer()
-                if copied {
-                    Image(systemName: "checkmark.circle.fill")
-                        .foregroundStyle(.green)
-                } else {
-                    Text(card.type.rawValue)
+            } label: {
+                HStack(spacing: 10) {
+                    // Network logo
+                    if card.type != .otherCard {
+                        Image(card.network.rawValue)
+                            .resizable()
+                            .scaledToFit()
+                            .frame(width: 32, height: 24)
+                    } else {
+                        Image(systemName: "creditcard.fill")
+                            .font(.title3)
+                            .foregroundStyle(.secondary)
+                            .frame(width: 32)
+                    }
+
+                    // Card name and masked number
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text(cardDisplayName)
+                            .font(.headline)
+                            .foregroundStyle(.primary)
+                            .lineLimit(1)
+                        Text(maskedNumber)
+                            .font(.system(.caption, design: .monospaced))
+                            .foregroundStyle(.secondary)
+                    }
+
+                    Spacer()
+
+                    // Expand indicator
+                    Image(systemName: isExpanded ? "chevron.up" : "chevron.down")
                         .font(.caption)
                         .foregroundStyle(.tertiary)
+                }
+                .padding(.horizontal, 12)
+                .padding(.vertical, 10)
+                .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+
+            // Expanded details
+            if isExpanded {
+                VStack(spacing: 0) {
+                    // Card Number
+                    copyableRow(
+                        icon: "number",
+                        label: "Number",
+                        value: formatCardNumber(card.number),
+                        field: "number",
+                        actualValue: card.number
+                    )
+
+                    // Expiration
+                    if !card.expiration.isEmpty {
+                        Divider().padding(.leading, 44)
+                        copyableRow(
+                            icon: "calendar",
+                            label: "Expires",
+                            value: card.expiration,
+                            field: "exp",
+                            actualValue: card.expiration
+                        )
+                    }
+
+                    // CVV
+                    if !card.cvv.isEmpty {
+                        Divider().padding(.leading, 44)
+                        copyableRow(
+                            icon: "lock.fill",
+                            label: "CVV",
+                            value: "•••",
+                            field: "cvv",
+                            actualValue: card.cvv
+                        )
+                    }
+
+                    // Name on card
+                    if !card.name.isEmpty {
+                        Divider().padding(.leading, 44)
+                        copyableRow(
+                            icon: "person.fill",
+                            label: "Name",
+                            value: card.name,
+                            field: "name",
+                            actualValue: card.name
+                        )
+                    }
+                }
+                .background(Color(nsColor: .controlBackgroundColor).opacity(0.5))
+            }
+        }
+    }
+
+    @ViewBuilder
+    private func copyableRow(icon: String, label: String, value: String, field: String, actualValue: String) -> some View {
+        Button {
+            copyToClipboard(actualValue, field: field)
+        } label: {
+            HStack(spacing: 10) {
+                Image(systemName: icon)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .frame(width: 32)
+
+                Text(label)
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+
+                Spacer()
+
+                if copiedField == field {
+                    HStack(spacing: 4) {
+                        Image(systemName: "checkmark")
+                        Text("Copied!")
+                    }
+                    .font(.caption)
+                    .foregroundStyle(.green)
+                } else {
+                    Text(value)
+                        .font(.system(.subheadline, design: .monospaced))
+                        .foregroundStyle(.primary)
                 }
             }
             .padding(.horizontal, 12)
@@ -112,19 +217,43 @@ struct MenuBarCardRow: View {
         .buttonStyle(.plain)
     }
 
+    private var cardDisplayName: String {
+        if !card.description.isEmpty {
+            return card.description
+        } else if !card.name.isEmpty {
+            return card.name
+        } else {
+            return card.type.rawValue
+        }
+    }
+
     private var maskedNumber: String {
         let cleanNumber = card.number.replacingOccurrences(of: " ", with: "")
         if cleanNumber.count >= 4 {
             return "**** " + String(cleanNumber.suffix(4))
         }
-        return card.number
+        return card.number.isEmpty ? "No number" : card.number
     }
 
-    private func copyCardNumber() {
-        PasteboardService.copy(card.number)
-        copied = true
+    private func formatCardNumber(_ number: String) -> String {
+        let clean = number.replacingOccurrences(of: " ", with: "")
+        var result = ""
+        for (index, char) in clean.enumerated() {
+            if index > 0 && index % 4 == 0 {
+                result += " "
+            }
+            result.append(char)
+        }
+        return result
+    }
+
+    private func copyToClipboard(_ value: String, field: String) {
+        PasteboardService.copy(value)
+        copiedField = field
         DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
-            copied = false
+            if copiedField == field {
+                copiedField = nil
+            }
         }
     }
 }

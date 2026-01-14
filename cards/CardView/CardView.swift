@@ -445,9 +445,10 @@ struct CardView: View {
 				// Top row: Network logo and type
 				HStack {
 					Image(model.card.network.rawValue)
+						.renderingMode(.original)
 						.resizable()
 						.scaledToFit()
-						.frame(height: 32)
+						.frame(height: 36)
 					Spacer()
 					Text(model.card.type.rawValue)
 						.font(.caption)
