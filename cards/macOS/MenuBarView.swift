@@ -8,61 +8,129 @@
 #if os(macOS)
 import SwiftUI
 import AppKit
+import LocalAuthentication
 
 struct MenuBarView: View {
     var cardStore: CardDataStore
+    @State private var isAuthenticated = false
+    @State private var authError: String?
+
+    // Check if auth is required based on settings
+    private var requiresAuth: Bool {
+        UserSettings.shared.isAuthEnabled
+    }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
             if allCards.isEmpty {
-                VStack(spacing: 8) {
-                    Image(systemName: "creditcard")
-                        .font(.largeTitle)
-                        .foregroundStyle(.secondary)
-                    Text("No cards saved")
-                        .foregroundStyle(.secondary)
-                    Text("Open Holder to add cards")
-                        .font(.caption)
-                        .foregroundStyle(.tertiary)
-                }
-                .frame(maxWidth: .infinity)
-                .padding(.vertical, 20)
+                emptyStateView
+            } else if requiresAuth && !isAuthenticated {
+                lockedStateView
             } else {
-                ScrollView {
-                    LazyVStack(spacing: 0) {
-                        ForEach(allCards) { card in
-                            MenuBarCardRow(card: card)
-                            if card.id != allCards.last?.id {
-                                Divider()
-                                    .padding(.horizontal, 12)
-                            }
-                        }
-                    }
-                }
-                .frame(maxHeight: 400)
+                cardListView
             }
 
             Divider()
 
-            Button {
-                openMainApp()
-            } label: {
-                HStack {
-                    Image(systemName: "rectangle.stack")
-                    Text("Open Holder")
-                    Spacer()
-                    Text("⌘O")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                }
-                .padding(.horizontal, 12)
-                .padding(.vertical, 8)
-            }
-            .buttonStyle(.plain)
-            .keyboardShortcut("o", modifiers: .command)
+            openHolderButton
         }
         .frame(width: 320)
+        .onAppear {
+            // Auto-authenticate if auth is disabled
+            if !requiresAuth {
+                isAuthenticated = true
+            }
+        }
     }
+
+    // MARK: - Subviews
+
+    private var emptyStateView: some View {
+        VStack(spacing: 8) {
+            Image(systemName: "creditcard")
+                .font(.largeTitle)
+                .foregroundStyle(.secondary)
+            Text("No cards saved")
+                .foregroundStyle(.secondary)
+            Text("Open Holder to add cards")
+                .font(.caption)
+                .foregroundStyle(.tertiary)
+        }
+        .frame(maxWidth: .infinity)
+        .padding(.vertical, 20)
+    }
+
+    private var lockedStateView: some View {
+        VStack(spacing: 16) {
+            Image(systemName: "lock.fill")
+                .font(.system(size: 40))
+                .foregroundStyle(.secondary)
+
+            Text("Cards Locked")
+                .font(.headline)
+
+            Text("Authenticate to view your cards")
+                .font(.caption)
+                .foregroundStyle(.secondary)
+
+            Button {
+                authenticate()
+            } label: {
+                HStack {
+                    Image(systemName: "touchid")
+                    Text("Unlock with Touch ID")
+                }
+                .frame(maxWidth: .infinity)
+            }
+            .buttonStyle(.borderedProminent)
+            .controlSize(.large)
+
+            if let error = authError {
+                Text(error)
+                    .font(.caption)
+                    .foregroundStyle(.red)
+            }
+        }
+        .frame(maxWidth: .infinity)
+        .padding(.vertical, 30)
+        .padding(.horizontal, 20)
+    }
+
+    private var cardListView: some View {
+        ScrollView {
+            LazyVStack(spacing: 0) {
+                ForEach(allCards) { card in
+                    MenuBarCardRow(card: card, isAuthenticated: isAuthenticated)
+                    if card.id != allCards.last?.id {
+                        Divider()
+                            .padding(.horizontal, 12)
+                    }
+                }
+            }
+        }
+        .frame(maxHeight: 400)
+    }
+
+    private var openHolderButton: some View {
+        Button {
+            openMainApp()
+        } label: {
+            HStack {
+                Image(systemName: "rectangle.stack")
+                Text("Open Holder")
+                Spacer()
+                Text("⌘O")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+            .padding(.horizontal, 12)
+            .padding(.vertical, 8)
+        }
+        .buttonStyle(.plain)
+        .keyboardShortcut("o", modifiers: .command)
+    }
+
+    // MARK: - Helpers
 
     private var allCards: [CardData] {
         CardType.allCases.flatMap { cardStore.cardsByType[$0] ?? [] }
@@ -74,10 +142,48 @@ struct MenuBarView: View {
             window.makeKeyAndOrderFront(nil)
         }
     }
+
+    private func authenticate() {
+        let context = LAContext()
+        var error: NSError?
+
+        // Check if biometric authentication is available
+        if context.canEvaluatePolicy(.deviceOwnerAuthenticationWithBiometrics, error: &error) {
+            let reason = "Authenticate to access your cards"
+            context.evaluatePolicy(.deviceOwnerAuthenticationWithBiometrics, localizedReason: reason) { success, authenticationError in
+                Task { @MainActor in
+                    if success {
+                        isAuthenticated = true
+                        authError = nil
+                    } else {
+                        authError = authenticationError?.localizedDescription ?? "Authentication failed"
+                    }
+                }
+            }
+        } else {
+            // Fallback to password if biometrics unavailable
+            if context.canEvaluatePolicy(.deviceOwnerAuthentication, error: &error) {
+                let reason = "Authenticate to access your cards"
+                context.evaluatePolicy(.deviceOwnerAuthentication, localizedReason: reason) { success, authenticationError in
+                    Task { @MainActor in
+                        if success {
+                            isAuthenticated = true
+                            authError = nil
+                        } else {
+                            authError = authenticationError?.localizedDescription ?? "Authentication failed"
+                        }
+                    }
+                }
+            } else {
+                authError = error?.localizedDescription ?? "Authentication not available"
+            }
+        }
+    }
 }
 
 struct MenuBarCardRow: View {
     let card: CardData
+    let isAuthenticated: Bool
     @State private var copiedField: String?
     @State private var isExpanded = false
 
@@ -129,9 +235,10 @@ struct MenuBarCardRow: View {
                         copyableDetailRow(
                             icon: "number",
                             label: "Number",
-                            displayValue: formatCardNumber(card.number),
+                            displayValue: isAuthenticated ? formatCardNumber(card.number) : "•••• •••• •••• ••••",
                             copyValue: card.number,
-                            field: "number"
+                            field: "number",
+                            isSensitive: true
                         )
                     }
 
@@ -140,9 +247,10 @@ struct MenuBarCardRow: View {
                         copyableDetailRow(
                             icon: "calendar",
                             label: "Expires",
-                            displayValue: card.expiration,
+                            displayValue: isAuthenticated ? card.expiration : "••/••",
                             copyValue: card.expiration,
-                            field: "exp"
+                            field: "exp",
+                            isSensitive: true
                         )
                     }
 
@@ -153,22 +261,24 @@ struct MenuBarCardRow: View {
                             label: "CVV",
                             displayValue: "•••",
                             copyValue: card.cvv,
-                            field: "cvv"
+                            field: "cvv",
+                            isSensitive: true
                         )
                     }
 
-                    // Name on card
+                    // Name on card (not sensitive)
                     if !card.name.isEmpty {
                         copyableDetailRow(
                             icon: "person.fill",
                             label: "Name",
                             displayValue: card.name,
                             copyValue: card.name,
-                            field: "name"
+                            field: "name",
+                            isSensitive: false
                         )
                     }
                 }
-                .padding(.leading, 60) // Align with card name (12 padding + 36 icon + 12 spacing)
+                .padding(.leading, 60)
                 .padding(.trailing, 12)
                 .padding(.bottom, 8)
                 .background(Color.primary.opacity(0.03))
@@ -178,14 +288,12 @@ struct MenuBarCardRow: View {
 
     @ViewBuilder
     private var networkImage: some View {
-        // Check if we have a valid network that's not "Unknown"
         if card.type != .otherCard && card.network != .other {
             Image(card.network.rawValue)
                 .renderingMode(.original)
                 .resizable()
                 .scaledToFit()
         } else {
-            // Fallback to system icon for unknown networks or other card types
             Image(systemName: "creditcard.fill")
                 .font(.system(size: 18))
                 .foregroundStyle(.secondary)
@@ -193,18 +301,19 @@ struct MenuBarCardRow: View {
     }
 
     @ViewBuilder
-    private func copyableDetailRow(icon: String, label: String, displayValue: String, copyValue: String, field: String) -> some View {
+    private func copyableDetailRow(icon: String, label: String, displayValue: String, copyValue: String, field: String, isSensitive: Bool) -> some View {
         Button {
-            copyToClipboard(copyValue, field: field)
+            // Only allow copy if authenticated or field is not sensitive
+            if isAuthenticated || !isSensitive {
+                copyToClipboard(copyValue, field: field)
+            }
         } label: {
             HStack(spacing: 0) {
-                // Icon
                 Image(systemName: icon)
                     .font(.system(size: 11))
                     .foregroundStyle(.tertiary)
                     .frame(width: iconWidth, alignment: .leading)
 
-                // Label
                 Text(label)
                     .font(.system(size: 12))
                     .foregroundStyle(.secondary)
@@ -212,7 +321,6 @@ struct MenuBarCardRow: View {
 
                 Spacer()
 
-                // Value or Copied indicator
                 if copiedField == field {
                     HStack(spacing: 4) {
                         Image(systemName: "checkmark")
@@ -231,6 +339,7 @@ struct MenuBarCardRow: View {
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
+        .disabled(isSensitive && !isAuthenticated)
     }
 
     private var cardDisplayName: String {
