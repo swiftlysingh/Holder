@@ -81,7 +81,7 @@
 		EE8ADBEE2B66A5B600F0DC29 /* HomeViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeViewModel.swift; sourceTree = "<group>"; };
 		EE8ADF012F1100010000A1C1 /* ArchivedCardsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ArchivedCardsView.swift; sourceTree = "<group>"; };
 		EE960C4E2B4AC00B00B67805 /* CardDataStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CardDataStore.swift; sourceTree = "<group>"; };
-		EEBB52E62B238D6600035B92 /* Holder: A Secure Card Vault.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "Holder: A Secure Card Vault.app"; sourceTree = BUILT_PRODUCTS_DIR; };
+		EEBB52E62B238D6600035B92 /* Holder.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "Holder.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 		EEBB52E92B238D6600035B92 /* CreditCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CreditCard.swift; sourceTree = "<group>"; };
 		EEBB52EB2B238D6600035B92 /* HomeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeView.swift; sourceTree = "<group>"; };
 		EEBB52ED2B238D6800035B92 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
@@ -189,7 +189,7 @@
 		EEBB52E72B238D6600035B92 /* Products */ = {
 			isa = PBXGroup;
 			children = (
-				EEBB52E62B238D6600035B92 /* Holder: A Secure Card Vault.app */,
+				EEBB52E62B238D6600035B92 /* Holder.app */,
 				EED86E512F0BC2160063097F /* WidgetsExtension.appex */,
 			);
 			name = Products;
@@ -288,7 +288,7 @@
 				EE8ADF0A2F11A0A1C5000001 /* Analytics */,
 			);
 			productName = "credit-card";
-			productReference = EEBB52E62B238D6600035B92 /* Holder: A Secure Card Vault.app */;
+			productReference = EEBB52E62B238D6600035B92 /* Holder.app */;
 			productType = "com.apple.product-type.application";
 		};
 		EED86E502F0BC2160063097F /* WidgetsExtension */ = {
@@ -507,7 +507,7 @@
 				);
 				MARKETING_VERSION = 2.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.swiftlysingh.cards.beta;
-				PRODUCT_NAME = "Holder: A Secure Card Vault";
+				PRODUCT_NAME = "Holder";
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator macosx xros xrsimulator";
 				MACOSX_DEPLOYMENT_TARGET = 14.0;
 				SUPPORTS_MACCATALYST = NO;
@@ -665,7 +665,7 @@
 				);
 				MARKETING_VERSION = 2.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.swiftlysingh.cards.debug;
-				PRODUCT_NAME = "Holder: A Secure Card Vault";
+				PRODUCT_NAME = "Holder";
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator macosx xros xrsimulator";
 				MACOSX_DEPLOYMENT_TARGET = 14.0;
 				SUPPORTS_MACCATALYST = NO;
@@ -704,7 +704,7 @@
 				);
 				MARKETING_VERSION = 2.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.swiftlysingh.cards;
-				PRODUCT_NAME = "Holder: A Secure Card Vault";
+				PRODUCT_NAME = "Holder";
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator macosx xros xrsimulator";
 				MACOSX_DEPLOYMENT_TARGET = 14.0;
 				SUPPORTS_MACCATALYST = NO;
