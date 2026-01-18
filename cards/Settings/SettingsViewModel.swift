@@ -25,6 +25,10 @@ struct SettingsViewModel: SettingsViewModelProtocol {
         "https://github.com/swiftlysingh/holder/"
     }
 
+    var linesOfCode: Int {
+        2200
+    }
+
     @ViewBuilder var appSettings: some View {
         AppSettingsView()
     }

@@ -10,9 +10,37 @@ import TipKit
 import WhatsNewKit
 import Analytics
 import OnboardingKit
+import Settings
+#if os(macOS)
+import AppKit
+#endif
+
+#if os(macOS)
+class AppDelegate: NSObject, NSApplicationDelegate {
+    func applicationShouldTerminateAfterLastWindowClosed(_ sender: NSApplication) -> Bool {
+        // If "Keep in Menu Bar" is enabled, don't quit when window closes
+        if UserSettings.shared.keepInMenuBar {
+            // Hide from dock but keep running in menu bar
+            NSApp.setActivationPolicy(.accessory)
+            return false
+        }
+        return true
+    }
+
+    func applicationShouldHandleReopen(_ sender: NSApplication, hasVisibleWindows flag: Bool) -> Bool {
+        // When clicking dock icon or reopening, show in dock again
+        NSApp.setActivationPolicy(.regular)
+        return true
+    }
+}
+#endif
 
 @main
 struct CreditCard: App {
+    #if os(macOS)
+    @NSApplicationDelegateAdaptor(AppDelegate.self) var appDelegate
+    #endif
+
     /// Shared card data store for menu bar access on macOS
     @State private var cardDataStore = CardDataStore()
 
@@ -46,6 +74,7 @@ struct CreditCard: App {
         }
         #if os(macOS)
         menuBarScene
+        settingsScene
         #endif
     }
 
@@ -55,6 +84,13 @@ struct CreditCard: App {
             MenuBarView(cardStore: cardDataStore)
         }
         .menuBarExtraStyle(.window)
+    }
+
+    var settingsScene: some Scene {
+        SwiftUI.Settings {
+            SettingsView(model: SettingsViewModel())
+                .frame(width: 450, height: 500)
+        }
     }
     #endif
 }

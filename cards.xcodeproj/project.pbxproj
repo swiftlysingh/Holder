@@ -7,16 +7,16 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		EE1D3E902B66AE66009733A5 /* Tip.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE1D3E8F2B66AE66009733A5 /* Tip.swift */; };
-		EE1D3E922B66AE83009733A5 /* CardViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE1D3E912B66AE83009733A5 /* CardViewModel.swift */; };
-		EE1D3E982B69379E009733A5 /* SettingsViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE1D3E972B69379E009733A5 /* SettingsViewModel.swift */; };
-		EE1D3E9D2B6AC7BC009733A5 /* SharkCardScanViewRepresentable.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE1D3E9C2B6AC7BC009733A5 /* SharkCardScanViewRepresentable.swift */; };
 		AA0000062F0BC0000000002A /* PlatformTypes.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000012F0BC0000000001A /* PlatformTypes.swift */; };
 		AA0000072F0BC0000000002B /* PasteboardService.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000022F0BC0000000001B /* PasteboardService.swift */; };
 		AA0000082F0BC0000000002C /* HapticService.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000032F0BC0000000001C /* HapticService.swift */; };
 		AA0000092F0BC0000000002D /* ReviewService.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000042F0BC0000000001D /* ReviewService.swift */; };
-		AA00000A2F0BC0000000002E /* MenuBarView.swift in Sources */ = {isa = PBXBuildFile; platformFilters = (macos, ); fileRef = AA0000052F0BC0000000001E /* MenuBarView.swift */; };
-		EE3406CE2B6D0FF8007E7DD2 /* SharkCardScan in Frameworks */ = {isa = PBXBuildFile; platformFilters = (ios, ); productRef = EE3406CD2B6D0FF8007E7DD2 /* SharkCardScan */; };
+		AA00000A2F0BC0000000002E /* MenuBarView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000052F0BC0000000001E /* MenuBarView.swift */; platformFilters = (macos, ); };
+		EE1D3E902B66AE66009733A5 /* Tip.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE1D3E8F2B66AE66009733A5 /* Tip.swift */; };
+		EE1D3E922B66AE83009733A5 /* CardViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE1D3E912B66AE83009733A5 /* CardViewModel.swift */; };
+		EE1D3E982B69379E009733A5 /* SettingsViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE1D3E972B69379E009733A5 /* SettingsViewModel.swift */; };
+		EE1D3E9D2B6AC7BC009733A5 /* SharkCardScanViewRepresentable.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE1D3E9C2B6AC7BC009733A5 /* SharkCardScanViewRepresentable.swift */; };
+		EE3406CE2B6D0FF8007E7DD2 /* SharkCardScan in Frameworks */ = {isa = PBXBuildFile; platformFilter = ios; productRef = EE3406CD2B6D0FF8007E7DD2 /* SharkCardScan */; };
 		EE4CBEA82CEA98E900635DFC /* OnboardingKit in Frameworks */ = {isa = PBXBuildFile; productRef = EE4CBEA72CEA98E900635DFC /* OnboardingKit */; };
 		EE4CBEAB2CEEC8E900635DFC /* ICloudDataManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE4CBEAA2CEEC8E900635DFC /* ICloudDataManager.swift */; };
 		EE599BAC2B23900A002F49F8 /* AppSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE599BAB2B23900A002F49F8 /* AppSettingsView.swift */; };
@@ -66,6 +66,11 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		AA0000012F0BC0000000001A /* PlatformTypes.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlatformTypes.swift; sourceTree = "<group>"; };
+		AA0000022F0BC0000000001B /* PasteboardService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PasteboardService.swift; sourceTree = "<group>"; };
+		AA0000032F0BC0000000001C /* HapticService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HapticService.swift; sourceTree = "<group>"; };
+		AA0000042F0BC0000000001D /* ReviewService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReviewService.swift; sourceTree = "<group>"; };
+		AA0000052F0BC0000000001E /* MenuBarView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MenuBarView.swift; sourceTree = "<group>"; };
 		EE1D3E8F2B66AE66009733A5 /* Tip.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Tip.swift; sourceTree = "<group>"; };
 		EE1D3E912B66AE83009733A5 /* CardViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CardViewModel.swift; sourceTree = "<group>"; };
 		EE1D3E972B69379E009733A5 /* SettingsViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsViewModel.swift; sourceTree = "<group>"; };
@@ -81,7 +86,7 @@
 		EE8ADBEE2B66A5B600F0DC29 /* HomeViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeViewModel.swift; sourceTree = "<group>"; };
 		EE8ADF012F1100010000A1C1 /* ArchivedCardsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ArchivedCardsView.swift; sourceTree = "<group>"; };
 		EE960C4E2B4AC00B00B67805 /* CardDataStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CardDataStore.swift; sourceTree = "<group>"; };
-		EEBB52E62B238D6600035B92 /* Holder.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "Holder.app"; sourceTree = BUILT_PRODUCTS_DIR; };
+		EEBB52E62B238D6600035B92 /* Holder.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Holder.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		EEBB52E92B238D6600035B92 /* CreditCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CreditCard.swift; sourceTree = "<group>"; };
 		EEBB52EB2B238D6600035B92 /* HomeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeView.swift; sourceTree = "<group>"; };
 		EEBB52ED2B238D6800035B92 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
@@ -91,11 +96,6 @@
 		EED86E532F0BC2160063097F /* WidgetKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = WidgetKit.framework; path = System/Library/Frameworks/WidgetKit.framework; sourceTree = SDKROOT; };
 		EED86E552F0BC2170063097F /* SwiftUI.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = SwiftUI.framework; path = System/Library/Frameworks/SwiftUI.framework; sourceTree = SDKROOT; };
 		FF9452F82BDE314E00731D8B /* Secrets.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Secrets.plist; sourceTree = "<group>"; };
-		AA0000012F0BC0000000001A /* PlatformTypes.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlatformTypes.swift; sourceTree = "<group>"; };
-		AA0000022F0BC0000000001B /* PasteboardService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PasteboardService.swift; sourceTree = "<group>"; };
-		AA0000032F0BC0000000001C /* HapticService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HapticService.swift; sourceTree = "<group>"; };
-		AA0000042F0BC0000000001D /* ReviewService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReviewService.swift; sourceTree = "<group>"; };
-		AA0000052F0BC0000000001E /* MenuBarView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MenuBarView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
@@ -137,6 +137,25 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		AA00000B2F0BC0000000003A /* Platform */ = {
+			isa = PBXGroup;
+			children = (
+				AA0000012F0BC0000000001A /* PlatformTypes.swift */,
+				AA0000022F0BC0000000001B /* PasteboardService.swift */,
+				AA0000032F0BC0000000001C /* HapticService.swift */,
+				AA0000042F0BC0000000001D /* ReviewService.swift */,
+			);
+			path = Platform;
+			sourceTree = "<group>";
+		};
+		AA00000C2F0BC0000000003B /* macOS */ = {
+			isa = PBXGroup;
+			children = (
+				AA0000052F0BC0000000001E /* MenuBarView.swift */,
+			);
+			path = macOS;
+			sourceTree = "<group>";
+		};
 		EE1D3E8D2B66AE2A009733A5 /* Home */ = {
 			isa = PBXGroup;
 			children = (
@@ -241,25 +260,6 @@
 				EED86E552F0BC2170063097F /* SwiftUI.framework */,
 			);
 			name = Frameworks;
-			sourceTree = "<group>";
-		};
-		AA00000B2F0BC0000000003A /* Platform */ = {
-			isa = PBXGroup;
-			children = (
-				AA0000012F0BC0000000001A /* PlatformTypes.swift */,
-				AA0000022F0BC0000000001B /* PasteboardService.swift */,
-				AA0000032F0BC0000000001C /* HapticService.swift */,
-				AA0000042F0BC0000000001D /* ReviewService.swift */,
-			);
-			path = Platform;
-			sourceTree = "<group>";
-		};
-		AA00000C2F0BC0000000003B /* macOS */ = {
-			isa = PBXGroup;
-			children = (
-				AA0000052F0BC0000000001E /* MenuBarView.swift */,
-			);
-			path = macOS;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -505,12 +505,13 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
+				MACOSX_DEPLOYMENT_TARGET = 14.0;
 				MARKETING_VERSION = 2.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.swiftlysingh.cards.beta;
-				PRODUCT_NAME = "Holder";
+				PRODUCT_NAME = Holder;
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator macosx xros xrsimulator";
-				MACOSX_DEPLOYMENT_TARGET = 14.0;
 				SUPPORTS_MACCATALYST = NO;
+				SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD = NO;
 				SUPPORTS_XR_DESIGNED_FOR_IPHONE_IPAD = NO;
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_VERSION = 5.0;
@@ -663,12 +664,13 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
+				MACOSX_DEPLOYMENT_TARGET = 14.0;
 				MARKETING_VERSION = 2.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.swiftlysingh.cards.debug;
-				PRODUCT_NAME = "Holder";
+				PRODUCT_NAME = Holder;
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator macosx xros xrsimulator";
-				MACOSX_DEPLOYMENT_TARGET = 14.0;
 				SUPPORTS_MACCATALYST = NO;
+				SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD = NO;
 				SUPPORTS_XR_DESIGNED_FOR_IPHONE_IPAD = NO;
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_VERSION = 5.0;
@@ -702,12 +704,13 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
+				MACOSX_DEPLOYMENT_TARGET = 14.0;
 				MARKETING_VERSION = 2.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.swiftlysingh.cards;
-				PRODUCT_NAME = "Holder";
+				PRODUCT_NAME = Holder;
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator macosx xros xrsimulator";
-				MACOSX_DEPLOYMENT_TARGET = 14.0;
 				SUPPORTS_MACCATALYST = NO;
+				SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD = NO;
 				SUPPORTS_XR_DESIGNED_FOR_IPHONE_IPAD = NO;
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_VERSION = 5.0;
@@ -734,18 +737,18 @@
 					"@executable_path/Frameworks",
 					"@executable_path/../../Frameworks",
 				);
+				MACOSX_DEPLOYMENT_TARGET = 14.0;
 				MARKETING_VERSION = 2.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.swiftlysingh.cards.debug.widget;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SKIP_INSTALL = YES;
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator macosx";
 				SWIFT_APPROACHABLE_CONCURRENCY = YES;
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
-				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator macosx";
-				MACOSX_DEPLOYMENT_TARGET = 14.0;
 			};
 			name = Debug;
 		};
@@ -768,18 +771,18 @@
 					"@executable_path/Frameworks",
 					"@executable_path/../../Frameworks",
 				);
+				MACOSX_DEPLOYMENT_TARGET = 14.0;
 				MARKETING_VERSION = 2.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.swiftlysingh.cards.widget;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SKIP_INSTALL = YES;
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator macosx";
 				SWIFT_APPROACHABLE_CONCURRENCY = YES;
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
-				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator macosx";
-				MACOSX_DEPLOYMENT_TARGET = 14.0;
 			};
 			name = Release;
 		};
@@ -802,18 +805,18 @@
 					"@executable_path/Frameworks",
 					"@executable_path/../../Frameworks",
 				);
+				MACOSX_DEPLOYMENT_TARGET = 14.0;
 				MARKETING_VERSION = 2.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.swiftlysingh.cards.beta.widget;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SKIP_INSTALL = YES;
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator macosx";
 				SWIFT_APPROACHABLE_CONCURRENCY = YES;
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
-				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator macosx";
-				MACOSX_DEPLOYMENT_TARGET = 14.0;
 			};
 			name = Beta;
 		};

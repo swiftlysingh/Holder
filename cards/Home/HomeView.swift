@@ -61,11 +61,13 @@ struct HomeView: View {
 			.task {
 				model.cardDataStore.loadCards()
 			}
-			.toolbar{
-                NavigationLink(destination: SettingsView(model: SettingsViewModel())){
+			#if !os(macOS)
+			.toolbar {
+				NavigationLink(destination: SettingsView(model: SettingsViewModel())) {
 					Image(systemName: "gear")
 				}
 			}
+			#endif
 			.alert("Enable Biometrics",isPresented: model.$isFirstLaunch, actions: {
 				Button("Yes", role: .cancel) { 
 					UserSettings.shared.isAuthEnabled = true

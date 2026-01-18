@@ -20,6 +20,23 @@ struct MenuBarView: View {
         UserSettings.shared.isAuthEnabled
     }
 
+    // Get the appropriate biometric label and icon
+    private var biometricInfo: (label: String, icon: String) {
+        let context = LAContext()
+        var error: NSError?
+        _ = context.canEvaluatePolicy(.deviceOwnerAuthenticationWithBiometrics, error: &error)
+        switch context.biometryType {
+        case .touchID:
+            return ("Unlock with Touch ID", "touchid")
+        case .faceID:
+            return ("Unlock with Face ID", "faceid")
+        case .opticID:
+            return ("Unlock with Optic ID", "opticid")
+        default:
+            return ("Unlock with Password", "key.fill")
+        }
+    }
+
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
             if allCards.isEmpty {
@@ -33,6 +50,12 @@ struct MenuBarView: View {
             Divider()
 
             openHolderButton
+
+            // Show Quit button when running in menu bar-only mode
+            if UserSettings.shared.keepInMenuBar {
+                Divider()
+                quitButton
+            }
         }
         .frame(width: 320)
         .onAppear {
@@ -77,8 +100,8 @@ struct MenuBarView: View {
                 authenticate()
             } label: {
                 HStack {
-                    Image(systemName: "touchid")
-                    Text("Unlock with Touch ID")
+                    Image(systemName: biometricInfo.icon)
+                    Text(biometricInfo.label)
                 }
                 .frame(maxWidth: .infinity)
             }
@@ -130,6 +153,25 @@ struct MenuBarView: View {
         .keyboardShortcut("o", modifiers: .command)
     }
 
+    private var quitButton: some View {
+        Button {
+            NSApp.terminate(nil)
+        } label: {
+            HStack {
+                Image(systemName: "power")
+                Text("Quit Holder")
+                Spacer()
+                Text("⌘Q")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+            .padding(.horizontal, 12)
+            .padding(.vertical, 8)
+        }
+        .buttonStyle(.plain)
+        .keyboardShortcut("q", modifiers: .command)
+    }
+
     // MARK: - Helpers
 
     private var allCards: [CardData] {
@@ -137,12 +179,20 @@ struct MenuBarView: View {
     }
 
     private func openMainApp() {
+        // Restore dock icon if running in menu bar-only mode
+        NSApp.setActivationPolicy(.regular)
         NSApp.activate(ignoringOtherApps: true)
+
         if let window = NSApp.windows.first(where: { $0.canBecomeMain }) {
             window.makeKeyAndOrderFront(nil)
         } else {
-            // If no window exists, create one by sending the newDocument action
-            NSApp.sendAction(#selector(NSDocumentController.newDocument(_:)), to: nil, from: nil)
+            // If no window exists, create one
+            if let window = NSApp.windows.first(where: { $0.title == "Holder" || $0.title.contains("Card") }) {
+                window.makeKeyAndOrderFront(nil)
+            } else {
+                // Try to open a new window
+                NSApp.sendAction(Selector(("newWindowForTab:")), to: nil, from: nil)
+            }
         }
     }
 
