@@ -28,8 +28,17 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     func applicationShouldHandleReopen(_ sender: NSApplication, hasVisibleWindows flag: Bool) -> Bool {
-        // When clicking dock icon or reopening, show in dock again
+        // Restore dock icon
         NSApp.setActivationPolicy(.regular)
+
+        // If no visible windows, open a new one
+        if !flag {
+            // Find and show an existing window, or the system will create a new one
+            for window in NSApp.windows where window.canBecomeMain {
+                window.makeKeyAndOrderFront(self)
+                return false // We handled it
+            }
+        }
         return true
     }
 }
@@ -45,9 +54,12 @@ struct CreditCard: App {
     @State private var cardDataStore = CardDataStore()
 
     private var appID: String {
-        let path = Bundle.main.path(forResource: "Secrets", ofType: "plist")
-        let dict = NSDictionary(contentsOfFile: path!) as? [String: AnyObject]
-        return dict!["TDeck"] as! String
+        guard let path = Bundle.main.path(forResource: "Secrets", ofType: "plist"),
+              let dict = NSDictionary(contentsOfFile: path) as? [String: AnyObject],
+              let appID = dict["TDeck"] as? String else {
+            fatalError("Missing Secrets.plist or TDeck key - ensure Secrets.plist is added to the project")
+        }
+        return appID
     }
 
     var body: some Scene {

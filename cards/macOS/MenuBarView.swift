@@ -14,27 +14,12 @@ struct MenuBarView: View {
     var cardStore: CardDataStore
     @State private var isAuthenticated = false
     @State private var authError: String?
+    @State private var biometricLabel = "Unlock"
+    @State private var biometricIcon = "key.fill"
 
     // Check if auth is required based on settings
     private var requiresAuth: Bool {
         UserSettings.shared.isAuthEnabled
-    }
-
-    // Get the appropriate biometric label and icon
-    private var biometricInfo: (label: String, icon: String) {
-        let context = LAContext()
-        var error: NSError?
-        _ = context.canEvaluatePolicy(.deviceOwnerAuthenticationWithBiometrics, error: &error)
-        switch context.biometryType {
-        case .touchID:
-            return ("Unlock with Touch ID", "touchid")
-        case .faceID:
-            return ("Unlock with Face ID", "faceid")
-        case .opticID:
-            return ("Unlock with Optic ID", "opticid")
-        default:
-            return ("Unlock with Password", "key.fill")
-        }
     }
 
     var body: some View {
@@ -63,6 +48,28 @@ struct MenuBarView: View {
             if !requiresAuth {
                 isAuthenticated = true
             }
+            // Detect biometric type once
+            detectBiometricType()
+        }
+    }
+
+    private func detectBiometricType() {
+        let context = LAContext()
+        var error: NSError?
+        _ = context.canEvaluatePolicy(.deviceOwnerAuthenticationWithBiometrics, error: &error)
+        switch context.biometryType {
+        case .touchID:
+            biometricLabel = "Unlock with Touch ID"
+            biometricIcon = "touchid"
+        case .faceID:
+            biometricLabel = "Unlock with Face ID"
+            biometricIcon = "faceid"
+        case .opticID:
+            biometricLabel = "Unlock with Optic ID"
+            biometricIcon = "opticid"
+        default:
+            biometricLabel = "Unlock with Password"
+            biometricIcon = "key.fill"
         }
     }
 
@@ -100,8 +107,8 @@ struct MenuBarView: View {
                 authenticate()
             } label: {
                 HStack {
-                    Image(systemName: biometricInfo.icon)
-                    Text(biometricInfo.label)
+                    Image(systemName: biometricIcon)
+                    Text(biometricLabel)
                 }
                 .frame(maxWidth: .infinity)
             }

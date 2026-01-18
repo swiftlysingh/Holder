@@ -22,6 +22,17 @@ struct CardView: View {
 	@State private var copiedField: String?
 	#endif
 
+	/// Formats expiration date input (auto-inserts "/" after 2 digits, limits to 5 chars)
+	private func formatExpirationIfNeeded(_ newValue: String) {
+		Task { @MainActor in
+			if newValue.count == 2 && !newValue.contains("/") {
+				model.card.expiration = newValue + "/"
+			} else if newValue.count > 5 {
+				model.card.expiration = String(newValue.prefix(5))
+			}
+		}
+	}
+
 	var body: some View {
 		#if os(macOS)
 		macOSCardView()
@@ -123,13 +134,7 @@ struct CardView: View {
 							view.popoverTip(tip, arrowEdge: .top)
 						} else if heading == "Expiration" {
 							view.onChange(of: model.card.expiration) { _, newValue in
-								Task { @MainActor in
-									if newValue.count == 2 && !newValue.contains("/") {
-										model.card.expiration = newValue + "/"
-									} else if newValue.count > 5 {
-										model.card.expiration = String(newValue.prefix(5))
-									}
-								}
+								formatExpirationIfNeeded(newValue)
 							}
 						} else {
 							view
@@ -153,13 +158,7 @@ struct CardView: View {
 							view.popoverTip(tip, arrowEdge: .top)
 						} else if heading == "Expiration" {
 							view.onChange(of: model.card.expiration) { _, newValue in
-								Task { @MainActor in
-									if newValue.count == 2 && !newValue.contains("/") {
-										model.card.expiration = newValue + "/"
-									} else if newValue.count > 5 {
-										model.card.expiration = String(newValue.prefix(5))
-									}
-								}
+								formatExpirationIfNeeded(newValue)
 							}
 						} else {
 							view
@@ -554,13 +553,7 @@ struct CardView: View {
 					Divider()
 					macOSFormRow(label: "Expiration", value: $model.card.expiration, isEditing: true)
 						.onChange(of: model.card.expiration) { _, newValue in
-							Task { @MainActor in
-								if newValue.count == 2 && !newValue.contains("/") {
-									model.card.expiration = newValue + "/"
-								} else if newValue.count > 5 {
-									model.card.expiration = String(newValue.prefix(5))
-								}
-							}
+							formatExpirationIfNeeded(newValue)
 						}
 					Divider()
 					macOSFormRow(label: "CVV", value: $model.card.cvv, isEditing: true)
