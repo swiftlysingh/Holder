@@ -5,6 +5,7 @@
 //  Created by Pushpinder Pal Singh on 03/02/24.
 //
 
+#if os(iOS)
 import SharkCardScan
 import UIKit
 
@@ -15,7 +16,7 @@ struct CardScanViewStyle: CardScanStyling {
 	public var holderLabelStyling: LabelStyling
 	public var backgroundColor: UIColor
 
-	public init () {
+	public init() {
 		self.instructionLabelStyling = (font: UIFont.boldSystemFont(ofSize: 14), color: .secondaryLabel)
 		self.cardNumberLabelStyling = (font: UIFont.systemFont(ofSize: 28), color: .white)
 		self.expiryLabelStyling = (font: UIFont.systemFont(ofSize: 14), color: .white)
@@ -23,3 +24,4 @@ struct CardScanViewStyle: CardScanStyling {
 		self.backgroundColor = .systemBackground
 	}
 }
+#endif

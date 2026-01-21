@@ -10,18 +10,61 @@ import TipKit
 import WhatsNewKit
 import Analytics
 import OnboardingKit
+import Settings
+#if os(macOS)
+import AppKit
+#endif
+
+#if os(macOS)
+class AppDelegate: NSObject, NSApplicationDelegate {
+    func applicationShouldTerminateAfterLastWindowClosed(_ sender: NSApplication) -> Bool {
+        // If "Keep in Menu Bar" is enabled, don't quit when window closes
+        if UserSettings.shared.keepInMenuBar {
+            // Hide from dock but keep running in menu bar
+            NSApp.setActivationPolicy(.accessory)
+            return false
+        }
+        return true
+    }
+
+    func applicationShouldHandleReopen(_ sender: NSApplication, hasVisibleWindows flag: Bool) -> Bool {
+        // Restore dock icon
+        NSApp.setActivationPolicy(.regular)
+
+        // If no visible windows, open a new one
+        if !flag {
+            // Find and show an existing window, or the system will create a new one
+            for window in NSApp.windows where window.canBecomeMain {
+                window.makeKeyAndOrderFront(self)
+                return false // We handled it
+            }
+        }
+        return true
+    }
+}
+#endif
 
 @main
 struct CreditCard: App {
+    #if os(macOS)
+    @NSApplicationDelegateAdaptor(AppDelegate.self) var appDelegate
+    #endif
+
+    /// Shared card data store for menu bar access on macOS
+    @State private var cardDataStore = CardDataStore()
+
     private var appID: String {
-        let path = Bundle.main.path(forResource: "Secrets", ofType: "plist")
-        let dict = NSDictionary(contentsOfFile: path!) as? [String: AnyObject]
-        return dict!["TDeck"] as! String
+        guard let path = Bundle.main.path(forResource: "Secrets", ofType: "plist"),
+              let dict = NSDictionary(contentsOfFile: path) as? [String: AnyObject],
+              let appID = dict["TDeck"] as? String else {
+            fatalError("Missing Secrets.plist or TDeck key - ensure Secrets.plist is added to the project")
+        }
+        return appID
     }
 
     var body: some Scene {
         WindowGroup {
-            HomeView()
+            HomeView(cardDataStore: cardDataStore)
                 .task {
                     try? Tips.configure([
                         .displayFrequency(.immediate),
@@ -40,9 +83,29 @@ struct CreditCard: App {
                      )
                 )
                 .showOnboardingIfNeeded(using: .prod)
+        }
+        #if os(macOS)
+        menuBarScene
+        settingsScene
+        #endif
+    }
 
+    #if os(macOS)
+    var menuBarScene: some Scene {
+        MenuBarExtra("Holder", systemImage: "creditcard.fill") {
+            MenuBarView(cardStore: cardDataStore)
+        }
+        .menuBarExtraStyle(.window)
+    }
+
+    var settingsScene: some Scene {
+        SwiftUI.Settings {
+            SettingsView(model: SettingsViewModel())
+                .presentationSizing(.fitted)
+                .frame(minWidth: 620, minHeight: 480)
         }
     }
+    #endif
 }
 
 extension OnboardingConfiguration {
@@ -68,6 +131,7 @@ extension OnboardingConfiguration {
 
 extension CreditCard: WhatsNewCollectionProvider {
   var primaryAction: WhatsNew.PrimaryAction {
+	#if os(iOS)
 	WhatsNew.PrimaryAction(
 	  title: "Dive In 🚀",
 	  backgroundColor: .accentColor,
@@ -77,6 +141,16 @@ extension CreditCard: WhatsNewCollectionProvider {
 		print("Ready to explore the new features!")
 	  }
 	)
+	#else
+	WhatsNew.PrimaryAction(
+	  title: "Dive In 🚀",
+	  backgroundColor: .accentColor,
+	  foregroundColor: .white,
+	  onDismiss: {
+		print("Ready to explore the new features!")
+	  }
+	)
+	#endif
   }
 
   var title: WhatsNew.Title {

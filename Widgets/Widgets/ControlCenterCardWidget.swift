@@ -5,6 +5,7 @@
 //  Control Center widget displaying a single card (iOS 18+)
 //
 
+#if os(iOS)
 import WidgetKit
 import SwiftUI
 import AppIntents
@@ -64,3 +65,4 @@ struct OpenHolderCardIntent: AppIntent {
         return .result()
     }
 }
+#endif

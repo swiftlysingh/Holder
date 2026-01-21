@@ -6,7 +6,12 @@
 //
 
 import Foundation
+
+#if os(macOS)
+import AppKit
+#else
 import UIKit
+#endif
 
 class ICloudDataManager {
 
@@ -25,7 +30,7 @@ class ICloudDataManager {
 		return cloudDirectory?.appendingPathComponent("\(uuid.uuidString).jpg")
 	}
 
-	func saveImage(_ image: UIImage, for uuid: UUID) -> Bool {
+	func saveImage(_ image: PlatformImage, for uuid: UUID) -> Bool {
 		guard let imageData = image.jpegData(compressionQuality: 0.8),
 			  let imageURL = getImageURL(for: uuid) else {
 			return false
@@ -44,13 +49,13 @@ class ICloudDataManager {
 		}
 	}
 
-	func loadImage(for uuid: UUID) -> UIImage? {
+	func loadImage(for uuid: UUID) -> PlatformImage? {
 		guard let imageURL = getImageURL(for: uuid),
 			  let imageData = try? Data(contentsOf: imageURL),
-			  let uiImage = UIImage(data: imageData) else {
+			  let image = PlatformImage(data: imageData) else {
 			return nil
 		}
-		return uiImage
+		return image
 	}
 
 	func deleteImage(for uuid: UUID) {

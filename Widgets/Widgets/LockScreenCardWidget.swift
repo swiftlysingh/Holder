@@ -5,6 +5,7 @@
 //  Lock screen widget displaying a single card
 //
 
+#if os(iOS)
 import WidgetKit
 import SwiftUI
 
@@ -154,3 +155,4 @@ struct LockScreenCardWidget: Widget {
         configuration: SelectCardIntent()
     )
 }
+#endif

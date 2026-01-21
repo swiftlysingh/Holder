@@ -10,8 +10,11 @@ import WhatsNewKit
 import Settings
 
 struct HomeView: View {
+	@ObservedObject var model: HomeViewModel
 
-	@ObservedObject var model = HomeViewModel()
+	init(cardDataStore: CardDataStore = CardDataStore()) {
+		self.model = HomeViewModel(cardDataStore: cardDataStore)
+	}
 
 	var body: some View {
 		NavigationSplitView {
@@ -55,14 +58,16 @@ struct HomeView: View {
 				}
 			}
 			.navigationTitle("Cards")
-			.onAppear {
+			.task {
 				model.cardDataStore.loadCards()
 			}
-			.toolbar{
-                NavigationLink(destination: SettingsView(model: SettingsViewModel())){
+			#if !os(macOS)
+			.toolbar {
+				NavigationLink(destination: SettingsView(model: SettingsViewModel())) {
 					Image(systemName: "gear")
 				}
 			}
+			#endif
 			.alert("Enable Biometrics",isPresented: model.$isFirstLaunch, actions: {
 				Button("Yes", role: .cancel) { 
 					UserSettings.shared.isAuthEnabled = true
@@ -110,7 +115,9 @@ struct HomeView: View {
 					addUpdateCard: { card in
 						model.cardDataStore.addCard(card)
 						model.addingType = nil
-						model.cardDataStore.loadCards()
+						Task { @MainActor in
+							model.cardDataStore.loadCards()
+						}
 					})
 				)
 			}
