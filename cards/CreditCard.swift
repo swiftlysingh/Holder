@@ -101,7 +101,8 @@ struct CreditCard: App {
     var settingsScene: some Scene {
         SwiftUI.Settings {
             SettingsView(model: SettingsViewModel())
-                .frame(width: 450, height: 500)
+                .presentationSizing(.fitted)
+                .frame(minWidth: 620, minHeight: 480)
         }
     }
     #endif
