@@ -224,18 +224,30 @@ struct CardView: View {
 								.foregroundStyle(.gray)
 						}
 					}
-					.onChange(of: model.selectedItem) {
-						Task {
-							if let data = try? await model.selectedItem?.loadTransferable(type: Data.self) {
-								if let uiImage = UIImage(data: data) {
-									model.cardImage = uiImage
-									print(ICloudDataManager.shared.saveImage(uiImage, for: model.card.id))
-								} else {
-									print("Failed")
-								}
+				.onChange(of: model.selectedItem) {
+					Task {
+						do {
+							guard let data = try await model.selectedItem?.loadTransferable(type: Data.self) else {
+								throw URLError(.cannotDecodeContentData)
 							}
+
+							guard let uiImage = UIImage(data: data) else {
+								throw URLError(.cannotDecodeContentData)
+							}
+
+							guard ICloudDataManager.shared.saveImage(uiImage, for: model.card.id) else {
+								throw URLError(.cannotCreateFile)
+							}
+
+							model.cardImage = uiImage
+							model.errorMessage = nil
+						} catch {
+							model.errorMessage = "Unable to save image: \(error.localizedDescription)"
+							model.showErrorAlert = true
 						}
 					}
+				}
+
 
 					if model.cardImage != nil {
 						Button(role: .destructive) {
@@ -284,6 +296,17 @@ struct CardView: View {
 				}
 			}
 			#endif
+		}
+		.alert("Image Error", isPresented: $model.showErrorAlert) {
+			Button("OK", role: .cancel) {
+				model.showErrorAlert = false
+			}
+		} message: {
+			if let message = model.errorMessage {
+				Text(message)
+			} else {
+				Text("An unknown error occurred")
+			}
 		}
 		.toolbar {
 			ShareLink(item: model.card.toShareString()) {

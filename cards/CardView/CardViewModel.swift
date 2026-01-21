@@ -19,6 +19,8 @@ class CardViewModel: ObservableObject {
 	@Published var cardImage: PlatformImage?
 	@AppStorage("auth") var isAuthenticated = false
 	@Published var isShowingScanner = false
+	@Published var errorMessage: String?
+	@Published var showErrorAlert = false
 
 	#if os(iOS)
 	@Published var selectedItem: PhotosPickerItem?
