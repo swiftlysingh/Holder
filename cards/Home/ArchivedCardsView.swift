@@ -34,6 +34,18 @@ struct ArchivedCardsView: View {
 							}
 							.tint(.green)
 						}
+						.contextMenu {
+							Button {
+								model.unarchiveCard(card)
+							} label: {
+								Label("Unarchive", systemImage: "arrow.uturn.backward")
+							}
+							Button(role: .destructive) {
+								model.deleteArchivedCard(card)
+							} label: {
+								Label("Delete", systemImage: "trash")
+							}
+						}
 				}
 			}
 		}

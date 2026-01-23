@@ -37,6 +37,19 @@ struct HomeView: View {
 									}
 									.tint(.orange)
 								}
+								.contextMenu {
+									Button {
+										model.archiveCard(card)
+									} label: {
+										Label("Archive", systemImage: "archivebox")
+									}
+									Button(role: .destructive) {
+										_ = model.cardDataStore.deleteCard(with: card.id)
+										model.cardDataStore.cardsByType[type]?.removeAll { $0.id == card.id }
+									} label: {
+										Label("Delete", systemImage: "trash")
+									}
+								}
 						}
 						Button("Add a new \(type.rawValue)") {
 							model.addingType = type
