@@ -415,8 +415,13 @@ struct CardView: View {
 				// Card Details Form
 				macOSCardForm()
 			}
-			.padding(24)
+			.padding(.top, 24)
+			.padding(.bottom, 24)
+			.padding(.horizontal, 24)
+			.frame(maxWidth: .infinity)
 		}
+		.scrollContentBackground(.hidden)
+		.contentMargins(0)
 		.toolbar {
 			ShareLink(item: model.card.toShareString()) {
 				Label("Share", systemImage: "square.and.arrow.up")
