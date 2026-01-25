@@ -64,11 +64,27 @@ class HomeViewModel: ObservableObject {
 				cardDataStore.loadCards()
 			}
 
-			// Small delay to ensure view is ready for navigation
-			try? await Task.sleep(nanoseconds: 100_000_000)
-			if let card = cardDataStore.findCard(by: cardID) {
-				selectedCard = card
-			}
+			// Retry finding the card with exponential backoff instead of fixed delay
+			await findAndSelectCard(by: cardID)
+		}
+	}
+
+	/// Attempts to find and select a card with retries
+	@MainActor
+	private func findAndSelectCard(by cardID: UUID, attempt: Int = 0) async {
+		let maxAttempts = 5
+		let baseDelay: UInt64 = 50_000_000 // 50ms
+
+		if let card = cardDataStore.findCard(by: cardID) {
+			selectedCard = card
+			return
+		}
+
+		// Retry with exponential backoff if card not found
+		if attempt < maxAttempts {
+			let delay = baseDelay * UInt64(1 << attempt) // 50ms, 100ms, 200ms, 400ms, 800ms
+			try? await Task.sleep(nanoseconds: delay)
+			await findAndSelectCard(by: cardID, attempt: attempt + 1)
 		}
 	}
 }
