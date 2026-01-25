@@ -384,8 +384,12 @@ struct CardView: View {
 
 		if panel.runModal() == .OK, let url = panel.url {
 			if let image = NSImage(contentsOf: url) {
-				model.cardImage = image
-				_ = ICloudDataManager.shared.saveImage(image, for: model.card.id)
+				if ICloudDataManager.shared.saveImage(image, for: model.card.id) {
+					model.cardImage = image
+				} else {
+					model.errorMessage = "Failed to save image to iCloud"
+					model.showErrorAlert = true
+				}
 			}
 		}
 	}
