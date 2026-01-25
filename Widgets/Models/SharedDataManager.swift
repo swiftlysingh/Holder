@@ -23,6 +23,9 @@ final class SharedDataManager {
     // MARK: - Save Methods (called from main app)
 
     /// Saves available cards to shared storage for widget access
+    /// - Note: This method uses JSONEncoder which is incompatible with how the main app
+    ///   writes data (using JSONSerialization). Use CardDataStore.syncCardsToWidget() instead.
+    @available(*, deprecated, message: "Use CardDataStore.syncCardsToWidget() instead")
     func saveAvailableCards(_ cards: [WidgetCardData]) {
         guard let data = try? JSONEncoder().encode(cards) else { return }
         sharedDefaults?.set(data, forKey: availableCardsKey)
