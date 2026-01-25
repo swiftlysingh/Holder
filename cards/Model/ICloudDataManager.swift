@@ -15,11 +15,21 @@ import UIKit
 
 class ICloudDataManager {
 
-	private init () {}
+	private init () {
+		// Log iCloud availability on initialization
+		if !isICloudAvailable {
+			print("Warning: iCloud is not available. Images will not be synced across devices.")
+		}
+	}
 
 	static let shared = ICloudDataManager()
 
 	private let fileManager = FileManager.default
+
+	/// Indicates whether iCloud storage is available
+	var isICloudAvailable: Bool {
+		cloudDirectory != nil
+	}
 
 	private var cloudDirectory: URL? {
 		fileManager.url(forUbiquityContainerIdentifier: nil)?
@@ -31,6 +41,11 @@ class ICloudDataManager {
 	}
 
 	func saveImage(_ image: PlatformImage, for uuid: UUID) -> Bool {
+		guard isICloudAvailable else {
+			print("Error: Cannot save image - iCloud is not available")
+			return false
+		}
+
 		guard let imageData = image.jpegData(compressionQuality: 0.8),
 			  let imageURL = getImageURL(for: uuid) else {
 			return false

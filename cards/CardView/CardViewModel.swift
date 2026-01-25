@@ -47,10 +47,18 @@ class CardViewModel: ObservableObject {
 			}
 			return
 		}
+		let reason = "Please authenticate to view your card details."
+
 		// Check if the device supports biometric authentication
 		if context.canEvaluatePolicy(.deviceOwnerAuthenticationWithBiometrics, error: &error) {
-			let reason = "Please authenticate to view your card details."
 			context.evaluatePolicy(.deviceOwnerAuthenticationWithBiometrics, localizedReason: reason) { success, authenticationError in
+				Task { @MainActor in
+					self.isAuthenticated = success
+				}
+			}
+		} else if context.canEvaluatePolicy(.deviceOwnerAuthentication, error: &error) {
+			// Fallback to password/passcode authentication when biometrics unavailable
+			context.evaluatePolicy(.deviceOwnerAuthentication, localizedReason: reason) { success, authenticationError in
 				Task { @MainActor in
 					self.isAuthenticated = success
 				}
