@@ -6,15 +6,30 @@
 //
 
 import Foundation
+
+#if os(macOS)
+import AppKit
+#else
 import UIKit
+#endif
 
 class ICloudDataManager {
 
-	private init () {}
+	private init () {
+		// Log iCloud availability on initialization
+		if !isICloudAvailable {
+			print("Warning: iCloud is not available. Images will not be synced across devices.")
+		}
+	}
 
 	static let shared = ICloudDataManager()
 
 	private let fileManager = FileManager.default
+
+	/// Indicates whether iCloud storage is available
+	var isICloudAvailable: Bool {
+		cloudDirectory != nil
+	}
 
 	private var cloudDirectory: URL? {
 		fileManager.url(forUbiquityContainerIdentifier: nil)?
@@ -25,7 +40,12 @@ class ICloudDataManager {
 		return cloudDirectory?.appendingPathComponent("\(uuid.uuidString).jpg")
 	}
 
-	func saveImage(_ image: UIImage, for uuid: UUID) -> Bool {
+	func saveImage(_ image: PlatformImage, for uuid: UUID) -> Bool {
+		guard isICloudAvailable else {
+			print("Error: Cannot save image - iCloud is not available")
+			return false
+		}
+
 		guard let imageData = image.jpegData(compressionQuality: 0.8),
 			  let imageURL = getImageURL(for: uuid) else {
 			return false
@@ -44,13 +64,13 @@ class ICloudDataManager {
 		}
 	}
 
-	func loadImage(for uuid: UUID) -> UIImage? {
+	func loadImage(for uuid: UUID) -> PlatformImage? {
 		guard let imageURL = getImageURL(for: uuid),
 			  let imageData = try? Data(contentsOf: imageURL),
-			  let uiImage = UIImage(data: imageData) else {
+			  let image = PlatformImage(data: imageData) else {
 			return nil
 		}
-		return uiImage
+		return image
 	}
 
 	func deleteImage(for uuid: UUID) {

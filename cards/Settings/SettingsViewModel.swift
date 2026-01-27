@@ -6,21 +6,34 @@
 //
 
 import Settings
-import UIKit
 import SwiftUI
-import StoreKit
 
-class SettingsViewModel: SettingsViewModelProtocol {
-    var appVersion : String = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? ""
-    
-    var privacyPolicy = "https://docs.google.com/document/d/1OD3foirDwAsmZ8Mp6cYJlDpUjAyDpvgX7rvzosnNQes"
+#if os(iOS)
+import UIKit
+#endif
 
-    var sourceCode: String? = "https://github.com/swiftlysingh/holder/"
-    
-    var appSettings: AnyView? = AppSettingsView().body
-    
+struct SettingsViewModel: SettingsViewModelProtocol {
+    var appVersion: String {
+        Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? ""
+    }
+
+    var privacyPolicy: String {
+        "https://docs.google.com/document/d/1OD3foirDwAsmZ8Mp6cYJlDpUjAyDpvgX7rvzosnNQes"
+    }
+
+    var sourceCode: String? {
+        "https://github.com/swiftlysingh/holder/"
+    }
+
+    var linesOfCode: Int {
+        2200
+    }
+
+    @ViewBuilder var appSettings: some View {
+        AppSettingsView()
+    }
+
     func rateTheAppAction() {
-        guard let windowScene =  UIApplication.shared.connectedScenes.first as? UIWindowScene else { return }
-        SKStoreReviewController.requestReview(in: windowScene)
+        ReviewService.requestReview()
     }
 }

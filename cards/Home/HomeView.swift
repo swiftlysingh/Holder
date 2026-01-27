@@ -10,33 +10,77 @@ import WhatsNewKit
 import Settings
 
 struct HomeView: View {
+	@ObservedObject var model: HomeViewModel
 
-	@ObservedObject var model = HomeViewModel()
+	init(cardDataStore: CardDataStore = CardDataStore()) {
+		self.model = HomeViewModel(cardDataStore: cardDataStore)
+	}
 
 	var body: some View {
 		NavigationSplitView {
-			List(CardType.allCases, selection: $model.selectedCard){ type in
+			List(selection: $model.selectedCard) {
+				ForEach(CardType.allCases) { type in
 					Section(header: Text("\(type.rawValue)s")){
 						ForEach(model.cardDataStore.cardsByType[type] ?? [], id: \.id) { card in
 							getRowforCards(with: card)
-						}
-						.onDelete { offsets in
-							model.deleteCard(at: offsets, inSection: type)
+								.swipeActions(edge: .trailing, allowsFullSwipe: false) {
+									Button(role: .destructive) {
+										_ = model.cardDataStore.deleteCard(with: card.id)
+										model.cardDataStore.cardsByType[type]?.removeAll { $0.id == card.id }
+									} label: {
+										Label("Delete", systemImage: "trash")
+									}
+									Button {
+										model.archiveCard(card)
+									} label: {
+										Label("Archive", systemImage: "archivebox")
+									}
+									.tint(.orange)
+								}
+								.contextMenu {
+									Button {
+										model.archiveCard(card)
+									} label: {
+										Label("Archive", systemImage: "archivebox")
+									}
+									Button(role: .destructive) {
+										_ = model.cardDataStore.deleteCard(with: card.id)
+										model.cardDataStore.cardsByType[type]?.removeAll { $0.id == card.id }
+									} label: {
+										Label("Delete", systemImage: "trash")
+									}
+								}
 						}
 						Button("Add a new \(type.rawValue)") {
 							model.addingType = type
 						}
 					}
 				}
+				// Archived Cards Link
+				if !model.cardDataStore.archivedCards.isEmpty {
+					Section {
+						NavigationLink {
+							ArchivedCardsView(model: model)
+						} label: {
+							HStack {
+								Image(systemName: "archivebox")
+								Text("View Archived Cards (\(model.cardDataStore.archivedCards.count))")
+							}
+						}
+					}
+				}
+			}
 			.navigationTitle("Cards")
-			.onAppear {
+			.task {
 				model.cardDataStore.loadCards()
 			}
-			.toolbar{
-                NavigationLink(destination: SettingsView(model: SettingsViewModel())){
+			#if !os(macOS)
+			.toolbar {
+				NavigationLink(destination: SettingsView(model: SettingsViewModel())) {
 					Image(systemName: "gear")
 				}
 			}
+			#endif
 			.alert("Enable Biometrics",isPresented: model.$isFirstLaunch, actions: {
 				Button("Yes", role: .cancel) { 
 					UserSettings.shared.isAuthEnabled = true
@@ -58,6 +102,16 @@ struct HomeView: View {
 			}
 		}
 		.whatsNewSheet()
+		.onOpenURL { url in
+			model.handleDeepLink(url)
+		}
+		.navigationDestination(item: $model.selectedCard) { card in
+			CardView(model: CardViewModel(
+				card: card,
+				addUpdateCard: { card in
+					model.cardDataStore.addCard(card)
+				}))
+		}
 		.sheet(item: $model.addingType) { type in
 			NavigationView {
 				CardView(model: CardViewModel(
@@ -74,7 +128,9 @@ struct HomeView: View {
 					addUpdateCard: { card in
 						model.cardDataStore.addCard(card)
 						model.addingType = nil
-						model.cardDataStore.loadCards()
+						Task { @MainActor in
+							model.cardDataStore.loadCards()
+						}
 					})
 				)
 			}
