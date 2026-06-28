@@ -1,5 +1,5 @@
 {
-  "originHash" : "0be06d0359319f812e686af38b91880a54595a556cc20ddd857cd4dbed9d9386",
+  "originHash" : "82f9fc5945da3a61eb3a4017ef346dfc0fbbc489f160fe84c532ccdc917d2b68",
   "pins" : [
     {
       "identity" : "ios-card-scan",
@@ -29,30 +29,30 @@
       }
     },
     {
+      "identity" : "posthog-ios",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/PostHog/posthog-ios.git",
+      "state" : {
+        "revision" : "9fcdb83e79b155c0dae104eadf5c269079dcbddb",
+        "version" : "3.62.0"
+      }
+    },
+    {
       "identity" : "purchases-ios",
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/RevenueCat/purchases-ios.git",
       "state" : {
-        "revision" : "6238361173aa15a02b99de0d6c003b24fa5fa444",
-        "version" : "5.52.1"
+        "revision" : "e89cb027a472e5cf1c15435c4e690b9a3c170cdc",
+        "version" : "5.80.0"
       }
     },
     {
-      "identity" : "singhdevelopmentkit",
+      "identity" : "singhdevkit",
       "kind" : "remoteSourceControl",
-      "location" : "https://github.com/swiftlysingh/SinghDevelopmentKit.git",
+      "location" : "https://github.com/swiftlysingh/SinghDevKit.git",
       "state" : {
-        "revision" : "36373cbd1db5e695c57cb27bf03bad8ea01493dd",
-        "version" : "1.2.0"
-      }
-    },
-    {
-      "identity" : "swiftclient",
-      "kind" : "remoteSourceControl",
-      "location" : "https://github.com/TelemetryDeck/SwiftClient",
-      "state" : {
-        "revision" : "8f332c1c256ba26cc46f74c9e5af94f7b1c37a9c",
-        "version" : "2.11.0"
+        "revision" : "f7d77030a7b429262d337b8a43ee6dfd882ffd28",
+        "version" : "2.1.1"
       }
     },
     {

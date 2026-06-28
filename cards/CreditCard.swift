@@ -8,9 +8,8 @@
 import SwiftUI
 import TipKit
 import WhatsNewKit
-import Analytics
+import SinghDevKit
 import OnboardingKit
-import Settings
 #if os(macOS)
 import AppKit
 #endif
@@ -72,8 +71,15 @@ struct CreditCard: App {
                     ])
                 }
                 .task {
-                    await AnalyticsManager.shared.configure(with: appID)
-                    await AnalyticsManager.shared.appDidFinishLaunching()
+                    try? await SinghDevKit.shared.configure(
+                        SDKConfiguration(
+                            analytics: .postHog(
+                                projectToken: appID,
+                                host: URL(string: "https://us.i.posthog.com")!
+                            )
+                        )
+                    )
+                    await SinghDevKit.shared.analytics.trackAppLaunch()
                 }
                 .environment(
                     \.whatsNew,
@@ -100,7 +106,7 @@ struct CreditCard: App {
 
     var settingsScene: some Scene {
         SwiftUI.Settings {
-            SettingsView(model: SettingsViewModel())
+            SettingsView(configuration: SettingsViewModel())
                 .presentationSizing(.fitted)
                 .frame(minWidth: 620, minHeight: 480)
         }
@@ -108,7 +114,7 @@ struct CreditCard: App {
     #endif
 }
 
-extension OnboardingConfiguration {
+extension OnboardingKit.OnboardingConfiguration {
 	static let prod = Self.init(privacyUrlString: "",
 								accentColor: .blue,
 								features: [

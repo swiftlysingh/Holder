@@ -5,7 +5,7 @@
 //  Created by Pushpinder Pal Singh on 30/01/24.
 //
 
-import Settings
+import SinghDevKit
 import SwiftUI
 
 #if os(iOS)
@@ -17,13 +17,15 @@ struct SettingsViewModel: SettingsViewModelProtocol {
         Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? ""
     }
 
-    var privacyPolicy: String {
-        "https://docs.google.com/document/d/1OD3foirDwAsmZ8Mp6cYJlDpUjAyDpvgX7rvzosnNQes"
+    var privacyPolicyURL: URL? {
+        URL(string: "https://docs.google.com/document/d/1OD3foirDwAsmZ8Mp6cYJlDpUjAyDpvgX7rvzosnNQes")
     }
 
-    var sourceCode: String? {
-        "https://github.com/swiftlysingh/holder/"
+    var sourceCodeURL: URL? {
+        URL(string: "https://github.com/swiftlysingh/holder/")
     }
+
+    var showsSubscriptionManagement: Bool { false }
 
     var linesOfCode: Int {
         2200
