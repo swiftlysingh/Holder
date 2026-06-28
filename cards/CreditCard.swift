@@ -5,6 +5,7 @@
 //  Created by Pushpinder Pal Singh on 08/12/23.
 //
 
+import Foundation
 import SwiftUI
 import TipKit
 import WhatsNewKit
@@ -51,15 +52,7 @@ struct CreditCard: App {
 
     /// Shared card data store for menu bar access on macOS
     @State private var cardDataStore = CardDataStore()
-
-    private var appID: String {
-        guard let path = Bundle.main.path(forResource: "Secrets", ofType: "plist"),
-              let dict = NSDictionary(contentsOfFile: path) as? [String: AnyObject],
-              let appID = dict["TDeck"] as? String else {
-            fatalError("Missing Secrets.plist or TDeck key - ensure Secrets.plist is added to the project")
-        }
-        return appID
-    }
+    private let appSecrets = AppSecrets.load()
 
     var body: some Scene {
         WindowGroup {
@@ -74,8 +67,8 @@ struct CreditCard: App {
                     try? await SinghDevKit.shared.configure(
                         SDKConfiguration(
                             analytics: .postHog(
-                                projectToken: appID,
-                                host: URL(string: "https://us.i.posthog.com")!
+                                projectToken: appSecrets.postHogProjectToken,
+                                host: appSecrets.postHogHost
                             )
                         )
                     )
@@ -112,6 +105,38 @@ struct CreditCard: App {
         }
     }
     #endif
+}
+
+private struct AppSecrets {
+    let postHogProjectToken: String
+    let postHogHost: URL
+
+    static func load() -> Self {
+        guard let path = Bundle.main.path(forResource: "Secrets", ofType: "plist"),
+              let dictionary = NSDictionary(contentsOfFile: path) as? [String: Any] else {
+            fatalError("Missing Secrets.plist - ensure it is added to the project")
+        }
+
+        guard let projectToken = nonEmptyString(from: dictionary["PostHogProjectToken"]) else {
+            fatalError("Missing PostHogProjectToken in Secrets.plist")
+        }
+
+        let host = nonEmptyString(from: dictionary["PostHogHost"])
+            .flatMap(URL.init(string:))
+            ?? URL(string: "https://us.i.posthog.com")!
+
+        return Self(
+            postHogProjectToken: projectToken,
+            postHogHost: host
+        )
+    }
+
+    private static func nonEmptyString(from value: Any?) -> String? {
+        guard let string = value as? String else { return nil }
+
+        let trimmed = string.trimmingCharacters(in: .whitespacesAndNewlines)
+        return trimmed.isEmpty ? nil : trimmed
+    }
 }
 
 extension OnboardingKit.OnboardingConfiguration {
