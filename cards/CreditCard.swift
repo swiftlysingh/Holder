@@ -52,7 +52,18 @@ struct CreditCard: App {
 
     /// Shared card data store for menu bar access on macOS
     @State private var cardDataStore = CardDataStore()
-    private let appSecrets = AppSecrets.load()
+    private let sdkBootstrapper: SDKBootstrapper
+
+    init() {
+        let sdkBootstrapper = SDKBootstrapper()
+        let appSecrets = AppSecrets.load()
+
+        self.sdkBootstrapper = sdkBootstrapper
+
+        Task {
+            await sdkBootstrapper.configure(with: appSecrets)
+        }
+    }
 
     var body: some Scene {
         WindowGroup {
@@ -63,17 +74,6 @@ struct CreditCard: App {
                         .datastoreLocation(.applicationDefault)
                     ])
                 }
-                .task {
-                    try? await SinghDevKit.shared.configure(
-                        SDKConfiguration(
-                            analytics: .postHog(
-                                projectToken: appSecrets.postHogProjectToken,
-                                host: appSecrets.postHogHost
-                            )
-                        )
-                    )
-                    await SinghDevKit.shared.analytics.trackAppLaunch()
-                }
                 .environment(
                     \.whatsNew,
                      WhatsNewEnvironment(
@@ -81,6 +81,7 @@ struct CreditCard: App {
                         whatsNewCollection: self
                      )
                 )
+                .withSDK(.shared)
                 .showOnboardingIfNeeded(using: .prod)
         }
         #if os(macOS)
@@ -100,6 +101,7 @@ struct CreditCard: App {
     var settingsScene: some Scene {
         SwiftUI.Settings {
             SettingsView(configuration: SettingsViewModel())
+                .withSDK(.shared)
                 .presentationSizing(.fitted)
                 .frame(minWidth: 620, minHeight: 480)
         }
@@ -107,7 +109,46 @@ struct CreditCard: App {
     #endif
 }
 
-private struct AppSecrets {
+private actor SDKBootstrapper {
+    private enum State {
+        case idle
+        case configuring
+        case configured
+        case failed
+    }
+
+    private var state: State = .idle
+
+    func configure(with appSecrets: AppSecrets) async {
+        switch state {
+        case .idle, .failed:
+            state = .configuring
+        case .configuring, .configured:
+            return
+        }
+
+        do {
+            try await SinghDevKit.shared.configure(
+                SDKConfiguration(
+                    analytics: .postHog(
+                        projectToken: appSecrets.postHogProjectToken,
+                        host: appSecrets.postHogHost
+                    )
+                )
+            )
+            await SinghDevKit.shared.analytics.trackAppLaunch()
+            state = .configured
+        } catch {
+            state = .failed
+            assertionFailure("Failed to configure SinghDevKit: \(error.localizedDescription)")
+            #if DEBUG
+            print("[SinghDevKit] Failed to configure: \(error.localizedDescription)")
+            #endif
+        }
+    }
+}
+
+private struct AppSecrets: Sendable {
     let postHogProjectToken: String
     let postHogHost: URL
 
