@@ -52,7 +52,16 @@ struct CreditCard: App {
 
     /// Shared card data store for menu bar access on macOS
     @State private var cardDataStore = CardDataStore()
-    private let appSecrets = AppSecrets.load()
+    private let sdkBootstrapper: SDKBootstrapper
+
+    init() {
+        let sdkBootstrapper = SDKBootstrapper()
+        self.sdkBootstrapper = sdkBootstrapper
+
+        Task {
+            await sdkBootstrapper.configure(with: AppSecrets.load())
+        }
+    }
 
     var body: some Scene {
         WindowGroup {
@@ -62,16 +71,6 @@ struct CreditCard: App {
                         .displayFrequency(.immediate),
                         .datastoreLocation(.applicationDefault)
                     ])
-
-                    try? await SinghDevKit.shared.configure(
-                        SDKConfiguration(
-                            analytics: .postHog(
-                                projectToken: appSecrets.postHogProjectToken,
-                                host: appSecrets.postHogHost
-                            )
-                        )
-                    )
-                    await SinghDevKit.shared.analytics.trackAppLaunch()
                 }
                 .environment(
                     \.whatsNew,
@@ -120,18 +119,62 @@ struct CreditCard: App {
     #endif
 }
 
+private actor SDKBootstrapper {
+    private enum State {
+        case idle
+        case configuring
+        case configured
+        case failed
+    }
+
+    private var state: State = .idle
+
+    func configure(with appSecrets: AppSecrets?) async {
+        switch state {
+        case .idle, .failed:
+            state = .configuring
+        case .configuring, .configured:
+            return
+        }
+
+        guard let appSecrets else {
+            print("Warning: Missing or invalid Secrets.plist - analytics disabled")
+            state = .failed
+            return
+        }
+
+        do {
+            try await SinghDevKit.shared.configure(
+                SDKConfiguration(
+                    analytics: .postHog(
+                        projectToken: appSecrets.postHogProjectToken,
+                        host: appSecrets.postHogHost
+                    )
+                )
+            )
+            await SinghDevKit.shared.analytics.trackAppLaunch()
+            state = .configured
+        } catch {
+            state = .failed
+            print("Warning: Failed to configure SinghDevKit: \(error.localizedDescription)")
+        }
+    }
+}
+
 private struct AppSecrets: Sendable {
     let postHogProjectToken: String
     let postHogHost: URL
 
-    static func load() -> Self {
+    static func load() -> Self? {
         guard let path = Bundle.main.path(forResource: "Secrets", ofType: "plist"),
               let dictionary = NSDictionary(contentsOfFile: path) as? [String: Any] else {
-            fatalError("Missing Secrets.plist - ensure it is added to the project")
+            print("Warning: Missing Secrets.plist - analytics disabled")
+            return nil
         }
 
         guard let projectToken = nonEmptyString(from: dictionary["PostHogProjectToken"]) else {
-            fatalError("Missing PostHogProjectToken in Secrets.plist")
+            print("Warning: Missing PostHogProjectToken in Secrets.plist - analytics disabled")
+            return nil
         }
 
         let host = nonEmptyString(from: dictionary["PostHogHost"])
