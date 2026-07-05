@@ -7,7 +7,7 @@
 
 import SwiftUI
 import WhatsNewKit
-import Settings
+import SinghDevKit
 
 struct HomeView: View {
 	@ObservedObject var model: HomeViewModel
@@ -76,7 +76,7 @@ struct HomeView: View {
 			}
 			#if !os(macOS)
 			.toolbar {
-				NavigationLink(destination: SettingsView(model: SettingsViewModel())) {
+				NavigationLink(destination: SettingsView(configuration: SettingsViewModel())) {
 					Image(systemName: "gear")
 				}
 			}

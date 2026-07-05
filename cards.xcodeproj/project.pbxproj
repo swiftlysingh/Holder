@@ -17,7 +17,6 @@
 		EE1D3E982B69379E009733A5 /* SettingsViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE1D3E972B69379E009733A5 /* SettingsViewModel.swift */; };
 		EE1D3E9D2B6AC7BC009733A5 /* SharkCardScanViewRepresentable.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE1D3E9C2B6AC7BC009733A5 /* SharkCardScanViewRepresentable.swift */; };
 		EE3406CE2B6D0FF8007E7DD2 /* SharkCardScan in Frameworks */ = {isa = PBXBuildFile; platformFilter = ios; productRef = EE3406CD2B6D0FF8007E7DD2 /* SharkCardScan */; };
-		EE4CBEA82CEA98E900635DFC /* OnboardingKit in Frameworks */ = {isa = PBXBuildFile; productRef = EE4CBEA72CEA98E900635DFC /* OnboardingKit */; };
 		EE4CBEAB2CEEC8E900635DFC /* ICloudDataManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE4CBEAA2CEEC8E900635DFC /* ICloudDataManager.swift */; };
 		EE599BAC2B23900A002F49F8 /* AppSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE599BAB2B23900A002F49F8 /* AppSettingsView.swift */; };
 		EE599BAE2B2398DF002F49F8 /* UserSettings.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE599BAD2B2398DF002F49F8 /* UserSettings.swift */; };
@@ -26,7 +25,7 @@
 		EE599BB62B24495F002F49F8 /* CardData.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE599BB52B24495F002F49F8 /* CardData.swift */; };
 		EE8ADBEF2B66A5B600F0DC29 /* HomeViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE8ADBEE2B66A5B600F0DC29 /* HomeViewModel.swift */; };
 		EE8ADF002F1100010000A1C0 /* ArchivedCardsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE8ADF012F1100010000A1C1 /* ArchivedCardsView.swift */; };
-		EE8ADF0B2F11A0A1C5000002 /* Analytics in Frameworks */ = {isa = PBXBuildFile; productRef = EE8ADF0A2F11A0A1C5000001 /* Analytics */; };
+		EE8ADF0B2F11A0A1C5000002 /* SinghDevKit in Frameworks */ = {isa = PBXBuildFile; productRef = EE8ADF0A2F11A0A1C5000001 /* SinghDevKit */; };
 		EE960C4F2B4AC00B00B67805 /* CardDataStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE960C4E2B4AC00B00B67805 /* CardDataStore.swift */; };
 		EEABD0D12B6D8AD600FF34E6 /* WhatsNewKit in Frameworks */ = {isa = PBXBuildFile; productRef = EEABD0D02B6D8AD600FF34E6 /* WhatsNewKit */; };
 		EEBB52EA2B238D6600035B92 /* CreditCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = EEBB52E92B238D6600035B92 /* CreditCard.swift */; };
@@ -37,7 +36,6 @@
 		EED86E542F0BC2160063097F /* WidgetKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = EED86E532F0BC2160063097F /* WidgetKit.framework */; };
 		EED86E562F0BC2170063097F /* SwiftUI.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = EED86E552F0BC2170063097F /* SwiftUI.framework */; };
 		EED86E612F0BC2190063097F /* WidgetsExtension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = EED86E512F0BC2160063097F /* WidgetsExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
-		FF9212C02BE57A50005DF48E /* Settings in Frameworks */ = {isa = PBXBuildFile; productRef = FF9212BF2BE57A50005DF48E /* Settings */; };
 		FF9452F92BDE314E00731D8B /* Secrets.plist in Resources */ = {isa = PBXBuildFile; fileRef = FF9452F82BDE314E00731D8B /* Secrets.plist */; };
 /* End PBXBuildFile section */
 
@@ -117,9 +115,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				EE4CBEA82CEA98E900635DFC /* OnboardingKit in Frameworks */,
-				FF9212C02BE57A50005DF48E /* Settings in Frameworks */,
-				EE8ADF0B2F11A0A1C5000002 /* Analytics in Frameworks */,
+				EE8ADF0B2F11A0A1C5000002 /* SinghDevKit in Frameworks */,
 				EEABD0D12B6D8AD600FF34E6 /* WhatsNewKit in Frameworks */,
 				EE3406CE2B6D0FF8007E7DD2 /* SharkCardScan in Frameworks */,
 			);
@@ -283,9 +279,7 @@
 			packageProductDependencies = (
 				EE3406CD2B6D0FF8007E7DD2 /* SharkCardScan */,
 				EEABD0D02B6D8AD600FF34E6 /* WhatsNewKit */,
-				FF9212BF2BE57A50005DF48E /* Settings */,
-				EE4CBEA72CEA98E900635DFC /* OnboardingKit */,
-				EE8ADF0A2F11A0A1C5000001 /* Analytics */,
+				EE8ADF0A2F11A0A1C5000001 /* SinghDevKit */,
 			);
 			productName = "credit-card";
 			productReference = EEBB52E62B238D6600035B92 /* Holder.app */;
@@ -343,8 +337,7 @@
 			packageReferences = (
 				EE3406CC2B6D0FF8007E7DD2 /* XCRemoteSwiftPackageReference "ios-card-scan" */,
 				EEABD0CF2B6D8AD600FF34E6 /* XCRemoteSwiftPackageReference "WhatsNewKit" */,
-				FF9212BC2BE57A50005DF48E /* XCRemoteSwiftPackageReference "SinghDevelopmentKit" */,
-				EE4CBEA62CEA98E900635DFC /* XCRemoteSwiftPackageReference "OnboardingKit" */,
+				FF9212BC2BE57A50005DF48E /* XCRemoteSwiftPackageReference "SinghDevKit" */,
 			);
 			productRefGroup = EEBB52E72B238D6600035B92 /* Products */;
 			projectDirPath = "";
@@ -506,7 +499,7 @@
 					"@executable_path/Frameworks",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 15.6;
-				MARKETING_VERSION = 2.0;
+				MARKETING_VERSION = 2.1;
 				PRODUCT_BUNDLE_IDENTIFIER = com.swiftlysingh.cards.beta;
 				PRODUCT_NAME = Holder;
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator macosx xros xrsimulator";
@@ -665,7 +658,7 @@
 					"@executable_path/Frameworks",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 15.6;
-				MARKETING_VERSION = 2.0;
+				MARKETING_VERSION = 2.1;
 				PRODUCT_BUNDLE_IDENTIFIER = com.swiftlysingh.cards.debug;
 				PRODUCT_NAME = Holder;
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator macosx xros xrsimulator";
@@ -705,7 +698,7 @@
 					"@executable_path/Frameworks",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 15.6;
-				MARKETING_VERSION = 2.0;
+				MARKETING_VERSION = 2.1;
 				PRODUCT_BUNDLE_IDENTIFIER = com.swiftlysingh.cards;
 				PRODUCT_NAME = Holder;
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator macosx xros xrsimulator";
@@ -864,14 +857,6 @@
 				kind = branch;
 			};
 		};
-		EE4CBEA62CEA98E900635DFC /* XCRemoteSwiftPackageReference "OnboardingKit" */ = {
-			isa = XCRemoteSwiftPackageReference;
-			repositoryURL = "https://github.com/JamesSedlacek/OnboardingKit.git";
-			requirement = {
-				branch = main;
-				kind = branch;
-			};
-		};
 		EEABD0CF2B6D8AD600FF34E6 /* XCRemoteSwiftPackageReference "WhatsNewKit" */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/SvenTiigi/WhatsNewKit.git";
@@ -880,12 +865,12 @@
 				minimumVersion = 2.2.0;
 			};
 		};
-		FF9212BC2BE57A50005DF48E /* XCRemoteSwiftPackageReference "SinghDevelopmentKit" */ = {
+		FF9212BC2BE57A50005DF48E /* XCRemoteSwiftPackageReference "SinghDevKit" */ = {
 			isa = XCRemoteSwiftPackageReference;
-			repositoryURL = "https://github.com/swiftlysingh/SinghDevelopmentKit.git";
+			repositoryURL = "https://github.com/swiftlysingh/SinghDevKit.git";
 			requirement = {
 				kind = upToNextMajorVersion;
-				minimumVersion = 1.2.0;
+				minimumVersion = 2.1.1;
 			};
 		};
 /* End XCRemoteSwiftPackageReference section */
@@ -896,25 +881,15 @@
 			package = EE3406CC2B6D0FF8007E7DD2 /* XCRemoteSwiftPackageReference "ios-card-scan" */;
 			productName = SharkCardScan;
 		};
-		EE4CBEA72CEA98E900635DFC /* OnboardingKit */ = {
+		EE8ADF0A2F11A0A1C5000001 /* SinghDevKit */ = {
 			isa = XCSwiftPackageProductDependency;
-			package = EE4CBEA62CEA98E900635DFC /* XCRemoteSwiftPackageReference "OnboardingKit" */;
-			productName = OnboardingKit;
-		};
-		EE8ADF0A2F11A0A1C5000001 /* Analytics */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = FF9212BC2BE57A50005DF48E /* XCRemoteSwiftPackageReference "SinghDevelopmentKit" */;
-			productName = Analytics;
+			package = FF9212BC2BE57A50005DF48E /* XCRemoteSwiftPackageReference "SinghDevKit" */;
+			productName = SinghDevKit;
 		};
 		EEABD0D02B6D8AD600FF34E6 /* WhatsNewKit */ = {
 			isa = XCSwiftPackageProductDependency;
 			package = EEABD0CF2B6D8AD600FF34E6 /* XCRemoteSwiftPackageReference "WhatsNewKit" */;
 			productName = WhatsNewKit;
-		};
-		FF9212BF2BE57A50005DF48E /* Settings */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = FF9212BC2BE57A50005DF48E /* XCRemoteSwiftPackageReference "SinghDevelopmentKit" */;
-			productName = Settings;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};
