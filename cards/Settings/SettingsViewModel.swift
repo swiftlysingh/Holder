@@ -30,8 +30,6 @@ struct SettingsViewModel: SettingsViewModelProtocol {
     @ViewBuilder var appSettings: some View {
         AppSettingsView()
     }
-
-    func rateTheAppAction() {
-        ReviewService.requestReview()
-    }
+    
+    var appReview: AppReviewConfiguration = .appStoreID("6475649492")
 }
