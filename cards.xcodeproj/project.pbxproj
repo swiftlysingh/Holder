@@ -40,6 +40,13 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
+		CD29000B2F2100010000000B /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = EEBB52DE2B238D6600035B92 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = EEBB52E52B238D6600035B92;
+			remoteInfo = cards;
+		};
 		EED86E5F2F0BC2190063097F /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = EEBB52DE2B238D6600035B92 /* Project object */;
@@ -64,6 +71,7 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		CD2900012F21000100000001 /* cardsTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = cardsTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		AA0000012F0BC0000000001A /* PlatformTypes.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlatformTypes.swift; sourceTree = "<group>"; };
 		AA0000022F0BC0000000001B /* PasteboardService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PasteboardService.swift; sourceTree = "<group>"; };
 		AA0000032F0BC0000000001C /* HapticService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HapticService.swift; sourceTree = "<group>"; };
@@ -107,10 +115,18 @@
 /* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
+		CD2900022F21000100000002 /* cardsTests */ = {isa = PBXFileSystemSynchronizedRootGroup; explicitFileTypes = {}; explicitFolders = (); path = cardsTests; sourceTree = "<group>"; };
 		EED86E572F0BC2170063097F /* Widgets */ = {isa = PBXFileSystemSynchronizedRootGroup; exceptions = (EED86E662F0BC2190063097F /* PBXFileSystemSynchronizedBuildFileExceptionSet */, ); explicitFileTypes = {}; explicitFolders = (); path = Widgets; sourceTree = "<group>"; };
 /* End PBXFileSystemSynchronizedRootGroup section */
 
 /* Begin PBXFrameworksBuildPhase section */
+		CD2900052F21000100000005 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		EEBB52E32B238D6600035B92 /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
@@ -195,6 +211,7 @@
 			isa = PBXGroup;
 			children = (
 				EEBB52E82B238D6600035B92 /* cards */,
+				CD2900022F21000100000002 /* cardsTests */,
 				EED86E572F0BC2170063097F /* Widgets */,
 				EED86E522F0BC2160063097F /* Frameworks */,
 				EEBB52E72B238D6600035B92 /* Products */,
@@ -206,6 +223,7 @@
 			children = (
 				EEBB52E62B238D6600035B92 /* Holder.app */,
 				EED86E512F0BC2160063097F /* WidgetsExtension.appex */,
+				CD2900012F21000100000001 /* cardsTests.xctest */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -261,6 +279,29 @@
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
+		CD2900032F21000100000003 /* cardsTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = CD2900072F21000100000007 /* Build configuration list for PBXNativeTarget "cardsTests" */;
+			buildPhases = (
+				CD2900042F21000100000004 /* Sources */,
+				CD2900052F21000100000005 /* Frameworks */,
+				CD2900062F21000100000006 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				CD29000C2F2100010000000C /* PBXTargetDependency */,
+			);
+			fileSystemSynchronizedGroups = (
+				CD2900022F21000100000002 /* cardsTests */,
+			);
+			name = cardsTests;
+			packageProductDependencies = (
+			);
+			productName = cardsTests;
+			productReference = CD2900012F21000100000001 /* cardsTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
 		EEBB52E52B238D6600035B92 /* cards */ = {
 			isa = PBXNativeTarget;
 			buildConfigurationList = EEBB52F42B238D6800035B92 /* Build configuration list for PBXNativeTarget "cards" */;
@@ -317,6 +358,10 @@
 				LastSwiftUpdateCheck = 2600;
 				LastUpgradeCheck = 1500;
 				TargetAttributes = {
+					CD2900032F21000100000003 = {
+						CreatedOnToolsVersion = 26.0;
+						TestTargetID = EEBB52E52B238D6600035B92;
+					};
 					EEBB52E52B238D6600035B92 = {
 						CreatedOnToolsVersion = 15.0;
 					};
@@ -345,11 +390,19 @@
 			targets = (
 				EEBB52E52B238D6600035B92 /* cards */,
 				EED86E502F0BC2160063097F /* WidgetsExtension */,
+				CD2900032F21000100000003 /* cardsTests */,
 			);
 		};
 /* End PBXProject section */
 
 /* Begin PBXResourcesBuildPhase section */
+		CD2900062F21000100000006 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		EEBB52E42B238D6600035B92 /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -370,6 +423,13 @@
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
+		CD2900042F21000100000004 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		EEBB52E22B238D6600035B92 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -408,6 +468,11 @@
 /* End PBXSourcesBuildPhase section */
 
 /* Begin PBXTargetDependency section */
+		CD29000C2F2100010000000C /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = EEBB52E52B238D6600035B92 /* cards */;
+			targetProxy = CD29000B2F2100010000000B /* PBXContainerItemProxy */;
+		};
 		EED86E602F0BC2190063097F /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
 			target = EED86E502F0BC2160063097F /* WidgetsExtension */;
@@ -416,6 +481,84 @@
 /* End PBXTargetDependency section */
 
 /* Begin XCBuildConfiguration section */
+		CD2900082F21000100000008 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 4WMQY24R33;
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
+				MACOSX_DEPLOYMENT_TARGET = 15.6;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.swiftlysingh.cardsTests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator macosx xros xrsimulator";
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2,7";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Holder.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/Holder";
+			};
+			name = Debug;
+		};
+		CD2900092F21000100000009 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 4WMQY24R33;
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
+				MACOSX_DEPLOYMENT_TARGET = 15.6;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.swiftlysingh.cardsTests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator macosx xros xrsimulator";
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2,7";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Holder.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/Holder";
+			};
+			name = Release;
+		};
+		CD29000A2F2100010000000A /* Beta */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 4WMQY24R33;
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
+				MACOSX_DEPLOYMENT_TARGET = 15.6;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.swiftlysingh.cardsTests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator macosx xros xrsimulator";
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2,7";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Holder.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/Holder";
+			};
+			name = Beta;
+		};
 		EE1D3E952B692C9F009733A5 /* Beta */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
@@ -816,6 +959,16 @@
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
+		CD2900072F21000100000007 /* Build configuration list for PBXNativeTarget "cardsTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				CD2900082F21000100000008 /* Debug */,
+				CD2900092F21000100000009 /* Release */,
+				CD29000A2F2100010000000A /* Beta */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
 		EEBB52E12B238D6600035B92 /* Build configuration list for PBXProject "cards" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
