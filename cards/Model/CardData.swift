@@ -18,6 +18,10 @@ struct CardData : Identifiable, Codable, Hashable {
 	var network: CardNetwork
 	var isArchived: Bool
 
+	private enum CodingKeys: String, CodingKey {
+		case id, number, cvv, expiration, name, description, type, network, isArchived
+	}
+
 	init(
 		id: UUID,
 		number: String,
@@ -59,6 +63,24 @@ struct CardData : Identifiable, Codable, Hashable {
 		self.network = network
 		self.isArchived = isArchived
 	}
+
+	init(from decoder: Decoder) throws {
+		let container = try decoder.container(keyedBy: CodingKeys.self)
+		let number = try container.decode(String.self, forKey: .number)
+
+		self.init(
+			id: try container.decode(UUID.self, forKey: .id),
+			number: number,
+			cvv: try container.decode(String.self, forKey: .cvv),
+			expiration: try container.decode(String.self, forKey: .expiration),
+			name: try container.decode(String.self, forKey: .name),
+			description: try container.decode(String.self, forKey: .description),
+			type: try container.decode(CardType.self, forKey: .type),
+			network: try container.decodeIfPresent(CardNetwork.self, forKey: .network) ?? number.getCardNetwork(),
+			isArchived: try container.decodeIfPresent(Bool.self, forKey: .isArchived) ?? false
+		)
+	}
+
 	func toShareString() -> String {
 		return "Name: \(self.name) \nNumber: \(number) \nExpiration: \(expiration) \nSecurity Code: \(cvv)"
 	}
@@ -102,29 +124,5 @@ extension CardData {
 	func toData() throws -> Data {
 		let encoder = JSONEncoder()
 		return try encoder.encode(self)
-	}
-}
-
-struct OldCardData : Identifiable, Codable, Hashable {
-	var id: UUID
-	var number : String
-	var cvv : String
-	var expiration : String
-	var name : String
-	var description: String
-	var type : CardType
-
-	func transferToNewSchema() -> CardData {
-		return CardData(
-			id: id,
-			number: number,
-			cvv: cvv,
-			expiration: expiration,
-			name: name,
-			description: description,
-			type: type,
-			network: number.getCardNetwork(),
-			isArchived: false
-		)
 	}
 }

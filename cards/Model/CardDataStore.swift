@@ -35,7 +35,6 @@ class CardDataStore {
 	}
 
 	func loadCards() {
-		migrateToNewSchema(for: Bundle.main.bundleIdentifier ?? "com.myApp.defaultService")
 		var retrievedCard = retrieveAllCardData(service: Bundle.main.bundleIdentifier ?? "com.myApp.defaultService") ?? []
 
 			//		Add default data for simulator
@@ -70,14 +69,18 @@ class CardDataStore {
 			)
 
 		}
-		// Separate archived and active cards
-		archivedCards = retrievedCard.filter { $0.isArchived }
-		let activeCards = retrievedCard.filter { !$0.isArchived }
-
-		for type in CardType.allCases {
-			cardsByType[type] = activeCards.filter { $0.type == type }
-		}
+		let partition = Self.partition(retrievedCard)
+		cardsByType = partition.cardsByType
+		archivedCards = partition.archivedCards
 		syncCardsToWidget()
+	}
+
+	static func partition(_ cards: [CardData]) -> (cardsByType: [CardType: [CardData]], archivedCards: [CardData]) {
+		let activeCards = cards.filter { !$0.isArchived }
+		let cardsByType = Dictionary(uniqueKeysWithValues: CardType.allCases.map { type in
+			(type, activeCards.filter { $0.type == type })
+		})
+		return (cardsByType, cards.filter { $0.isArchived })
 	}
 
 	func addCard(_ card: CardData) {
@@ -114,32 +117,21 @@ class CardDataStore {
 	func archiveCard(_ card: CardData) {
 		var archivedCard = card
 		archivedCard.isArchived = true
-		_ = saveOrUpdateCardData(archivedCard)
-
-		// Remove from active cards
-		if let index = cardsByType[card.type]?.firstIndex(where: { $0.id == card.id }) {
-			cardsByType[card.type]?.remove(at: index)
+		guard saveOrUpdateCardData(archivedCard) else {
+			print("Failed to archive card: \(card.id)")
+			return
 		}
-		// Add to archived list
-		archivedCards.append(archivedCard)
-		syncCardsToWidget()
+		loadCards()
 	}
 
 	func unarchiveCard(_ card: CardData) {
 		var unarchivedCard = card
 		unarchivedCard.isArchived = false
-		_ = saveOrUpdateCardData(unarchivedCard)
-
-		// Remove from archived cards
-		if let index = archivedCards.firstIndex(where: { $0.id == card.id }) {
-			archivedCards.remove(at: index)
+		guard saveOrUpdateCardData(unarchivedCard) else {
+			print("Failed to unarchive card: \(card.id)")
+			return
 		}
-		// Add back to active cards
-		if cardsByType[card.type] == nil {
-			cardsByType[card.type] = []
-		}
-		cardsByType[card.type]?.append(unarchivedCard)
-		syncCardsToWidget()
+		loadCards()
 	}
 /// Returns if success
 	private func saveOrUpdateCardData(_ cardData: CardData) -> Bool {
@@ -243,40 +235,4 @@ class CardDataStore {
 		WidgetCenter.shared.reloadAllTimelines()
 	}
 
-	private func migrateToNewSchema(for service: String) {
-		let query: [String: Any] = [
-			kSecClass as String: kSecClassGenericPassword,
-			kSecAttrService as String: service,
-			kSecMatchLimit as String: kSecMatchLimitAll,
-			kSecReturnAttributes as String: kCFBooleanTrue!,
-			kSecReturnData as String: kCFBooleanTrue!,
-			kSecAttrSynchronizable as String: kCFBooleanTrue!
-		]
-
-		var items: CFTypeRef?
-		let status = SecItemCopyMatching(query as CFDictionary, &items)
-
-		guard status == errSecSuccess else {
-			print("Error retrieving old from Keychain: \(status)")
-			return
-		}
-
-		guard let existingItems = items as? [[String: Any]] else {
-			print("No items found in the Keychain")
-			return
-		}
-
-		for item in existingItems {
-
-			if let data = item[kSecValueData as String] as? Data {
-				do {
-					let oldCardData = try JSONDecoder().decode(OldCardData.self, from: data)
-					_ = saveOrUpdateCardData(oldCardData.transferToNewSchema())
-				} catch {
-					print("Error decoding CardData: \(error)")
-						// Optionally handle the error, e.g., continue with next item
-				}
-			}
-		}
-	}
 }
