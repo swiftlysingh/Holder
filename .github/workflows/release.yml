@@ -1,0 +1,116 @@
+name: Release
+
+on:
+  workflow_dispatch:
+
+concurrency:
+  group: release-${{ github.repository }}
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    name: Cut release and bump trunk
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout main
+        uses: actions/checkout@v5
+        with:
+          ref: main
+          fetch-depth: 0
+
+      - name: Plan release
+        id: plan
+        run: |
+          set -euo pipefail
+
+          PBXPROJ="cards.xcodeproj/project.pbxproj"
+          RAW_VERSION="$(grep -m1 'MARKETING_VERSION =' "$PBXPROJ" | sed -E 's/.*MARKETING_VERSION = ([^;]+);/\1/' | tr -d '[:space:]')"
+
+          if ! [[ "$RAW_VERSION" =~ ^[0-9]+\.[0-9]+(\.[0-9]+)?$ ]]; then
+            echo "Unexpected MARKETING_VERSION: $RAW_VERSION" >&2
+            exit 1
+          fi
+
+          IFS='.' read -r MAJOR MINOR PATCH <<< "$RAW_VERSION"
+          RELEASE_VERSION="${MAJOR}.${MINOR}.${PATCH:-0}"
+          NEXT_VERSION="${MAJOR}.$((MINOR + 1))"
+
+          {
+            echo "raw_version=$RAW_VERSION"
+            echo "release_version=$RELEASE_VERSION"
+            echo "next_version=$NEXT_VERSION"
+            echo "release_branch=release/$RELEASE_VERSION"
+            echo "tag=v$RELEASE_VERSION"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Validate release
+        run: |
+          set -euo pipefail
+
+          if git rev-parse "${{ steps.plan.outputs.tag }}" >/dev/null 2>&1; then
+            echo "Tag ${{ steps.plan.outputs.tag }} already exists." >&2
+            exit 1
+          fi
+
+          if git ls-remote --exit-code --heads origin "${{ steps.plan.outputs.release_branch }}" >/dev/null 2>&1; then
+            echo "Branch ${{ steps.plan.outputs.release_branch }} already exists." >&2
+            exit 1
+          fi
+
+      - name: Generate release notes
+        run: |
+          set -euo pipefail
+
+          PREVIOUS_TAG="$(git tag --sort=-v:refname | head -n 1 || true)"
+          if [ -n "$PREVIOUS_TAG" ]; then
+            git log "$PREVIOUS_TAG..HEAD" --pretty=format:'- %s (%h)' --no-merges > release-notes.md
+          else
+            git log --pretty=format:'- %s (%h)' --no-merges -20 > release-notes.md
+          fi
+
+      - name: Create release branch, tag, and version bump
+        run: |
+          set -euo pipefail
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git branch "${{ steps.plan.outputs.release_branch }}"
+          git tag -a "${{ steps.plan.outputs.tag }}" -m "Holder ${{ steps.plan.outputs.release_version }}"
+
+          PBXPROJ="cards.xcodeproj/project.pbxproj"
+          CURRENT_VERSION="${{ steps.plan.outputs.raw_version }}"
+          NEXT_VERSION="${{ steps.plan.outputs.next_version }}"
+
+          sed -i "s/MARKETING_VERSION = ${CURRENT_VERSION};/MARKETING_VERSION = ${NEXT_VERSION};/g" "$PBXPROJ"
+          if git diff --quiet "$PBXPROJ"; then
+            echo "No marketing version changes detected." >&2
+            exit 1
+          fi
+
+          git add "$PBXPROJ"
+          git commit -m "Bump marketing version to ${NEXT_VERSION}"
+          git push --atomic origin \
+            main \
+            "${{ steps.plan.outputs.release_branch }}" \
+            "${{ steps.plan.outputs.tag }}"
+
+      - name: Create GitHub release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "${{ steps.plan.outputs.tag }}" \
+            --title "Holder ${{ steps.plan.outputs.release_version }}" \
+            --notes-file release-notes.md \
+            --target "${{ steps.plan.outputs.release_branch }}"
+
+      - name: Summary
+        run: |
+          {
+            echo "### Holder ${{ steps.plan.outputs.release_version }}"
+            echo "- Branch: \`${{ steps.plan.outputs.release_branch }}\`"
+            echo "- Tag: \`${{ steps.plan.outputs.tag }}\`"
+            echo "- Trunk version: \`${{ steps.plan.outputs.next_version }}\`"
+          } >> "$GITHUB_STEP_SUMMARY"
