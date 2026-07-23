@@ -149,7 +149,8 @@ private actor SDKBootstrapper {
                     analytics: .postHog(
                         projectToken: appSecrets.postHogProjectToken,
                         host: appSecrets.postHogHost
-                    )
+                    ),
+                    payments: .revenueCat(apiKey: appSecrets.revenueCatAPIKey)
                 )
             )
             await SinghDevKit.shared.analytics.trackAppLaunch()
@@ -164,6 +165,7 @@ private actor SDKBootstrapper {
 private struct AppSecrets: Sendable {
     let postHogProjectToken: String
     let postHogHost: URL
+    let revenueCatAPIKey: String
 
     static func load() -> Self? {
         guard let path = Bundle.main.path(forResource: "Secrets", ofType: "plist"),
@@ -177,13 +179,19 @@ private struct AppSecrets: Sendable {
             return nil
         }
 
+        guard let revenueCatAPIKey = nonEmptyString(from: dictionary["RevenueCatAPIKey"]) else {
+            print("Warning: Missing RevenueCatAPIKey in Secrets.plist - payments disabled")
+            return nil
+        }
+
         let host = nonEmptyString(from: dictionary["PostHogHost"])
             .flatMap(URL.init(string:))
             ?? URL(string: "https://us.i.posthog.com")!
 
         return Self(
             postHogProjectToken: projectToken,
-            postHogHost: host
+            postHogHost: host,
+            revenueCatAPIKey: revenueCatAPIKey
         )
     }
 
