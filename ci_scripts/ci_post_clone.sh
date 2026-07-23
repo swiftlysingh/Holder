@@ -33,13 +33,25 @@ fi
 # Define the path to where Secrets.plist should be stored in your project
 SECRETS_PLIST_PATH="$REPO_PATH/$APP_NAME/Secrets.plist"
 
-# Your GitHub repository URL for Secrets.plist
-# Replace `your_username` and `your_repo` with your actual GitHub account and repository details
 GITHUB_REPO_URL="https://api.github.com/repos/swiftlysingh/AppKeys/contents/$APP_NAME/Secrets.plist?ref=main"
 
-# Use curl to download Secrets.plist from the private GitHub repo
-# Assumes GITHUB_TOKEN is set in your Xcode Cloud environment variables and marked as secret
-curl -H "Authorization: token $GITHUB_TOKEN" -H "Accept: application/vnd.github.v3.raw" -L $GITHUB_REPO_URL -o "$SECRETS_PLIST_PATH"
+if [ "${CI_BRANCH#release/}" = "$CI_BRANCH" ]; then
+    plutil -create xml1 "$SECRETS_PLIST_PATH"
+    echo "Using an empty Secrets.plist for a non-release build"
+    exit 0
+fi
 
-echo "Secrets.plist has been successfully downloaded and placed at $SECRETS_PLIST_PATH"
+: "${GITHUB_TOKEN:?Set GITHUB_TOKEN with access to swiftlysingh/AppKeys}"
 
+TEMP_SECRETS_PATH="$SECRETS_PLIST_PATH.tmp"
+trap 'rm -f "$TEMP_SECRETS_PATH"' EXIT
+
+curl --fail --silent --show-error --location \
+    -H "Authorization: Bearer $GITHUB_TOKEN" \
+    -H "Accept: application/vnd.github.raw+json" \
+    "$GITHUB_REPO_URL" \
+    -o "$TEMP_SECRETS_PATH"
+plutil -lint "$TEMP_SECRETS_PATH" >/dev/null
+mv "$TEMP_SECRETS_PATH" "$SECRETS_PLIST_PATH"
+
+echo "Secrets.plist downloaded and validated"

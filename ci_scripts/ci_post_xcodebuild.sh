@@ -2,6 +2,10 @@
 
 set -e
 
+if [[ ! -d "${CI_ARCHIVE_PATH:-}" ]]; then
+  exit 0
+fi
+
 # Adds testflight notes
 if [[ -d "$CI_APP_STORE_SIGNED_APP_PATH" ]]; then
   TESTFLIGHT_DIR_PATH="../TestFlight"
@@ -108,4 +112,3 @@ upload_response=$(curl \
 upload_url=$(echo "$upload_response" | jq -r .uploadURL)
 
 curl -v -H 'Content-Type: application/zip' -T "$zip_path" "$upload_url"
-
