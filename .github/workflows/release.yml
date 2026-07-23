@@ -27,7 +27,10 @@ jobs:
           set -euo pipefail
 
           PBXPROJ="cards.xcodeproj/project.pbxproj"
-          RAW_VERSION="$(grep -m1 'MARKETING_VERSION =' "$PBXPROJ" | sed -E 's/.*MARKETING_VERSION = ([^;]+);/\1/' | tr -d '[:space:]')"
+          RAW_VERSION="$(awk '
+            /MARKETING_VERSION =/ { version = $3; sub(/;$/, "", version) }
+            /PRODUCT_BUNDLE_IDENTIFIER = com\.swiftlysingh\.cards;/ { print version; exit }
+          ' "$PBXPROJ")"
 
           if ! [[ "$RAW_VERSION" =~ ^[0-9]+\.[0-9]+(\.[0-9]+)?$ ]]; then
             echo "Unexpected MARKETING_VERSION: $RAW_VERSION" >&2
