@@ -42,7 +42,7 @@ To install the application, follow these steps:
 3. Build and run the project
 
 ## Contributing
-We welcome contributions to Holder. Please see our contributing guidelines for more details.
+We welcome contributions to Holder. Please see our [contributing guidelines](Contributing.md) for more details.
 
 ## License
 Holder is licensed under the Creative Commons Attribution-NonCommercial 4.0 International (CC BY-NC 4.0) license. See the LICENSE file for more details.

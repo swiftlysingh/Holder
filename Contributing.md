@@ -49,4 +49,12 @@ The process described here has several goals:
 - Engage the community in working toward the best possible Holder
 - Enable a sustainable system for Holder's maintainers to review contributions
 
+## Development and Releases
+
+- `main` is the trunk branch. Create short-lived branches from it and open pull requests back to `main`.
+- Xcode Cloud's **Test** workflow runs the iOS tests on every branch when `cards`, `Widgets`, `cardsTests`, or `cards.xcodeproj` changes.
+- To release, manually run the GitHub Actions **Release** workflow. It reads the app target's current `MARKETING_VERSION`, creates `release/<version>`, tag `v<version>`, and a GitHub Release at that commit, then bumps the minor marketing version on `main`.
+- A new `release/*` branch starts Xcode Cloud's **Release** workflow, which produces App Store-eligible iOS and macOS archives.
+- Non-release builds use an empty `Secrets.plist`. Release builds require the Xcode Cloud secret `GITHUB_TOKEN` to have read access to the private `swiftlysingh/AppKeys` repository.
+
 ### An AI whipped up this page, but a real-life human gave it the once-over to make sure it's not just a bunch of robotic mumbo jumbo!
