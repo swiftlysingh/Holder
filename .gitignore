@@ -93,3 +93,7 @@ Secrets.plist
 
 # Ignore accidental duplicate Info.plist copy
 cards copy-Info.plist
+
+# Generated files
+cards/Generated/*
+!cards/Generated/LinesOfCode.swift

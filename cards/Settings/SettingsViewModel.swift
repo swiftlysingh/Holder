@@ -27,6 +27,8 @@ struct SettingsViewModel: SettingsViewModelProtocol {
 
     var showsSubscriptionManagement: Bool { false }
 
+    var linesOfCode: Int? { LinesOfCode.appCount }
+
     @ViewBuilder var appSettings: some View {
         AppSettingsView()
     }

@@ -15,6 +15,7 @@
 		EE1D3E902B66AE66009733A5 /* Tip.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE1D3E8F2B66AE66009733A5 /* Tip.swift */; };
 		EE1D3E922B66AE83009733A5 /* CardViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE1D3E912B66AE83009733A5 /* CardViewModel.swift */; };
 		EE1D3E982B69379E009733A5 /* SettingsViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE1D3E972B69379E009733A5 /* SettingsViewModel.swift */; };
+		EE9000012F25000100000001 /* LinesOfCode.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE9000022F25000100000002 /* LinesOfCode.swift */; };
 		EE1D3E9D2B6AC7BC009733A5 /* SharkCardScanViewRepresentable.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE1D3E9C2B6AC7BC009733A5 /* SharkCardScanViewRepresentable.swift */; };
 		EE3406CE2B6D0FF8007E7DD2 /* SharkCardScan in Frameworks */ = {isa = PBXBuildFile; platformFilter = ios; productRef = EE3406CD2B6D0FF8007E7DD2 /* SharkCardScan */; };
 		EE4CBEAB2CEEC8E900635DFC /* ICloudDataManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE4CBEAA2CEEC8E900635DFC /* ICloudDataManager.swift */; };
@@ -80,6 +81,7 @@
 		EE1D3E8F2B66AE66009733A5 /* Tip.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Tip.swift; sourceTree = "<group>"; };
 		EE1D3E912B66AE83009733A5 /* CardViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CardViewModel.swift; sourceTree = "<group>"; };
 		EE1D3E972B69379E009733A5 /* SettingsViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsViewModel.swift; sourceTree = "<group>"; };
+		EE9000022F25000100000002 /* LinesOfCode.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LinesOfCode.swift; sourceTree = "<group>"; };
 		EE1D3E9C2B6AC7BC009733A5 /* SharkCardScanViewRepresentable.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SharkCardScanViewRepresentable.swift; sourceTree = "<group>"; };
 		EE4CBEAA2CEEC8E900635DFC /* ICloudDataManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = ICloudDataManager.swift; path = Model/ICloudDataManager.swift; sourceTree = "<group>"; };
 		EE4CBEAC2CEED4F700635DFC /* cards.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = cards.entitlements; sourceTree = "<group>"; };
@@ -207,6 +209,14 @@
 			path = Model;
 			sourceTree = "<group>";
 		};
+		EE9000032F25000100000003 /* Generated */ = {
+			isa = PBXGroup;
+			children = (
+				EE9000022F25000100000002 /* LinesOfCode.swift */,
+			);
+			path = Generated;
+			sourceTree = "<group>";
+		};
 		EEBB52DD2B238D6600035B92 = {
 			isa = PBXGroup;
 			children = (
@@ -240,6 +250,7 @@
 				EEBED8C92B6D7F8A00BEBE87 /* ScanView */,
 				EE1D3E8E2B66AE36009733A5 /* Settings */,
 				EE1D3E942B66B156009733A5 /* Model */,
+				EE9000032F25000100000003 /* Generated */,
 				AA00000B2F0BC0000000003A /* Platform */,
 				AA00000C2F0BC0000000003B /* macOS */,
 				EE599BB12B24465A002F49F8 /* Extensions.swift */,
@@ -306,6 +317,7 @@
 			isa = PBXNativeTarget;
 			buildConfigurationList = EEBB52F42B238D6800035B92 /* Build configuration list for PBXNativeTarget "cards" */;
 			buildPhases = (
+				EE9000042F25000100000004 /* Count Lines of Code */,
 				EEBB52E22B238D6600035B92 /* Sources */,
 				EEBB52E32B238D6600035B92 /* Frameworks */,
 				EEBB52E42B238D6600035B92 /* Resources */,
@@ -422,6 +434,50 @@
 		};
 /* End PBXResourcesBuildPhase section */
 
+/* Begin PBXShellScriptBuildPhase section */
+		EE9000042F25000100000004 /* Count Lines of Code */ = {
+			isa = PBXShellScriptBuildPhase;
+			alwaysOutOfDate = 1;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+			);
+			inputPaths = (
+				"$(SRCROOT)/cards/CardView/CardView.swift",
+				"$(SRCROOT)/cards/CardView/CardViewModel.swift",
+				"$(SRCROOT)/cards/CardView/Tip.swift",
+				"$(SRCROOT)/cards/CreditCard.swift",
+				"$(SRCROOT)/cards/Extensions.swift",
+				"$(SRCROOT)/cards/Home/ArchivedCardsView.swift",
+				"$(SRCROOT)/cards/Home/HomeView.swift",
+				"$(SRCROOT)/cards/Home/HomeViewModel.swift",
+				"$(SRCROOT)/cards/Model/CardData.swift",
+				"$(SRCROOT)/cards/Model/CardDataStore.swift",
+				"$(SRCROOT)/cards/Model/ICloudDataManager.swift",
+				"$(SRCROOT)/cards/Platform/HapticService.swift",
+				"$(SRCROOT)/cards/Platform/PasteboardService.swift",
+				"$(SRCROOT)/cards/Platform/PlatformTypes.swift",
+				"$(SRCROOT)/cards/Platform/ReviewService.swift",
+				"$(SRCROOT)/cards/ScanView/CardScanViewStyle.swift",
+				"$(SRCROOT)/cards/ScanView/SharkCardScanViewRepresentable.swift",
+				"$(SRCROOT)/cards/Settings/AppSettingsView.swift",
+				"$(SRCROOT)/cards/Settings/SettingsViewModel.swift",
+				"$(SRCROOT)/cards/Settings/UserSettings.swift",
+				"$(SRCROOT)/cards/macOS/MenuBarView.swift",
+			);
+			name = "Count Lines of Code";
+			outputFileListPaths = (
+			);
+			outputPaths = (
+				"$(SRCROOT)/cards/Generated/LinesOfCode.swift",
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "# Count non-empty, non-comment Swift lines from declared inputs\nAPP_LINES=0\nINDEX=0\nwhile [ \"${INDEX}\" -lt \"${SCRIPT_INPUT_FILE_COUNT}\" ]; do\n    eval \"INPUT=\\${SCRIPT_INPUT_FILE_${INDEX}}\"\n    FILE_LINES=$(grep -v \"^[[:space:]]*$\" \"${INPUT}\" | grep -v \"^[[:space:]]*//\" | wc -l | tr -d ' ')\n    APP_LINES=$((APP_LINES + FILE_LINES))\n    INDEX=$((INDEX + 1))\ndone\n\ncat > \"${SRCROOT}/cards/Generated/LinesOfCode.swift\" << EOF\n// AUTO-GENERATED FILE - DO NOT EDIT\n// Generated by Xcode build phase\n\nenum LinesOfCode {\n    static let count = ${APP_LINES}\n    static let appCount = ${APP_LINES}\n}\nEOF\n";
+		};
+/* End PBXShellScriptBuildPhase section */
+
 /* Begin PBXSourcesBuildPhase section */
 		CD2900042F21000100000004 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
@@ -449,6 +505,7 @@
 				EEBB52EA2B238D6600035B92 /* CreditCard.swift in Sources */,
 				EE599BB02B239F28002F49F8 /* CardView.swift in Sources */,
 				EE1D3E982B69379E009733A5 /* SettingsViewModel.swift in Sources */,
+				EE9000012F25000100000001 /* LinesOfCode.swift in Sources */,
 				EEBED8C82B6D7F6F00BEBE87 /* CardScanViewStyle.swift in Sources */,
 				AA0000062F0BC0000000002A /* PlatformTypes.swift in Sources */,
 				AA0000072F0BC0000000002B /* PasteboardService.swift in Sources */,
@@ -1023,7 +1080,7 @@
 			repositoryURL = "https://github.com/swiftlysingh/SinghDevKit.git";
 			requirement = {
 				kind = upToNextMajorVersion;
-				minimumVersion = 2.1.1;
+				minimumVersion = 2.3.0;
 			};
 		};
 /* End XCRemoteSwiftPackageReference section */
