@@ -129,7 +129,7 @@ private actor SDKBootstrapper {
 
     private var state: State = .idle
 
-    func configure(with appSecrets: AppSecrets?) async {
+    func configure(with appSecrets: AppSecrets) async {
         switch state {
         case .idle, .failed:
             state = .configuring
@@ -137,23 +137,16 @@ private actor SDKBootstrapper {
             return
         }
 
-        guard let appSecrets else {
-            print("Warning: Missing or invalid Secrets.plist - analytics disabled")
-            state = .failed
-            return
-        }
-
         do {
             try await SinghDevKit.shared.configure(
                 SDKConfiguration(
-                    analytics: .postHog(
-                        projectToken: appSecrets.postHogProjectToken,
-                        host: appSecrets.postHogHost
-                    ),
+                    analytics: appSecrets.analyticsConfiguration,
                     payments: appSecrets.paymentsConfiguration
                 )
             )
-            await SinghDevKit.shared.analytics.trackAppLaunch()
+            if appSecrets.isAnalyticsEnabled {
+                await SinghDevKit.shared.analytics.trackAppLaunch()
+            }
             state = .configured
         } catch {
             state = .failed
@@ -163,36 +156,55 @@ private actor SDKBootstrapper {
 }
 
 struct AppSecrets: Sendable {
-    let postHogProjectToken: String
+    let postHogProjectToken: String?
     let postHogHost: URL
     let revenueCatAPIKey: String?
+
+    var analyticsConfiguration: AnalyticsConfiguration {
+        postHogProjectToken.map {
+            .postHog(projectToken: $0, host: postHogHost)
+        } ?? .disabled
+    }
 
     var paymentsConfiguration: PaymentsConfiguration {
         revenueCatAPIKey.map { .revenueCat(apiKey: $0) } ?? .disabled
     }
 
-    static func load() -> Self? {
-        guard let path = Bundle.main.path(forResource: "Secrets", ofType: "plist"),
-              let dictionary = NSDictionary(contentsOfFile: path) as? [String: Any] else {
-            print("Warning: Missing Secrets.plist - analytics disabled")
-            return nil
-        }
-
-        return load(from: dictionary)
+    var isAnalyticsEnabled: Bool {
+        postHogProjectToken != nil
     }
 
-    static func load(from dictionary: [String: Any]) -> Self? {
-        guard let projectToken = nonEmptyString(from: dictionary["PostHogProjectToken"]) else {
+    static func load() -> Self {
+        let secrets: [String: Any]
+        if let path = Bundle.main.path(forResource: "Secrets", ofType: "plist"),
+           let dictionary = NSDictionary(contentsOfFile: path) as? [String: Any] {
+            secrets = dictionary
+        } else {
+            print("Warning: Missing Secrets.plist - analytics disabled")
+            secrets = [:]
+        }
+
+        return load(
+            from: secrets,
+            appConfiguration: Bundle.main.infoDictionary ?? [:]
+        )
+    }
+
+    static func load(
+        from secrets: [String: Any],
+        appConfiguration: [String: Any]
+    ) -> Self {
+        let projectToken = nonEmptyString(from: secrets["PostHogProjectToken"])
+        if projectToken == nil {
             print("Warning: Missing PostHogProjectToken in Secrets.plist - analytics disabled")
-            return nil
         }
 
-        let revenueCatAPIKey = nonEmptyString(from: dictionary["RevenueCatAPIKey"])
+        let revenueCatAPIKey = nonEmptyString(from: appConfiguration["RevenueCatAPIKey"])
         if revenueCatAPIKey == nil {
-            print("Warning: Missing RevenueCatAPIKey in Secrets.plist - payments disabled")
+            print("Warning: Missing RevenueCatAPIKey in Info.plist - payments disabled")
         }
 
-        let host = nonEmptyString(from: dictionary["PostHogHost"])
+        let host = nonEmptyString(from: secrets["PostHogHost"])
             .flatMap(URL.init(string:))
             ?? URL(string: "https://us.i.posthog.com")!
 
