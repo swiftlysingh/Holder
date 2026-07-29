@@ -83,10 +83,13 @@ class CardDataStore {
 		return (cardsByType, cards.filter { $0.isArchived })
 	}
 
-	func addCard(_ card: CardData) {
-		//TODO: Add error handling here
-		_ = saveOrUpdateCardData(card)
-		syncCardsToWidget()
+	@discardableResult
+	func addCard(_ card: CardData) -> Bool {
+		let succeeded = saveOrUpdateCardData(card)
+		if succeeded {
+			loadCards()
+		}
+		return succeeded
 	}
 
 	/// Finds a card by its UUID (used for deep linking from widgets)
@@ -108,30 +111,50 @@ class CardDataStore {
 		]
 
 		let status = SecItemDelete(query as CFDictionary)
+		let containsInMemoryCard = cardsByType.values.contains { cards in
+			cards.contains { $0.id == id }
+		} || archivedCards.contains { $0.id == id }
+		let deletedPersistedCard = status == errSecSuccess
+		let deletedDebugCard = isDebugOrSimulator
+			&& status == errSecItemNotFound
+			&& containsInMemoryCard
+		guard deletedPersistedCard || deletedDebugCard else {
+			return false
+		}
+
+		// Drop in-memory copies before widget sync so timelines match persistence.
+		for type in CardType.allCases {
+			cardsByType[type]?.removeAll { $0.id == id }
+		}
+		archivedCards.removeAll { $0.id == id }
 		syncCardsToWidget()
-		return status == errSecSuccess
+		return true
 	}
 
 	// MARK: - Archive
 
-	func archiveCard(_ card: CardData) {
+	@discardableResult
+	func archiveCard(_ card: CardData) -> Bool {
 		var archivedCard = card
 		archivedCard.isArchived = true
 		guard saveOrUpdateCardData(archivedCard) else {
 			print("Failed to archive card: \(card.id)")
-			return
+			return false
 		}
 		loadCards()
+		return true
 	}
 
-	func unarchiveCard(_ card: CardData) {
+	@discardableResult
+	func unarchiveCard(_ card: CardData) -> Bool {
 		var unarchivedCard = card
 		unarchivedCard.isArchived = false
 		guard saveOrUpdateCardData(unarchivedCard) else {
 			print("Failed to unarchive card: \(card.id)")
-			return
+			return false
 		}
 		loadCards()
+		return true
 	}
 /// Returns if success
 	private func saveOrUpdateCardData(_ cardData: CardData) -> Bool {

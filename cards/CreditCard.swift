@@ -79,7 +79,6 @@ struct CreditCard: App {
                         whatsNewCollection: self
                      )
                 )
-                .withSDK(.shared)
                 .showOnboardingIfNeeded(features: [.init(image: Image(systemName: "lock.shield"),
                                                          title: "Secure Storage",
                                                          content: "Keep your card details safe with state-of-the-art encryption."),
@@ -93,6 +92,7 @@ struct CreditCard: App {
                                                          title: "Privacy First, Open Source",
                                                          content: "Your data stays private and secure, and the app's code is open-source for transparency.")]
                 )
+                .withSDK(.shared)
         }
         #if os(macOS)
         menuBarScene
@@ -104,6 +104,7 @@ struct CreditCard: App {
     var menuBarScene: some Scene {
         MenuBarExtra("Holder", systemImage: "creditcard.fill") {
             MenuBarView(cardStore: cardDataStore)
+                .withSDK(.shared)
         }
         .menuBarExtraStyle(.window)
     }
@@ -111,6 +112,7 @@ struct CreditCard: App {
     var settingsScene: some Scene {
         SwiftUI.Settings {
             SettingsView(configuration: SettingsViewModel())
+                .sdkScreen(AppAnalyticsScreen.settings)
                 .withSDK(.shared)
                 .presentationSizing(.fitted)
                 .frame(minWidth: 620, minHeight: 480)
@@ -144,9 +146,6 @@ private actor SDKBootstrapper {
                     payments: appSecrets.paymentsConfiguration
                 )
             )
-            if appSecrets.isAnalyticsEnabled {
-                await SinghDevKit.shared.analytics.trackAppLaunch()
-            }
             state = .configured
         } catch {
             state = .failed
@@ -168,10 +167,6 @@ struct AppSecrets: Sendable {
 
     var paymentsConfiguration: PaymentsConfiguration {
         revenueCatAPIKey.map { .revenueCat(apiKey: $0) } ?? .disabled
-    }
-
-    var isAnalyticsEnabled: Bool {
-        postHogProjectToken != nil
     }
 
     static func load() -> Self {

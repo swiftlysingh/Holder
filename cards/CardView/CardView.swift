@@ -5,6 +5,7 @@
 //  Created by Pushpinder Pal Singh on 09/12/23.
 //
 
+import SinghDevKit
 import SwiftUI
 import UniformTypeIdentifiers
 
@@ -18,6 +19,7 @@ struct CardView: View {
 
 	@ObservedObject var model: CardViewModel
 	@Environment(\.scenePhase) var scenePhase
+	@Environment(\.analytics) private var analytics
 	#if os(macOS)
 	@State private var copiedField: String?
 	#endif
@@ -39,11 +41,21 @@ struct CardView: View {
 			.onAppear {
 				model.authenticateUser()
 			}
+			.sdkScreen(
+				model.isAddNewFlow
+					? AppAnalyticsScreen.cardEditor
+					: AppAnalyticsScreen.cardDetails
+			)
 		#else
 		getCardListView()
 			.onAppear {
 				model.authenticateUser()
 			}
+			.sdkScreen(
+				model.isAddNewFlow
+					? AppAnalyticsScreen.cardEditor
+					: AppAnalyticsScreen.cardDetails
+			)
 		#endif
 	}
 
@@ -314,10 +326,7 @@ struct CardView: View {
 			}
 			Button(action: {
 				model.isEditing.toggle()
-				// if user is not editing, then he is done editing when button press
-				if !$model.isEditing.wrappedValue && (model.card.type == .otherCard || !model.card.number.isEmpty){
-					model.addUpdateCard(model.card)
-				}
+				saveCardIfNeeded()
 			}) {
 				Text(model.isEditing ? "Done" : "Edit")
 			}
@@ -328,6 +337,7 @@ struct CardView: View {
 			if model.card.number.isEmpty {
 				ToolbarItem(placement: .topBarLeading) {
 					Button(action: {
+						track(.cardScanStarted)
 						model.isShowingScanner = true
 					}, label: {
 						Image(systemName: "camera.on.rectangle")
@@ -338,18 +348,20 @@ struct CardView: View {
 					.fullScreenCover(isPresented: $model.isShowingScanner) {
 						SharkCardScanViewRepresentable(
 							noPermissionAction: {
-								print("Error No Permission")
+								track(.cardScanPermissionDenied)
 							},
 							successHandler: { response in
 								DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
 									model.card.number = response.number
 									model.card.name = response.holder ?? ""
 									model.card.expiration = response.expiry ?? ""
+									model.markScannerCompleted()
+									track(.cardScanCompleted)
 									model.isShowingScanner = false
-									print(response.number, response.holder as Any, response.expiry as Any)
 								}
 							}
 						)
+						.sdkScreen(AppAnalyticsScreen.cardScanner)
 					}
 				}
 			}
@@ -371,6 +383,36 @@ struct CardView: View {
 				model.isAuthenticated = false
 			}
 		})
+	}
+
+	private func saveCardIfNeeded() {
+		guard !model.isEditing,
+			  model.card.type == .otherCard || !model.card.number.isEmpty else {
+			return
+		}
+
+		let operation: AppAnalyticsEvent.SaveOperation = model.isAddNewFlow ? .create : .update
+		let inputMethod: AppAnalyticsEvent.InputMethod = model.didUseScanner ? .scanner : .manual
+		let cardCategory = AppAnalyticsEvent.CardCategory(model.card.type)
+		let succeeded = model.addUpdateCard(model.card)
+		let event: AppAnalyticsEvent = succeeded
+			? .cardSaveCompleted(
+				operation: operation,
+				cardCategory: cardCategory,
+				inputMethod: inputMethod
+			)
+			: .cardSaveFailed(
+				operation: operation,
+				cardCategory: cardCategory,
+				inputMethod: inputMethod
+			)
+		track(event)
+	}
+
+	private func track(_ event: AppAnalyticsEvent) {
+		Task {
+			await analytics.capture(event)
+		}
 	}
 
 	#if os(macOS)
@@ -432,9 +474,7 @@ struct CardView: View {
 			}
 			Button(action: {
 				model.isEditing.toggle()
-				if !model.isEditing && (model.card.type == .otherCard || !model.card.number.isEmpty) {
-					model.addUpdateCard(model.card)
-				}
+				saveCardIfNeeded()
 			}) {
 				Text(model.isEditing ? "Done" : "Edit")
 			}

@@ -21,15 +21,16 @@ class CardViewModel: ObservableObject {
 	@Published var isShowingScanner = false
 	@Published var errorMessage: String?
 	@Published var showErrorAlert = false
+	private(set) var didUseScanner = false
 
 	#if os(iOS)
 	@Published var selectedItem: PhotosPickerItem?
 	#endif
 
 	var isAddNewFlow : Bool
-	var addUpdateCard: (CardData) -> Void
+	var addUpdateCard: (CardData) -> Bool
 
-	init(card: CardData, isEditing: Bool = false, addNewFlow: Bool = false, addUpdateCard: @escaping ((CardData) -> Void) ) {
+	init(card: CardData, isEditing: Bool = false, addNewFlow: Bool = false, addUpdateCard: @escaping ((CardData) -> Bool) ) {
 		self.card = card
 		self.isEditing = isEditing
 		self.addUpdateCard = addUpdateCard
@@ -77,5 +78,9 @@ class CardViewModel: ObservableObject {
 		}
 		PasteboardService.copy(value)
 		HapticService.trigger(.success)
+	}
+
+	func markScannerCompleted() {
+		didUseScanner = true
 	}
 }

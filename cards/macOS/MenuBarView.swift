@@ -6,9 +6,10 @@
 //
 
 #if os(macOS)
-import SwiftUI
 import AppKit
 import LocalAuthentication
+import SinghDevKit
+import SwiftUI
 
 struct MenuBarView: View {
     var cardStore: CardDataStore
@@ -51,6 +52,7 @@ struct MenuBarView: View {
             // Detect biometric type once
             detectBiometricType()
         }
+        .sdkScreen(AppAnalyticsScreen.menuBar)
     }
 
     private func detectBiometricType() {
