@@ -12,15 +12,66 @@ import LocalAuthentication
 import PhotosUI
 #endif
 
+/// Abstraction over LocalAuthentication so tests can drive completions without a real prompt.
+protocol CardAuthenticating: AnyObject {
+	func canEvaluateDeviceOwnerAuthentication() -> Bool
+	func evaluateDeviceOwnerAuthentication(reason: String, reply: @escaping (Bool) -> Void)
+	func invalidate()
+}
+
+protocol CardAuthenticatorFactory {
+	func makeAuthenticator() -> CardAuthenticating
+}
+
+protocol AsyncSleeper {
+	func sleep(for duration: Duration) async throws
+}
+
+struct TaskAsyncSleeper: AsyncSleeper {
+	func sleep(for duration: Duration) async throws {
+		try await Task.sleep(for: duration)
+	}
+}
+
+final class LACardAuthenticator: CardAuthenticating {
+	private let context = LAContext()
+
+	func canEvaluateDeviceOwnerAuthentication() -> Bool {
+		var error: NSError?
+		return context.canEvaluatePolicy(.deviceOwnerAuthentication, error: &error)
+	}
+
+	func evaluateDeviceOwnerAuthentication(reason: String, reply: @escaping (Bool) -> Void) {
+		context.evaluatePolicy(.deviceOwnerAuthentication, localizedReason: reason) { success, _ in
+			reply(success)
+		}
+	}
+
+	func invalidate() {
+		context.invalidate()
+	}
+}
+
+struct DefaultCardAuthenticatorFactory: CardAuthenticatorFactory {
+	func makeAuthenticator() -> CardAuthenticating {
+		LACardAuthenticator()
+	}
+}
+
 class CardViewModel: ObservableObject {
 
 	@Published var card : CardData
 	@Published var isEditing = false
 	@Published var cardImage: PlatformImage?
-	@AppStorage("auth") var isAuthenticated = false
+	@Published var isAuthenticated = false
 	@Published var isShowingScanner = false
 	@Published var errorMessage: String?
 	@Published var showErrorAlert = false
+	private var scheduledLockTask: Task<Void, Never>?
+	private var activeAuthenticator: CardAuthenticating?
+	private var authAttemptID: UInt64 = 0
+	private let authenticatorFactory: CardAuthenticatorFactory
+	private let sleeper: AsyncSleeper
 
 	#if os(iOS)
 	@Published var selectedItem: PhotosPickerItem?
@@ -29,45 +80,86 @@ class CardViewModel: ObservableObject {
 	var isAddNewFlow : Bool
 	var addUpdateCard: (CardData) -> Void
 
-	init(card: CardData, isEditing: Bool = false, addNewFlow: Bool = false, addUpdateCard: @escaping ((CardData) -> Void) ) {
+	/// True while a device-owner evaluation is in flight for the current attempt.
+	var isAuthenticating: Bool { activeAuthenticator != nil }
+
+	init(
+		card: CardData,
+		isEditing: Bool = false,
+		addNewFlow: Bool = false,
+		addUpdateCard: @escaping ((CardData) -> Void),
+		authenticatorFactory: CardAuthenticatorFactory = DefaultCardAuthenticatorFactory(),
+		sleeper: AsyncSleeper = TaskAsyncSleeper()
+	) {
 		self.card = card
 		self.isEditing = isEditing
 		self.addUpdateCard = addUpdateCard
 		self.isAddNewFlow = addNewFlow
+		self.authenticatorFactory = authenticatorFactory
+		self.sleeper = sleeper
 		cardImage = ICloudDataManager.shared.loadImage(for: card.id)
 	}
 
+	deinit {
+		scheduledLockTask?.cancel()
+		activeAuthenticator?.invalidate()
+		activeAuthenticator = nil
+	}
+
 	func authenticateUser() {
-		let context = LAContext()
-		var error: NSError?
+		invalidateCurrentAuthAttempt()
 
 		if !UserSettings.shared.isAuthEnabled {
-			Task { @MainActor in
-				isAuthenticated = true
-			}
+			isAuthenticated = true
 			return
 		}
+
+		let authenticator = authenticatorFactory.makeAuthenticator()
+		activeAuthenticator = authenticator
+		let attemptID = authAttemptID
 		let reason = "Please authenticate to view your card details."
 
-		// Check if the device supports biometric authentication
-		if context.canEvaluatePolicy(.deviceOwnerAuthenticationWithBiometrics, error: &error) {
-			context.evaluatePolicy(.deviceOwnerAuthenticationWithBiometrics, localizedReason: reason) { success, authenticationError in
-				Task { @MainActor in
-					self.isAuthenticated = success
-				}
-			}
-		} else if context.canEvaluatePolicy(.deviceOwnerAuthentication, error: &error) {
-			// Fallback to password/passcode authentication when biometrics unavailable
-			context.evaluatePolicy(.deviceOwnerAuthentication, localizedReason: reason) { success, authenticationError in
-				Task { @MainActor in
-					self.isAuthenticated = success
-				}
-			}
-		} else {
+		guard authenticator.canEvaluateDeviceOwnerAuthentication() else {
+			activeAuthenticator = nil
+			isAuthenticated = false
+			return
+		}
+
+		authenticator.evaluateDeviceOwnerAuthentication(reason: reason) { [weak self] success in
 			Task { @MainActor in
-				isAuthenticated = false
+				guard let self else { return }
+				guard attemptID == self.authAttemptID else { return }
+				self.activeAuthenticator = nil
+
+				if !UserSettings.shared.isAuthEnabled {
+					self.isAuthenticated = true
+					return
+				}
+
+				self.isAuthenticated = success
 			}
 		}
+	}
+
+	func scheduleLock(after duration: Duration) {
+		cancelScheduledLock()
+		scheduledLockTask = Task { @MainActor [weak self] in
+			guard let self else { return }
+			try? await self.sleeper.sleep(for: duration)
+			guard !Task.isCancelled else { return }
+			self.lock()
+		}
+	}
+
+	func cancelScheduledLock() {
+		scheduledLockTask?.cancel()
+		scheduledLockTask = nil
+	}
+
+	func lock() {
+		cancelScheduledLock()
+		invalidateCurrentAuthAttempt()
+		isAuthenticated = false
 	}
 
 	func copyAction(with value: String) {
@@ -77,5 +169,11 @@ class CardViewModel: ObservableObject {
 		}
 		PasteboardService.copy(value)
 		HapticService.trigger(.success)
+	}
+
+	private func invalidateCurrentAuthAttempt() {
+		authAttemptID &+= 1
+		activeAuthenticator?.invalidate()
+		activeAuthenticator = nil
 	}
 }

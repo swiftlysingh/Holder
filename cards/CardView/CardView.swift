@@ -34,17 +34,38 @@ struct CardView: View {
 	}
 
 	var body: some View {
-		#if os(macOS)
-		macOSCardView()
-			.onAppear {
-				model.authenticateUser()
+		Group {
+			#if os(macOS)
+			macOSCardView()
+			#else
+			getCardListView()
+			#endif
+		}
+		.onAppear {
+			model.authenticateUser()
+		}
+		.onChange(of: scenePhase) {
+			#if os(macOS)
+			let shouldScheduleLock = scenePhase == .inactive || scenePhase == .background
+			#else
+			let shouldScheduleLock = scenePhase == .background
+			#endif
+
+			if scenePhase == .active {
+				model.cancelScheduledLock()
+				// onChange does not fire for the initial phase, so onAppear owns the first prompt.
+				if UserSettings.shared.isAuthEnabled
+					&& !model.isAuthenticated
+					&& !model.isAuthenticating {
+					model.authenticateUser()
+				}
+			} else if shouldScheduleLock && UserSettings.shared.isAuthEnabled {
+				model.scheduleLock(after: .seconds(UserSettings.shared.authTimeout))
 			}
-		#else
-		getCardListView()
-			.onAppear {
-				model.authenticateUser()
-			}
-		#endif
+		}
+		.onDisappear {
+			model.lock()
+		}
 	}
 
 	#if os(iOS)
@@ -355,22 +376,6 @@ struct CardView: View {
 			}
 		}
 		#endif
-		.onChange(of: scenePhase) {
-			if scenePhase == .background && UserSettings.shared.isAuthEnabled {
-				DispatchQueue.main.asyncAfter(deadline: .now() + .seconds(UserSettings.shared.authTimeout)) {
-					if scenePhase == .background {
-						Task { @MainActor in
-							self.model.isAuthenticated = false
-						}
-					}
-				}
-			}
-		}
-		.onDisappear(perform: {
-			Task { @MainActor in
-				model.isAuthenticated = false
-			}
-		})
 	}
 
 	#if os(macOS)
@@ -440,22 +445,6 @@ struct CardView: View {
 			}
 		}
 		.disabled(!model.isAuthenticated)
-		.onChange(of: scenePhase) {
-			if scenePhase == .background && UserSettings.shared.isAuthEnabled {
-				DispatchQueue.main.asyncAfter(deadline: .now() + .seconds(UserSettings.shared.authTimeout)) {
-					if scenePhase == .background {
-						Task { @MainActor in
-							self.model.isAuthenticated = false
-						}
-					}
-				}
-			}
-		}
-		.onDisappear {
-			Task { @MainActor in
-				model.isAuthenticated = false
-			}
-		}
 	}
 
 	@ViewBuilder
