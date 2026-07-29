@@ -12,6 +12,7 @@ import LocalAuthentication
 
 struct MenuBarView: View {
     var cardStore: CardDataStore
+    @Environment(\.openWindow) private var openWindow
     @State private var isAuthenticated = false
     @State private var authError: String?
     @State private var biometricLabel = "Unlock"
@@ -44,6 +45,8 @@ struct MenuBarView: View {
         }
         .frame(width: 320)
         .onAppear {
+            // Keep a live OpenWindowAction for Dock reopen after the main window is closed.
+            MainWindowCoordinator.register(openWindow: openWindow)
             // Auto-authenticate if auth is disabled
             if !requiresAuth {
                 isAuthenticated = true
@@ -186,21 +189,9 @@ struct MenuBarView: View {
     }
 
     private func openMainApp() {
-        // Restore dock icon if running in menu bar-only mode
-        NSApp.setActivationPolicy(.regular)
-        NSApp.activate(ignoringOtherApps: true)
-
-        if let window = NSApp.windows.first(where: { $0.canBecomeMain }) {
-            window.makeKeyAndOrderFront(nil)
-        } else {
-            // If no window exists, create one
-            if let window = NSApp.windows.first(where: { $0.title == "Holder" || $0.title.contains("Card") }) {
-                window.makeKeyAndOrderFront(nil)
-            } else {
-                // Try to open a new window
-                NSApp.sendAction(Selector(("newWindowForTab:")), to: nil, from: nil)
-            }
-        }
+        // Same path as Dock reopen: focus/deminiaturize the registered main window, else open singleton scene.
+        MainWindowCoordinator.register(openWindow: openWindow)
+        MainWindowCoordinator.open()
     }
 
     private func authenticate() {
