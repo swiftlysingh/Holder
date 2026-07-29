@@ -45,6 +45,26 @@ final class CardDataPersistenceTests: XCTestCase {
 		XCTAssertEqual(partition.archivedCards.map(\.id), [archivedCard.id])
 	}
 
+	func testCardRetrievalKindDistinguishesEmptyFromFailure() {
+		XCTAssertEqual(CardDataStore.cardRetrievalKind(forStatus: errSecSuccess), .success)
+		XCTAssertEqual(CardDataStore.cardRetrievalKind(forStatus: errSecItemNotFound), .empty)
+		XCTAssertEqual(CardDataStore.cardRetrievalKind(forStatus: errSecAuthFailed), .failure)
+		XCTAssertEqual(CardDataStore.cardRetrievalKind(forStatus: errSecInteractionNotAllowed), .failure)
+	}
+
+	func testDecodeAllCardDataFailsClosedOnAnyInvalidPayload() throws {
+		let valid = try JSONEncoder().encode(makeCard(id: UUID()))
+		let invalid = Data("{}".utf8)
+
+		XCTAssertNil(CardDataStore.decodeAllCardData(from: [valid, invalid]))
+		XCTAssertNil(CardDataStore.decodeAllCardData(from: [nil]))
+		XCTAssertNil(CardDataStore.decodeAllCardData(from: [valid, nil]))
+		XCTAssertEqual(CardDataStore.decodeAllCardData(from: [])?.count, 0)
+
+		let decoded = try XCTUnwrap(CardDataStore.decodeAllCardData(from: [valid]))
+		XCTAssertEqual(decoded.count, 1)
+	}
+
 	private func makeCard(
 		id: UUID,
 		type: CardType = .creditCard,

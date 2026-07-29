@@ -128,9 +128,6 @@ struct HomeView: View {
 					addUpdateCard: { card in
 						model.cardDataStore.addCard(card)
 						model.addingType = nil
-						Task { @MainActor in
-							model.cardDataStore.loadCards()
-						}
 					})
 				)
 			}
