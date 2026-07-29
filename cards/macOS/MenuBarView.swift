@@ -12,16 +12,19 @@ import LocalAuthentication
 
 enum MenuBarContentState: Equatable {
     case locked
+    case unavailable
     case empty
     case cards
 
-    init(isAuthEnabled: Bool, isUnlocked: Bool, hasActiveCards: Bool) {
+    init(isAuthEnabled: Bool, isUnlocked: Bool, hasActiveCards: Bool, didLoadFail: Bool) {
         if isAuthEnabled && !isUnlocked {
             self = .locked
-        } else if !hasActiveCards {
-            self = .empty
-        } else {
+        } else if hasActiveCards {
             self = .cards
+        } else if didLoadFail {
+            self = .unavailable
+        } else {
+            self = .empty
         }
     }
 }
@@ -109,12 +112,15 @@ struct MenuBarView: View {
     @StateObject private var session = MenuBarSession()
     @State private var authStatus: String?
     @State private var authContext: LAContext?
+    @State private var didCardLoadFail = false
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
             switch contentState {
             case .locked:
                 lockedStateView
+            case .unavailable:
+                unavailableStateView
             case .empty:
                 emptyStateView
             case .cards:
@@ -134,12 +140,13 @@ struct MenuBarView: View {
         .frame(width: 320)
         .background {
             MenuBarPanelAppearObserver {
-                cardStore.loadCards()
+                refreshCards()
             }
         }
         .onAppear {
             // Keep a live OpenWindowAction for Dock reopen after the main window is closed.
             MainWindowCoordinator.register(openWindow: openWindow)
+            refreshCards()
         }
         // Successful unlock is bounded only by MenuBarSession timeout (and settings
         // changes below). Do not lock on disappear: LA presentation dismisses the
@@ -147,8 +154,9 @@ struct MenuBarView: View {
         .onChange(of: isAuthEnabled) { _, isEnabled in
             cancelAuthentication()
             session.lock()
+            authStatus = nil
             if !isEnabled {
-                authStatus = nil
+                refreshCards()
             }
         }
         .onChange(of: authTimeout) {
@@ -162,7 +170,8 @@ struct MenuBarView: View {
         MenuBarContentState(
             isAuthEnabled: isAuthEnabled,
             isUnlocked: session.isUnlocked,
-            hasActiveCards: !allCards.isEmpty
+            hasActiveCards: !allCards.isEmpty,
+            didLoadFail: didCardLoadFail
         )
     }
 
@@ -181,6 +190,27 @@ struct MenuBarView: View {
         }
         .frame(maxWidth: .infinity)
         .padding(.vertical, 20)
+    }
+
+    private var unavailableStateView: some View {
+        VStack(spacing: 12) {
+            Image(systemName: "exclamationmark.icloud")
+                .font(.largeTitle)
+                .foregroundStyle(.secondary)
+            Text("Cards Unavailable")
+                .font(.headline)
+            Text("Holder couldn’t refresh your cards. Your saved data has not been changed.")
+                .font(.caption)
+                .foregroundStyle(.secondary)
+                .multilineTextAlignment(.center)
+            Button("Try Again") {
+                refreshCards()
+            }
+            .buttonStyle(.bordered)
+        }
+        .frame(maxWidth: .infinity)
+        .padding(.vertical, 24)
+        .padding(.horizontal, 20)
     }
 
     private var lockedStateView: some View {
@@ -220,18 +250,21 @@ struct MenuBarView: View {
     }
 
     private var cardListView: some View {
-        ScrollView {
+        let cards = allCards
+        return ScrollView {
             LazyVStack(spacing: 0) {
-                ForEach(allCards) { card in
+                ForEach(cards) { card in
                     MenuBarCardRow(card: card, isAuthenticated: contentState != .locked)
-                    if card.id != allCards.last?.id {
+                    if card.id != cards.last?.id {
                         Divider()
                             .padding(.horizontal, 12)
                     }
                 }
             }
         }
-        .frame(maxHeight: 400)
+        // MenuBarExtra windows do not always recompute their intrinsic height when
+        // the card store refreshes after opening, so reserve the collapsed row height.
+        .frame(height: min(CGFloat(cards.count) * 58, 400))
     }
 
     private var openHolderButton: some View {
@@ -273,6 +306,10 @@ struct MenuBarView: View {
     }
 
     // MARK: - Helpers
+
+    private func refreshCards() {
+        didCardLoadFail = !cardStore.loadCards()
+    }
 
     private var allCards: [CardData] {
         CardType.allCases.flatMap { cardStore.cardsByType[$0] ?? [] }

@@ -52,6 +52,21 @@ final class CardDataPersistenceTests: XCTestCase {
 		XCTAssertEqual(CardDataStore.cardRetrievalKind(forStatus: errSecInteractionNotAllowed), .failure)
 	}
 
+	func testLoadCardsReportsFailureAndPreservesExistingCards() {
+		let card = makeCard(id: UUID())
+		let stub = CardRetrievalStub(result: .success([card]))
+		let store = CardDataStore { _ in stub.result }
+
+		XCTAssertEqual(store.findCard(by: card.id), card)
+
+		stub.result = .failure
+		XCTAssertFalse(store.loadCards())
+		XCTAssertEqual(store.findCard(by: card.id), card)
+
+		stub.result = .empty
+		XCTAssertTrue(store.loadCards())
+	}
+
 	func testDecodeAllCardDataRecoversValidPayloads() throws {
 		let valid = try JSONEncoder().encode(makeCard(id: UUID()))
 		let invalid = Data("{}".utf8)
@@ -80,5 +95,13 @@ final class CardDataPersistenceTests: XCTestCase {
 			network: .visa,
 			isArchived: isArchived
 		)
+	}
+}
+
+private final class CardRetrievalStub {
+	var result: CardDataStore.CardRetrievalResult
+
+	init(result: CardDataStore.CardRetrievalResult) {
+		self.result = result
 	}
 }

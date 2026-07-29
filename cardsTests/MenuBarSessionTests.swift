@@ -3,29 +3,68 @@ import XCTest
 @testable import Holder
 
 final class MenuBarSessionTests: XCTestCase {
-	func testContentStateLocksBeforeCheckingForActiveCards() {
+	func testContentStateLocksBeforeCheckingCardsOrLoadStatus() {
 		XCTAssertEqual(
-			MenuBarContentState(isAuthEnabled: true, isUnlocked: false, hasActiveCards: false),
+			MenuBarContentState(
+				isAuthEnabled: true,
+				isUnlocked: false,
+				hasActiveCards: false,
+				didLoadFail: true
+			),
 			.locked
 		)
 		XCTAssertEqual(
-			MenuBarContentState(isAuthEnabled: true, isUnlocked: false, hasActiveCards: true),
+			MenuBarContentState(
+				isAuthEnabled: true,
+				isUnlocked: false,
+				hasActiveCards: true,
+				didLoadFail: false
+			),
 			.locked
 		)
+	}
+
+	func testContentStateShowsCardsWithoutAuthentication() {
 		XCTAssertEqual(
-			MenuBarContentState(isAuthEnabled: false, isUnlocked: false, hasActiveCards: false),
-			.empty
-		)
-		XCTAssertEqual(
-			MenuBarContentState(isAuthEnabled: true, isUnlocked: true, hasActiveCards: false),
-			.empty
-		)
-		XCTAssertEqual(
-			MenuBarContentState(isAuthEnabled: false, isUnlocked: false, hasActiveCards: true),
+			MenuBarContentState(
+				isAuthEnabled: false,
+				isUnlocked: false,
+				hasActiveCards: true,
+				didLoadFail: false
+			),
 			.cards
 		)
+	}
+
+	func testContentStateDistinguishesEmptyFromUnavailable() {
 		XCTAssertEqual(
-			MenuBarContentState(isAuthEnabled: true, isUnlocked: true, hasActiveCards: true),
+			MenuBarContentState(
+				isAuthEnabled: false,
+				isUnlocked: false,
+				hasActiveCards: false,
+				didLoadFail: false
+			),
+			.empty
+		)
+		XCTAssertEqual(
+			MenuBarContentState(
+				isAuthEnabled: false,
+				isUnlocked: false,
+				hasActiveCards: false,
+				didLoadFail: true
+			),
+			.unavailable
+		)
+	}
+
+	func testContentStateKeepsCachedCardsVisibleAfterFailedRefresh() {
+		XCTAssertEqual(
+			MenuBarContentState(
+				isAuthEnabled: false,
+				isUnlocked: false,
+				hasActiveCards: true,
+				didLoadFail: true
+			),
 			.cards
 		)
 	}

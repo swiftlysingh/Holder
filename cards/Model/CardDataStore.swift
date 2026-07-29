@@ -37,25 +37,32 @@ class CardDataStore {
 		case failure
 	}
 
-	private enum CardRetrievalResult {
+	enum CardRetrievalResult {
 		case success([CardData])
 		case empty
 		case failure
 	}
 
-	init() {
+	@ObservationIgnored
+	private let retrieveCards: (String) -> CardRetrievalResult
+
+	init(retrieveCards: ((String) -> CardRetrievalResult)? = nil) {
+		self.retrieveCards = retrieveCards ?? Self.retrieveAllCardData
 		loadCards()
 	}
 
-	func loadCards() {
-		switch retrieveAllCardData(service: Bundle.main.bundleIdentifier ?? "com.myApp.defaultService") {
+	@discardableResult
+	func loadCards() -> Bool {
+		switch retrieveCards(Bundle.main.bundleIdentifier ?? "com.myApp.defaultService") {
 		case .failure:
 			// Preserve in-memory cards and widget snapshot on real Keychain/decode errors.
-			return
+			return false
 		case .empty:
 			commitRetrievedCards([])
+			return true
 		case .success(let cards):
 			commitRetrievedCards(cards)
+			return true
 		}
 	}
 
@@ -238,7 +245,7 @@ class CardDataStore {
 		}
 	}
 
-	private func retrieveAllCardData(service: String) -> CardRetrievalResult {
+	private static func retrieveAllCardData(service: String) -> CardRetrievalResult {
 		let query: [String: Any] = [
 			kSecClass as String: kSecClassGenericPassword,
 			kSecAttrService as String: service,

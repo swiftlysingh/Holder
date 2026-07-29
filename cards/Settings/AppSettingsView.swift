@@ -9,20 +9,28 @@ import SwiftUI
 
 struct AppSettingsView: View {
     @ObservedObject private var settings = UserSettings.shared
+    @AppStorage("isAuthEnabled") private var isAuthEnabled = true
 
     var body: some View {
-        Toggle("Toggle Biometrics", isOn: $settings.isAuthEnabled)
+        VStack(alignment: .leading, spacing: 4) {
+            Toggle("Require Authentication", isOn: $isAuthEnabled)
+            Text("Use Touch ID, Face ID, or your device password before showing card details.")
+                .font(.caption)
+                .foregroundStyle(.secondary)
+        }
         #if os(macOS)
-        Stepper("Timeout: \(settings.authTimeout) seconds",
+        Stepper("Lock after: \(settings.authTimeout) seconds",
                 value: $settings.authTimeout, in: 1...120)
+            .disabled(!isAuthEnabled)
         #else
         HStack(alignment: .center) {
-            Text("Timeout (in seconds)")
+            Text("Lock after (seconds)")
             Spacer()
             TextField("", value: $settings.authTimeout, format: .number)
                 .keyboardType(.numberPad)
                 .fixedSize()
         }
+        .disabled(!isAuthEnabled)
         #endif
         VStack(alignment: .leading) {
             Text("Number of card digits visible on home (Restart Required)")
