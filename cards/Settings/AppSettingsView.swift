@@ -5,10 +5,12 @@
 //  Created by Pushpinder Pal Singh on 08/12/23.
 //
 
+import SinghDevKit
 import SwiftUI
 
 struct AppSettingsView: View {
     @ObservedObject private var settings = UserSettings.shared
+    @State private var showsTipJar = false
 
     var body: some View {
         Toggle("Toggle Biometrics", isOn: $settings.isAuthEnabled)
@@ -37,5 +39,13 @@ struct AppSettingsView: View {
         #if os(macOS)
         Toggle("Keep in Menu Bar", isOn: $settings.keepInMenuBar)
         #endif
+        Button {
+            showsTipJar = true
+        } label: {
+            Label("Support Holder", systemImage: "heart.fill")
+        }
+        .sheet(isPresented: $showsTipJar) {
+            SDKPaywallView(displayCloseButton: true)
+        }
     }
 }
