@@ -23,13 +23,9 @@ class HomeViewModel: ObservableObject {
 	}
 
 	func deleteCard(at offsets: IndexSet, inSection cardType: CardType) {
-		offsets.forEach { index in
-			guard let card = cardDataStore.cardsByType[cardType]?[index] else { return }
-			if cardDataStore.deleteCard(with: card.id) {
-				cardDataStore.cardsByType[cardType]?.remove(at: index)
-			} else {
-				print("Error deleting")
-			}
+		let cardIDs = offsets.compactMap { cardDataStore.cardsByType[cardType]?[$0].id }
+		for id in cardIDs where !cardDataStore.deleteCard(with: id) {
+			print("Error deleting")
 		}
 	}
 
@@ -42,11 +38,7 @@ class HomeViewModel: ObservableObject {
 	}
 
 	func deleteArchivedCard(_ card: CardData) {
-		if cardDataStore.deleteCard(with: card.id) {
-			if let index = cardDataStore.archivedCards.firstIndex(where: { $0.id == card.id }) {
-				cardDataStore.archivedCards.remove(at: index)
-			}
-		}
+		_ = cardDataStore.deleteCard(with: card.id)
 	}
 
 	/// Handles deep link URL from widget (holder://card/{uuid})

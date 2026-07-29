@@ -111,19 +111,25 @@ class CardDataStore {
 		}
 	}
 
-	/// Decodes Keychain value payloads. Any missing or invalid payload fails the whole load.
+	/// Decodes every usable Keychain payload. A non-empty batch fails only when no
+	/// records can be recovered, preserving existing in-memory state on total corruption.
 	static func decodeAllCardData(from payloads: [Data?]) -> [CardData]? {
 		var cards: [CardData] = []
 		cards.reserveCapacity(payloads.count)
+		var hadInvalidPayload = false
 		for payload in payloads {
 			guard let data = payload else {
-				return nil
+				hadInvalidPayload = true
+				continue
 			}
 			do {
 				cards.append(try JSONDecoder().decode(CardData.self, from: data))
 			} catch {
-				return nil
+				hadInvalidPayload = true
 			}
+		}
+		if cards.isEmpty && hadInvalidPayload {
+			return nil
 		}
 		return cards
 	}
@@ -163,8 +169,14 @@ class CardDataStore {
 		]
 
 		let status = SecItemDelete(query as CFDictionary)
+		guard status == errSecSuccess else { return false }
+
+		for type in CardType.allCases {
+			cardsByType[type]?.removeAll { $0.id == id }
+		}
+		archivedCards.removeAll { $0.id == id }
 		syncCardsToWidget()
-		return status == errSecSuccess
+		return true
 	}
 
 	// MARK: - Archive
@@ -259,6 +271,9 @@ class CardDataStore {
 		guard let cardDataArray = Self.decodeAllCardData(from: payloads) else {
 			print("Error decoding CardData: missing or invalid Keychain payload")
 			return .failure
+		}
+		if cardDataArray.count != payloads.count {
+			print("Warning: skipped \(payloads.count - cardDataArray.count) invalid Keychain card payload(s)")
 		}
 
 		return .success(cardDataArray)

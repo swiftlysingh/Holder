@@ -52,16 +52,15 @@ final class CardDataPersistenceTests: XCTestCase {
 		XCTAssertEqual(CardDataStore.cardRetrievalKind(forStatus: errSecInteractionNotAllowed), .failure)
 	}
 
-	func testDecodeAllCardDataFailsClosedOnAnyInvalidPayload() throws {
+	func testDecodeAllCardDataRecoversValidPayloads() throws {
 		let valid = try JSONEncoder().encode(makeCard(id: UUID()))
 		let invalid = Data("{}".utf8)
 
-		XCTAssertNil(CardDataStore.decodeAllCardData(from: [valid, invalid]))
 		XCTAssertNil(CardDataStore.decodeAllCardData(from: [nil]))
-		XCTAssertNil(CardDataStore.decodeAllCardData(from: [valid, nil]))
+		XCTAssertNil(CardDataStore.decodeAllCardData(from: [invalid]))
 		XCTAssertEqual(CardDataStore.decodeAllCardData(from: [])?.count, 0)
 
-		let decoded = try XCTUnwrap(CardDataStore.decodeAllCardData(from: [valid]))
+		let decoded = try XCTUnwrap(CardDataStore.decodeAllCardData(from: [valid, invalid, nil]))
 		XCTAssertEqual(decoded.count, 1)
 	}
 

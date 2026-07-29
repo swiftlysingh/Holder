@@ -68,6 +68,7 @@ class CardViewModel: ObservableObject {
 	@Published var errorMessage: String?
 	@Published var showErrorAlert = false
 	private var scheduledLockTask: Task<Void, Never>?
+	private var scheduledLockDeadline: ContinuousClock.Instant?
 	private var activeAuthenticator: CardAuthenticating?
 	private var authAttemptID: UInt64 = 0
 	private let authenticatorFactory: CardAuthenticatorFactory
@@ -143,17 +144,32 @@ class CardViewModel: ObservableObject {
 
 	func scheduleLock(after duration: Duration) {
 		cancelScheduledLock()
-		scheduledLockTask = Task { @MainActor [weak self] in
-			guard let self else { return }
-			try? await self.sleeper.sleep(for: duration)
-			guard !Task.isCancelled else { return }
+		let clock = ContinuousClock()
+		let sleeper = self.sleeper
+		scheduledLockDeadline = clock.now.advanced(by: duration)
+		scheduledLockTask = Task { @MainActor [weak self, sleeper] in
+			try? await sleeper.sleep(for: duration)
+			guard !Task.isCancelled, let self else { return }
 			self.lock()
+		}
+	}
+
+	/// Resolves a pending lock when the scene becomes active. The explicit deadline
+	/// check prevents app suspension from cancelling an already-expired lock task.
+	func resolveScheduledLockOnActive(at now: ContinuousClock.Instant? = nil) {
+		guard let deadline = scheduledLockDeadline else { return }
+		let currentInstant = now ?? ContinuousClock().now
+		if currentInstant >= deadline {
+			lock()
+		} else {
+			cancelScheduledLock()
 		}
 	}
 
 	func cancelScheduledLock() {
 		scheduledLockTask?.cancel()
 		scheduledLockTask = nil
+		scheduledLockDeadline = nil
 	}
 
 	func lock() {

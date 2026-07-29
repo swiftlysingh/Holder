@@ -26,7 +26,6 @@ struct HomeView: View {
 								.swipeActions(edge: .trailing, allowsFullSwipe: false) {
 									Button(role: .destructive) {
 										_ = model.cardDataStore.deleteCard(with: card.id)
-										model.cardDataStore.cardsByType[type]?.removeAll { $0.id == card.id }
 									} label: {
 										Label("Delete", systemImage: "trash")
 									}
@@ -45,7 +44,6 @@ struct HomeView: View {
 									}
 									Button(role: .destructive) {
 										_ = model.cardDataStore.deleteCard(with: card.id)
-										model.cardDataStore.cardsByType[type]?.removeAll { $0.id == card.id }
 									} label: {
 										Label("Delete", systemImage: "trash")
 									}
@@ -96,6 +94,7 @@ struct HomeView: View {
 								addUpdateCard: { card in
 									model.cardDataStore.addCard(card)
 								}))
+					.id(card.id)
 			} 
 			else {
 				Text("Tap on a Card to view details")
@@ -111,6 +110,7 @@ struct HomeView: View {
 				addUpdateCard: { card in
 					model.cardDataStore.addCard(card)
 				}))
+			.id(card.id)
 		}
 		.sheet(item: $model.addingType) { type in
 			NavigationView {

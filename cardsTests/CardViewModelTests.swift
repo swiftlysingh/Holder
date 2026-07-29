@@ -73,6 +73,49 @@ final class CardViewModelTests: XCTestCase {
 		XCTAssertTrue(model.isAuthenticated)
 	}
 
+	func testBecomingActiveBeforeDeadlineCancelsLock() async {
+		let sleeper = ControllableAsyncSleeper()
+		let model = makeModel(sleeper: sleeper)
+		model.isAuthenticated = true
+
+		model.scheduleLock(after: .seconds(60))
+		await sleeper.waitUntilSleeping(count: 1)
+		model.resolveScheduledLockOnActive()
+		await sleeper.advance()
+
+		XCTAssertTrue(model.isAuthenticated)
+	}
+
+	func testBecomingActiveAfterDeadlineLocksImmediately() async {
+		let sleeper = ControllableAsyncSleeper()
+		let model = makeModel(sleeper: sleeper)
+		model.isAuthenticated = true
+
+		model.scheduleLock(after: .seconds(1))
+		await sleeper.waitUntilSleeping(count: 1)
+		model.resolveScheduledLockOnActive(
+			at: ContinuousClock().now.advanced(by: .seconds(2))
+		)
+
+		XCTAssertFalse(model.isAuthenticated)
+	}
+
+	func testScheduledLockDoesNotRetainModel() async {
+		let sleeper = ControllableAsyncSleeper()
+		weak var weakModel: CardViewModel?
+
+		do {
+			var model: CardViewModel? = makeModel(sleeper: sleeper)
+			weakModel = model
+			model?.scheduleLock(after: .seconds(60))
+			await sleeper.waitUntilSleeping(count: 1)
+			model = nil
+		}
+		await Task.yield()
+
+		XCTAssertNil(weakModel)
+	}
+
 	func testReschedulingReplacesPreviousLockTask() async throws {
 		let sleeper = ControllableAsyncSleeper()
 		let model = makeModel(sleeper: sleeper)

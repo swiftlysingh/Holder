@@ -16,11 +16,16 @@ import AppKit
 
 struct CardView: View {
 
-	@ObservedObject var model: CardViewModel
-	@Environment(\.scenePhase) var scenePhase
+	@StateObject private var model: CardViewModel
+	@Environment(\.scenePhase) private var scenePhase
+	@AppStorage("isAuthEnabled") private var isAuthEnabled = true
 	#if os(macOS)
 	@State private var copiedField: String?
 	#endif
+
+	init(model: CardViewModel) {
+		_model = StateObject(wrappedValue: model)
+	}
 
 	/// Formats expiration date input (auto-inserts "/" after 2 digits, limits to 5 chars)
 	private func formatExpirationIfNeeded(_ newValue: String) {
@@ -52,15 +57,25 @@ struct CardView: View {
 			#endif
 
 			if scenePhase == .active {
-				model.cancelScheduledLock()
+				model.resolveScheduledLockOnActive()
 				// onChange does not fire for the initial phase, so onAppear owns the first prompt.
-				if UserSettings.shared.isAuthEnabled
+				if isAuthEnabled
 					&& !model.isAuthenticated
 					&& !model.isAuthenticating {
 					model.authenticateUser()
 				}
-			} else if shouldScheduleLock && UserSettings.shared.isAuthEnabled {
+			} else if shouldScheduleLock && isAuthEnabled && !model.isAuthenticating {
 				model.scheduleLock(after: .seconds(UserSettings.shared.authTimeout))
+			}
+		}
+		.onChange(of: isAuthEnabled) { _, isEnabled in
+			if isEnabled {
+				model.lock()
+				if scenePhase == .active {
+					model.authenticateUser()
+				}
+			} else {
+				model.authenticateUser()
 			}
 		}
 		.onDisappear {

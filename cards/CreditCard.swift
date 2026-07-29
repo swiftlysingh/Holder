@@ -38,7 +38,9 @@ enum MainWindowCoordinator {
     }
 
     /// Restore Dock presence, focus/deminiaturize the registered main window, or open the singleton scene.
-    static func open() {
+    /// Returns false when SwiftUI has not registered either route yet so AppKit can use its default reopen behavior.
+    @discardableResult
+    static func open() -> Bool {
         NSApp.setActivationPolicy(.regular)
         NSApp.activate(ignoringOtherApps: true)
 
@@ -47,10 +49,12 @@ enum MainWindowCoordinator {
                 mainWindow.deminiaturize(nil)
             }
             mainWindow.makeKeyAndOrderFront(nil)
-            return
+            return true
         }
 
-        openWindow?(id: MainWindowScene.id)
+        guard let openWindow else { return false }
+        openWindow(id: MainWindowScene.id)
+        return true
     }
 }
 
@@ -107,8 +111,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 
     func applicationShouldHandleReopen(_ sender: NSApplication, hasVisibleWindows _: Bool) -> Bool {
         // Ignore hasVisibleWindows: Settings-only still reports true, but Dock must restore main (P2).
-        MainWindowCoordinator.open()
-        return false
+        return !MainWindowCoordinator.open()
     }
 }
 #endif
