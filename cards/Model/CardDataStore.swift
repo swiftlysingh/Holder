@@ -39,35 +39,37 @@ class CardDataStore {
 
 			//		Add default data for simulator
 		if isDebugOrSimulator && retrievedCard.isEmpty {
-			retrievedCard.append(
-				contentsOf: [
-					CardData(id: UUID(), number: "4234567890123456", cvv: "123", expiration: "12/25", name: "John Doe", description: "Axis Visa", type: .creditCard, network: "4234567890123456".getCardNetwork()),
-					CardData(id: UUID(), number: "5345678901234567", cvv: "234", expiration: "11/24", name: "Jane Smith", description: "SBI MasterCard", type: .creditCard, network: "5345678901234567".getCardNetwork()),
-					CardData(id: UUID(), number: "34567890123456", cvv: "345", expiration: "10/23", name: "Alex Johnson", description: "American Express Gold", type: .creditCard, network: "34567890123456".getCardNetwork()),
-					CardData(id: UUID(), number: "6067890123456789", cvv: "456", expiration: "08/26", name: "Emily Davis", description: "Kotak PVR", type: .debitCard, network: "6067890123456789".getCardNetwork()),
-					CardData(
-						id: UUID(),
-						number: "3678901234567890",
-						cvv: "567",
-						expiration: "07/25",
-						name: "Michael Brown",
-						description: "HDFC Platinum",
-						type: .debitCard,
-						network: "3678901234567890".getCardNetwork()
-					),
-					CardData(
-						id: UUID(),
-						number: "3678901234567890",
-						cvv: "567",
-						expiration: "07/25",
-						name: "Michael Brown",
-						description: "HDFC Platinum",
-						type: .otherCard,
-						network: "3678901234567890".getCardNetwork()
-					)
-				]
-			)
-
+			let fixtures = [
+				CardData(id: UUID(), number: "4234567890123456", cvv: "123", expiration: "12/25", name: "John Doe", description: "Axis Visa", type: .creditCard, network: "4234567890123456".getCardNetwork()),
+				CardData(id: UUID(), number: "5345678901234567", cvv: "234", expiration: "11/24", name: "Jane Smith", description: "SBI MasterCard", type: .creditCard, network: "5345678901234567".getCardNetwork()),
+				CardData(id: UUID(), number: "34567890123456", cvv: "345", expiration: "10/23", name: "Alex Johnson", description: "American Express Gold", type: .creditCard, network: "34567890123456".getCardNetwork()),
+				CardData(id: UUID(), number: "6067890123456789", cvv: "456", expiration: "08/26", name: "Emily Davis", description: "Kotak PVR", type: .debitCard, network: "6067890123456789".getCardNetwork()),
+				CardData(
+					id: UUID(),
+					number: "3678901234567890",
+					cvv: "567",
+					expiration: "07/25",
+					name: "Michael Brown",
+					description: "HDFC Platinum",
+					type: .debitCard,
+					network: "3678901234567890".getCardNetwork()
+				),
+				CardData(
+					id: UUID(),
+					number: "3678901234567890",
+					cvv: "567",
+					expiration: "07/25",
+					name: "Michael Brown",
+					description: "HDFC Platinum",
+					type: .otherCard,
+					network: "3678901234567890".getCardNetwork()
+				)
+			]
+			for fixture in fixtures {
+				if saveOrUpdateCardData(fixture) {
+					retrievedCard.append(fixture)
+				}
+			}
 		}
 		let partition = Self.partition(retrievedCard)
 		cardsByType = partition.cardsByType
@@ -110,15 +112,7 @@ class CardDataStore {
 			kSecAttrSynchronizable as String: kCFBooleanTrue!
 		]
 
-		let status = SecItemDelete(query as CFDictionary)
-		let containsInMemoryCard = cardsByType.values.contains { cards in
-			cards.contains { $0.id == id }
-		} || archivedCards.contains { $0.id == id }
-		let deletedPersistedCard = status == errSecSuccess
-		let deletedDebugCard = isDebugOrSimulator
-			&& status == errSecItemNotFound
-			&& containsInMemoryCard
-		guard deletedPersistedCard || deletedDebugCard else {
+		guard SecItemDelete(query as CFDictionary) == errSecSuccess else {
 			return false
 		}
 
