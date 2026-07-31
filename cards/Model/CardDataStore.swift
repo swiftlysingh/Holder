@@ -17,6 +17,7 @@ class CardDataStore {
 
 	private let appGroupID = "group.com.swiftlysingh.cards"
 	private let widgetCardsKey = "widgetAvailableCards"
+	private let debugFixturesInitializedKey = "debugFixturesInitialized"
 
 	private var sharedDefaults: UserDefaults? {
 		UserDefaults(suiteName: appGroupID)
@@ -36,9 +37,14 @@ class CardDataStore {
 
 	func loadCards() {
 		var retrievedCard = retrieveAllCardData(service: Bundle.main.bundleIdentifier ?? "com.myApp.defaultService") ?? []
+		let hasInitializedDebugFixtures = UserDefaults.standard.bool(forKey: debugFixturesInitializedKey)
 
 			//		Add default data for simulator
-		if isDebugOrSimulator && retrievedCard.isEmpty {
+		if Self.shouldSeedDebugFixtures(
+			isDebugOrSimulator: isDebugOrSimulator,
+			hasStoredCards: !retrievedCard.isEmpty,
+			hasInitializedFixtures: hasInitializedDebugFixtures
+		) {
 			let fixtures = [
 				CardData(id: UUID(), number: "4234567890123456", cvv: "123", expiration: "12/25", name: "John Doe", description: "Axis Visa", type: .creditCard, network: "4234567890123456".getCardNetwork()),
 				CardData(id: UUID(), number: "5345678901234567", cvv: "234", expiration: "11/24", name: "Jane Smith", description: "SBI MasterCard", type: .creditCard, network: "5345678901234567".getCardNetwork()),
@@ -71,10 +77,21 @@ class CardDataStore {
 				}
 			}
 		}
+		if isDebugOrSimulator && !hasInitializedDebugFixtures && !retrievedCard.isEmpty {
+			UserDefaults.standard.set(true, forKey: debugFixturesInitializedKey)
+		}
 		let partition = Self.partition(retrievedCard)
 		cardsByType = partition.cardsByType
 		archivedCards = partition.archivedCards
 		syncCardsToWidget()
+	}
+
+	static func shouldSeedDebugFixtures(
+		isDebugOrSimulator: Bool,
+		hasStoredCards: Bool,
+		hasInitializedFixtures: Bool
+	) -> Bool {
+		isDebugOrSimulator && !hasStoredCards && !hasInitializedFixtures
 	}
 
 	static func partition(_ cards: [CardData]) -> (cardsByType: [CardType: [CardData]], archivedCards: [CardData]) {
