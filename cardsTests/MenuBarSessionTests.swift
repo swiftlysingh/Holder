@@ -1,4 +1,5 @@
 #if os(macOS)
+import Combine
 import XCTest
 @testable import Holder
 
@@ -79,7 +80,7 @@ final class MenuBarSessionTests: XCTestCase {
 
 		await sleeper.waitUntilSleeping(count: 1)
 		await sleeper.advance()
-		await waitUntil(timeout: .seconds(1)) { !session.isUnlocked }
+		await waitUntilLocked(session)
 		XCTAssertFalse(session.isUnlocked)
 
 		session.unlock(for: .seconds(60))
@@ -99,10 +100,12 @@ final class MenuBarSessionTests: XCTestCase {
 		await sleeper.waitUntilSleeping(count: 1)
 		session.unlock(for: .seconds(2))
 		await sleeper.waitUntilSleeping(count: 2)
+		let replacementDuration = await sleeper.requestedDuration(at: 1)
+		XCTAssertEqual(replacementDuration, .seconds(2))
 		XCTAssertTrue(session.isUnlocked)
 
 		await sleeper.advance()
-		await waitUntil(timeout: .seconds(1)) { !session.isUnlocked }
+		await waitUntilLocked(session)
 		XCTAssertFalse(session.isUnlocked)
 
 		session.lock()
@@ -110,15 +113,9 @@ final class MenuBarSessionTests: XCTestCase {
 	}
 
 	@MainActor
-	private func waitUntil(
-		timeout: Duration,
-		pollInterval: Duration = .milliseconds(5),
-		condition: @MainActor () -> Bool
-	) async {
-		let deadline = ContinuousClock().now.advanced(by: timeout)
-		while ContinuousClock().now < deadline {
-			if condition() { return }
-			try? await Task.sleep(for: pollInterval)
+	private func waitUntilLocked(_ session: MenuBarSession) async {
+		for await isUnlocked in session.$isUnlocked.values {
+			if !isUnlocked { return }
 		}
 	}
 }

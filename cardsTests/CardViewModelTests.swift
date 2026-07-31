@@ -1,3 +1,4 @@
+import Combine
 import XCTest
 @testable import Holder
 
@@ -58,7 +59,7 @@ final class CardViewModelTests: XCTestCase {
 
 		await sleeper.waitUntilSleeping(count: 1)
 		await sleeper.advance()
-		await waitUntil { !model.isAuthenticated }
+		await waitUntilLocked(model)
 		XCTAssertFalse(model.isAuthenticated)
 	}
 
@@ -127,10 +128,12 @@ final class CardViewModelTests: XCTestCase {
 		model.scheduleLock(after: .seconds(2))
 		// Cumulative count distinguishes the replacement from the cancelled first waiter.
 		await sleeper.waitUntilSleeping(count: 2)
+		let replacementDuration = await sleeper.requestedDuration(at: 1)
+		XCTAssertEqual(replacementDuration, .seconds(2))
 
 		XCTAssertTrue(model.isAuthenticated)
 		await sleeper.advance()
-		await waitUntil { !model.isAuthenticated }
+		await waitUntilLocked(model)
 		XCTAssertFalse(model.isAuthenticated)
 	}
 
@@ -255,24 +258,15 @@ final class CardViewModelTests: XCTestCase {
 		)
 	}
 
-	/// Bounded poll so assertions wait for main-actor lock work after an injected sleeper advances,
-	/// without depending on a single `Task.yield` ordering.
-	private func waitUntil(
-		timeout: Duration = .seconds(1),
-		pollInterval: Duration = .milliseconds(5),
-		condition: @MainActor () -> Bool
-	) async {
-		let deadline = ContinuousClock().now.advanced(by: timeout)
-		while ContinuousClock().now < deadline {
-			if condition() { return }
-			try? await Task.sleep(for: pollInterval)
+	private func waitUntilLocked(_ model: CardViewModel) async {
+		for await isAuthenticated in model.$isAuthenticated.values {
+			if !isAuthenticated { return }
 		}
 	}
 }
 
 // MARK: - Test doubles
 
-@MainActor
 final class MockCardAuthenticator: CardAuthenticating {
 	var canEvaluate = true
 	private(set) var evaluateCount = 0
@@ -320,6 +314,7 @@ struct MockCardAuthenticatorFactory: CardAuthenticatorFactory {
 actor ControllableAsyncSleeper: AsyncSleeper {
 	private var waiters: [UUID: CheckedContinuation<Void, Error>] = [:]
 	private var waiterOrder: [UUID] = []
+	private var requestedDurations: [Duration] = []
 	private var cancelledBeforeRegister: Set<UUID> = []
 	private var cumulativeRegisteredCount = 0
 	private var sleepingBarriers: [(requiredCount: Int, continuation: CheckedContinuation<Void, Never>)] = []
@@ -328,7 +323,7 @@ actor ControllableAsyncSleeper: AsyncSleeper {
 		let id = UUID()
 		try await withTaskCancellationHandler {
 			try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, Error>) in
-				Task { await self.registerWaiter(id: id, continuation: continuation) }
+				registerWaiter(id: id, duration: duration, continuation: continuation)
 			}
 		} onCancel: {
 			Task { await self.cancelWaiter(id: id) }
@@ -354,13 +349,22 @@ actor ControllableAsyncSleeper: AsyncSleeper {
 		await Task.yield()
 	}
 
-	private func registerWaiter(id: UUID, continuation: CheckedContinuation<Void, Error>) {
+	func requestedDuration(at index: Int) -> Duration? {
+		requestedDurations.indices.contains(index) ? requestedDurations[index] : nil
+	}
+
+	private func registerWaiter(
+		id: UUID,
+		duration: Duration,
+		continuation: CheckedContinuation<Void, Error>
+	) {
 		if cancelledBeforeRegister.remove(id) != nil {
 			continuation.resume(throwing: CancellationError())
 			return
 		}
 		waiters[id] = continuation
 		waiterOrder.append(id)
+		requestedDurations.append(duration)
 		cumulativeRegisteredCount += 1
 		resumeSleepingBarriersIfNeeded()
 	}
