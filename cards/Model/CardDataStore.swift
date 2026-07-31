@@ -71,6 +71,7 @@ class CardDataStore {
 		var retrievedCard = cards
 		let hasInitializedDebugFixtures = UserDefaults.standard.bool(forKey: debugFixturesInitializedKey)
 
+		#if DEBUG || BETA
 		if Self.shouldSeedDebugFixtures(
 			isDebugOrSimulator: isDebugOrSimulator,
 			hasStoredCards: !retrievedCard.isEmpty,
@@ -111,6 +112,7 @@ class CardDataStore {
 		if isDebugOrSimulator && !hasInitializedDebugFixtures && !retrievedCard.isEmpty {
 			UserDefaults.standard.set(true, forKey: debugFixturesInitializedKey)
 		}
+		#endif
 
 		let partition = Self.partition(retrievedCard)
 		cardsByType = partition.cardsByType
@@ -218,8 +220,7 @@ class CardDataStore {
 			print("Failed to archive card: \(card.id)")
 			return false
 		}
-		loadCards()
-		return true
+		return loadCards()
 	}
 
 	@discardableResult
@@ -230,8 +231,7 @@ class CardDataStore {
 			print("Failed to unarchive card: \(card.id)")
 			return false
 		}
-		loadCards()
-		return true
+		return loadCards()
 	}
 /// Returns if success
 	private func saveOrUpdateCardData(_ cardData: CardData) -> Bool {
