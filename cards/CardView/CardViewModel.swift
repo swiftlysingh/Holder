@@ -121,6 +121,7 @@ class CardViewModel: ObservableObject {
 		let reason = "Please authenticate to view your card details."
 
 		guard authenticator.canEvaluateDeviceOwnerAuthentication() else {
+			authenticator.invalidate()
 			activeAuthenticator = nil
 			isAuthenticated = false
 			return
@@ -148,7 +149,12 @@ class CardViewModel: ObservableObject {
 		let sleeper = self.sleeper
 		scheduledLockDeadline = clock.now.advanced(by: duration)
 		scheduledLockTask = Task { @MainActor [weak self, sleeper] in
-			try? await sleeper.sleep(for: duration)
+			do {
+				try await sleeper.sleep(for: duration)
+			} catch {
+				// Includes cancellation and injected sleeper failures; leave auth state alone.
+				return
+			}
 			guard !Task.isCancelled, let self else { return }
 			self.lock()
 		}

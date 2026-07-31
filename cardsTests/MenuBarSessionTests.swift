@@ -71,11 +71,15 @@ final class MenuBarSessionTests: XCTestCase {
 
 	@MainActor
 	func testSessionLocksAtTimeoutAndCanBeCancelledImmediately() async throws {
-		let session = MenuBarSession()
+		let sleeper = ControllableAsyncSleeper()
+		let session = MenuBarSession(sleeper: sleeper)
 
-		session.unlock(for: .milliseconds(40))
+		session.unlock(for: .seconds(60))
 		XCTAssertTrue(session.isUnlocked)
-		try await Task.sleep(for: .milliseconds(250))
+
+		await sleeper.waitUntilSleeping(count: 1)
+		await sleeper.advance()
+		await waitUntil(timeout: .seconds(1)) { !session.isUnlocked }
 		XCTAssertFalse(session.isUnlocked)
 
 		session.unlock(for: .seconds(60))
@@ -86,18 +90,36 @@ final class MenuBarSessionTests: XCTestCase {
 
 	@MainActor
 	func testReplacementUnlockCancelsPriorTimeoutDeadline() async throws {
-		let session = MenuBarSession()
+		let sleeper = ControllableAsyncSleeper()
+		let session = MenuBarSession(sleeper: sleeper)
 
-		// Schedule a short timeout, then replace it with a long one. The first
-		// deadline must not lock once superseded.
-		session.unlock(for: .milliseconds(40))
-		session.unlock(for: .milliseconds(500))
+		// Schedule a timeout, then replace it. Wait for the second cumulative
+		// registration before completing the active waiter so the first cannot lock.
+		session.unlock(for: .seconds(1))
+		await sleeper.waitUntilSleeping(count: 1)
+		session.unlock(for: .seconds(2))
+		await sleeper.waitUntilSleeping(count: 2)
 		XCTAssertTrue(session.isUnlocked)
-		try await Task.sleep(for: .milliseconds(250))
-		XCTAssertTrue(session.isUnlocked)
+
+		await sleeper.advance()
+		await waitUntil(timeout: .seconds(1)) { !session.isUnlocked }
+		XCTAssertFalse(session.isUnlocked)
 
 		session.lock()
 		XCTAssertFalse(session.isUnlocked)
+	}
+
+	@MainActor
+	private func waitUntil(
+		timeout: Duration,
+		pollInterval: Duration = .milliseconds(5),
+		condition: @MainActor () -> Bool
+	) async {
+		let deadline = ContinuousClock().now.advanced(by: timeout)
+		while ContinuousClock().now < deadline {
+			if condition() { return }
+			try? await Task.sleep(for: pollInterval)
+		}
 	}
 }
 #endif

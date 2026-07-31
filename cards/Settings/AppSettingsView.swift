@@ -9,6 +9,8 @@ import SwiftUI
 
 struct AppSettingsView: View {
     @ObservedObject private var settings = UserSettings.shared
+    // Intentionally bypass UserSettings.shared: @AppStorage on the view invalidates
+    // reliably when the toggle changes (UserSettings' @AppStorage does not publish).
     @AppStorage("isAuthEnabled") private var isAuthEnabled = true
 
     var body: some View {
@@ -29,6 +31,9 @@ struct AppSettingsView: View {
             TextField("", value: $settings.authTimeout, format: .number)
                 .keyboardType(.numberPad)
                 .fixedSize()
+                .onChange(of: settings.authTimeout) { _, newValue in
+                    settings.authTimeout = min(max(newValue, 1), 120)
+                }
         }
         .disabled(!isAuthEnabled)
         #endif

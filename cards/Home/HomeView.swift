@@ -126,8 +126,10 @@ struct HomeView: View {
 					isEditing: true,
 					addNewFlow: true,
 					addUpdateCard: { card in
-						model.cardDataStore.addCard(card)
-						model.addingType = nil
+						// Keep the sheet open on failure so the entered form is preserved for retry.
+						if model.cardDataStore.addCard(card) {
+							model.addingType = nil
+						}
 					})
 				)
 			}

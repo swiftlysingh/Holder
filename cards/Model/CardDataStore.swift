@@ -149,12 +149,13 @@ class CardDataStore {
 		return (cardsByType, cards.filter { $0.isArchived })
 	}
 
-	func addCard(_ card: CardData) {
+	@discardableResult
+	func addCard(_ card: CardData) -> Bool {
 		guard saveOrUpdateCardData(card) else {
 			print("Failed to save card: \(card.id)")
-			return
+			return false
 		}
-		loadCards()
+		return loadCards()
 	}
 
 	/// Finds a card by its UUID (used for deep linking from widgets)

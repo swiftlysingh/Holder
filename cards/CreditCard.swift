@@ -33,6 +33,13 @@ enum MainWindowCoordinator {
         mainWindow = window
     }
 
+    /// Clears the registered window only when `window` is the currently tracked host,
+    /// so an obsolete accessor cannot unregister a newer main window.
+    static func unregister(window: NSWindow) {
+        guard mainWindow === window else { return }
+        mainWindow = nil
+    }
+
     static func register(openWindow: OpenWindowAction) {
         self.openWindow = openWindow
     }
@@ -77,17 +84,23 @@ private struct MainWindowRegistrar: View {
 /// Bridge: AppKit window identity is not available from SwiftUI; bind the host `NSWindow` once attached.
 private struct MainWindowAccessor: NSViewRepresentable {
     final class HostView: NSView {
-        var onWindowChange: ((NSWindow?) -> Void)?
+        var onWindowChange: ((NSWindow?, NSWindow?) -> Void)?
+        private weak var registeredWindow: NSWindow?
 
         override func viewDidMoveToWindow() {
             super.viewDidMoveToWindow()
-            onWindowChange?(window)
+            let previous = registeredWindow
+            registeredWindow = window
+            onWindowChange?(previous, window)
         }
     }
 
     func makeNSView(context: Context) -> HostView {
         let view = HostView()
-        view.onWindowChange = { window in
+        view.onWindowChange = { previous, window in
+            if let previous {
+                MainWindowCoordinator.unregister(window: previous)
+            }
             if let window {
                 MainWindowCoordinator.register(window: window)
             }

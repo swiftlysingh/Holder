@@ -19,6 +19,7 @@ struct CardView: View {
 	@StateObject private var model: CardViewModel
 	@Environment(\.scenePhase) private var scenePhase
 	@AppStorage("isAuthEnabled") private var isAuthEnabled = true
+	@AppStorage("timeout") private var authTimeout = 10
 	#if os(macOS)
 	@State private var copiedField: String?
 	#endif
@@ -65,7 +66,7 @@ struct CardView: View {
 					model.authenticateUser()
 				}
 			} else if shouldScheduleLock && isAuthEnabled && !model.isAuthenticating {
-				model.scheduleLock(after: .seconds(UserSettings.shared.authTimeout))
+				model.scheduleLock(after: .seconds(authTimeout))
 			}
 		}
 		.onChange(of: isAuthEnabled) { _, isEnabled in

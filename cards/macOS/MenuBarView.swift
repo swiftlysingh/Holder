@@ -33,12 +33,23 @@ enum MenuBarContentState: Equatable {
 final class MenuBarSession: ObservableObject {
     @Published private(set) var isUnlocked = false
     private var lockTask: Task<Void, Never>?
+    private let sleeper: AsyncSleeper
+
+    init(sleeper: AsyncSleeper = TaskAsyncSleeper()) {
+        self.sleeper = sleeper
+    }
 
     func unlock(for timeout: Duration) {
         lockTask?.cancel()
         isUnlocked = true
-        lockTask = Task { [weak self] in
-            try? await Task.sleep(for: timeout)
+        let sleeper = self.sleeper
+        lockTask = Task { [weak self, sleeper] in
+            do {
+                try await sleeper.sleep(for: timeout)
+            } catch {
+                // Includes cancellation and injected sleeper failures.
+                return
+            }
             guard !Task.isCancelled else { return }
             self?.lock()
         }
@@ -329,8 +340,13 @@ struct MenuBarView: View {
         let context = LAContext()
         var error: NSError?
         guard context.canEvaluatePolicy(.deviceOwnerAuthentication, error: &error) else {
+            if let error {
+                print("Menu bar unlock unavailable: \(error.localizedDescription) (\(error.domain) \(error.code))")
+            } else {
+                print("Menu bar unlock unavailable: device owner authentication cannot be evaluated")
+            }
             session.lock()
-            authStatus = "Your vault is still locked. Try again when you're ready."
+            authStatus = "Unlock isn’t available on this Mac. Open Holder to manage your cards."
             return
         }
 

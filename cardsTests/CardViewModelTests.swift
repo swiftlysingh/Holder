@@ -58,6 +58,7 @@ final class CardViewModelTests: XCTestCase {
 
 		await sleeper.waitUntilSleeping(count: 1)
 		await sleeper.advance()
+		await waitUntil { !model.isAuthenticated }
 		XCTAssertFalse(model.isAuthenticated)
 	}
 
@@ -129,6 +130,7 @@ final class CardViewModelTests: XCTestCase {
 
 		XCTAssertTrue(model.isAuthenticated)
 		await sleeper.advance()
+		await waitUntil { !model.isAuthenticated }
 		XCTAssertFalse(model.isAuthenticated)
 	}
 
@@ -251,6 +253,20 @@ final class CardViewModelTests: XCTestCase {
 			authenticatorFactory: MockCardAuthenticatorFactory(authenticator ?? MockCardAuthenticator()),
 			sleeper: sleeper
 		)
+	}
+
+	/// Bounded poll so assertions wait for main-actor lock work after an injected sleeper advances,
+	/// without depending on a single `Task.yield` ordering.
+	private func waitUntil(
+		timeout: Duration = .seconds(1),
+		pollInterval: Duration = .milliseconds(5),
+		condition: @MainActor () -> Bool
+	) async {
+		let deadline = ContinuousClock().now.advanced(by: timeout)
+		while ContinuousClock().now < deadline {
+			if condition() { return }
+			try? await Task.sleep(for: pollInterval)
+		}
 	}
 }
 
