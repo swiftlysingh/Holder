@@ -17,6 +17,7 @@ class CardDataStore {
 
 	private let appGroupID = "group.com.swiftlysingh.cards"
 	private let widgetCardsKey = "widgetAvailableCards"
+	private let debugFixturesInitializedKey = "debugFixturesInitialized"
 
 	private var sharedDefaults: UserDefaults? {
 		UserDefaults(suiteName: appGroupID)
@@ -68,37 +69,47 @@ class CardDataStore {
 
 	private func commitRetrievedCards(_ cards: [CardData]) {
 		var retrievedCard = cards
+		let hasInitializedDebugFixtures = UserDefaults.standard.bool(forKey: debugFixturesInitializedKey)
 
-		// Add default data for simulator / debug only when Keychain is confirmed empty.
-		if isDebugOrSimulator && retrievedCard.isEmpty {
-			retrievedCard.append(
-				contentsOf: [
-					CardData(id: UUID(), number: "4234567890123456", cvv: "123", expiration: "12/25", name: "John Doe", description: "Axis Visa", type: .creditCard, network: "4234567890123456".getCardNetwork()),
-					CardData(id: UUID(), number: "5345678901234567", cvv: "234", expiration: "11/24", name: "Jane Smith", description: "SBI MasterCard", type: .creditCard, network: "5345678901234567".getCardNetwork()),
-					CardData(id: UUID(), number: "34567890123456", cvv: "345", expiration: "10/23", name: "Alex Johnson", description: "American Express Gold", type: .creditCard, network: "34567890123456".getCardNetwork()),
-					CardData(id: UUID(), number: "6067890123456789", cvv: "456", expiration: "08/26", name: "Emily Davis", description: "Kotak PVR", type: .debitCard, network: "6067890123456789".getCardNetwork()),
-					CardData(
-						id: UUID(),
-						number: "3678901234567890",
-						cvv: "567",
-						expiration: "07/25",
-						name: "Michael Brown",
-						description: "HDFC Platinum",
-						type: .debitCard,
-						network: "3678901234567890".getCardNetwork()
-					),
-					CardData(
-						id: UUID(),
-						number: "3678901234567890",
-						cvv: "567",
-						expiration: "07/25",
-						name: "Michael Brown",
-						description: "HDFC Platinum",
-						type: .otherCard,
-						network: "3678901234567890".getCardNetwork()
-					)
-				]
-			)
+		if Self.shouldSeedDebugFixtures(
+			isDebugOrSimulator: isDebugOrSimulator,
+			hasStoredCards: !retrievedCard.isEmpty,
+			hasInitializedFixtures: hasInitializedDebugFixtures
+		) {
+			let fixtures = [
+				CardData(id: UUID(), number: "4234567890123456", cvv: "123", expiration: "12/25", name: "John Doe", description: "Axis Visa", type: .creditCard, network: "4234567890123456".getCardNetwork()),
+				CardData(id: UUID(), number: "5345678901234567", cvv: "234", expiration: "11/24", name: "Jane Smith", description: "SBI MasterCard", type: .creditCard, network: "5345678901234567".getCardNetwork()),
+				CardData(id: UUID(), number: "34567890123456", cvv: "345", expiration: "10/23", name: "Alex Johnson", description: "American Express Gold", type: .creditCard, network: "34567890123456".getCardNetwork()),
+				CardData(id: UUID(), number: "6067890123456789", cvv: "456", expiration: "08/26", name: "Emily Davis", description: "Kotak PVR", type: .debitCard, network: "6067890123456789".getCardNetwork()),
+				CardData(
+					id: UUID(),
+					number: "3678901234567890",
+					cvv: "567",
+					expiration: "07/25",
+					name: "Michael Brown",
+					description: "HDFC Platinum",
+					type: .debitCard,
+					network: "3678901234567890".getCardNetwork()
+				),
+				CardData(
+					id: UUID(),
+					number: "3678901234567890",
+					cvv: "567",
+					expiration: "07/25",
+					name: "Michael Brown",
+					description: "HDFC Platinum",
+					type: .otherCard,
+					network: "3678901234567890".getCardNetwork()
+				)
+			]
+			for fixture in fixtures {
+				if saveOrUpdateCardData(fixture) {
+					retrievedCard.append(fixture)
+				}
+			}
+		}
+		if isDebugOrSimulator && !hasInitializedDebugFixtures && !retrievedCard.isEmpty {
+			UserDefaults.standard.set(true, forKey: debugFixturesInitializedKey)
 		}
 
 		let partition = Self.partition(retrievedCard)
@@ -141,6 +152,14 @@ class CardDataStore {
 		return cards
 	}
 
+	static func shouldSeedDebugFixtures(
+		isDebugOrSimulator: Bool,
+		hasStoredCards: Bool,
+		hasInitializedFixtures: Bool
+	) -> Bool {
+		isDebugOrSimulator && !hasStoredCards && !hasInitializedFixtures
+	}
+
 	static func partition(_ cards: [CardData]) -> (cardsByType: [CardType: [CardData]], archivedCards: [CardData]) {
 		let activeCards = cards.filter { !$0.isArchived }
 		let cardsByType = Dictionary(uniqueKeysWithValues: CardType.allCases.map { type in
@@ -176,9 +195,11 @@ class CardDataStore {
 			kSecAttrSynchronizable as String: kCFBooleanTrue!
 		]
 
-		let status = SecItemDelete(query as CFDictionary)
-		guard status == errSecSuccess else { return false }
+		guard SecItemDelete(query as CFDictionary) == errSecSuccess else {
+			return false
+		}
 
+		// Drop in-memory copies before widget sync so timelines match persistence.
 		for type in CardType.allCases {
 			cardsByType[type]?.removeAll { $0.id == id }
 		}
@@ -189,24 +210,28 @@ class CardDataStore {
 
 	// MARK: - Archive
 
-	func archiveCard(_ card: CardData) {
+	@discardableResult
+	func archiveCard(_ card: CardData) -> Bool {
 		var archivedCard = card
 		archivedCard.isArchived = true
 		guard saveOrUpdateCardData(archivedCard) else {
 			print("Failed to archive card: \(card.id)")
-			return
+			return false
 		}
 		loadCards()
+		return true
 	}
 
-	func unarchiveCard(_ card: CardData) {
+	@discardableResult
+	func unarchiveCard(_ card: CardData) -> Bool {
 		var unarchivedCard = card
 		unarchivedCard.isArchived = false
 		guard saveOrUpdateCardData(unarchivedCard) else {
 			print("Failed to unarchive card: \(card.id)")
-			return
+			return false
 		}
 		loadCards()
+		return true
 	}
 /// Returns if success
 	private func saveOrUpdateCardData(_ cardData: CardData) -> Bool {

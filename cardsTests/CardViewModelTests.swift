@@ -252,7 +252,7 @@ final class CardViewModelTests: XCTestCase {
 				description: "",
 				type: .creditCard
 			),
-			addUpdateCard: { _ in },
+			addUpdateCard: { _ in true },
 			authenticatorFactory: MockCardAuthenticatorFactory(authenticator ?? MockCardAuthenticator()),
 			sleeper: sleeper
 		)

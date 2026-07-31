@@ -11,6 +11,7 @@ import SinghDevKit
 
 struct HomeView: View {
 	@ObservedObject var model: HomeViewModel
+	@Environment(\.analytics) private var analytics
 
 	init(cardDataStore: CardDataStore = CardDataStore()) {
 		self.model = HomeViewModel(cardDataStore: cardDataStore)
@@ -25,12 +26,12 @@ struct HomeView: View {
 							getRowforCards(with: card)
 								.swipeActions(edge: .trailing, allowsFullSwipe: false) {
 									Button(role: .destructive) {
-										_ = model.cardDataStore.deleteCard(with: card.id)
+										deleteCard(card)
 									} label: {
 										Label("Delete", systemImage: "trash")
 									}
 									Button {
-										model.archiveCard(card)
+										archiveCard(card)
 									} label: {
 										Label("Archive", systemImage: "archivebox")
 									}
@@ -38,18 +39,19 @@ struct HomeView: View {
 								}
 								.contextMenu {
 									Button {
-										model.archiveCard(card)
+										archiveCard(card)
 									} label: {
 										Label("Archive", systemImage: "archivebox")
 									}
 									Button(role: .destructive) {
-										_ = model.cardDataStore.deleteCard(with: card.id)
+										deleteCard(card)
 									} label: {
 										Label("Delete", systemImage: "trash")
 									}
 								}
 						}
 						Button("Add a new \(type.rawValue)") {
+							track(.cardAddStarted(cardCategory: .init(type)))
 							model.addingType = type
 						}
 					}
@@ -74,7 +76,10 @@ struct HomeView: View {
 			}
 			#if !os(macOS)
 			.toolbar {
-				NavigationLink(destination: SettingsView(configuration: SettingsViewModel())) {
+				NavigationLink(
+					destination: SettingsView(configuration: SettingsViewModel())
+						.sdkScreen(AppAnalyticsScreen.settings)
+				) {
 					Image(systemName: "gear")
 				}
 			}
@@ -102,7 +107,9 @@ struct HomeView: View {
 		}
 		.whatsNewSheet()
 		.onOpenURL { url in
-			model.handleDeepLink(url)
+			model.handleDeepLink(url, onOpenedFromWidget: {
+				track(.cardOpenedFromWidget)
+			})
 		}
 		.navigationDestination(item: $model.selectedCard) { card in
 			CardView(model: CardViewModel(
@@ -127,12 +134,35 @@ struct HomeView: View {
 					addNewFlow: true,
 					addUpdateCard: { card in
 						// Keep the sheet open on failure so the entered form is preserved for retry.
-						if model.cardDataStore.addCard(card) {
+						let succeeded = model.cardDataStore.addCard(card)
+						if succeeded {
 							model.addingType = nil
 						}
+						return succeeded
 					})
 				)
 			}
+		}
+		.sdkScreen(AppAnalyticsScreen.home)
+	}
+
+	private func deleteCard(_ card: CardData) {
+		let event: AppAnalyticsEvent = model.cardDataStore.deleteCard(with: card.id)
+			? .cardDeleted(cardCategory: .init(card.type), location: .active)
+			: .cardDeleteFailed(cardCategory: .init(card.type), location: .active)
+		track(event)
+	}
+
+	private func archiveCard(_ card: CardData) {
+		let event: AppAnalyticsEvent = model.archiveCard(card)
+			? .cardArchived(cardCategory: .init(card.type))
+			: .cardArchiveFailed(cardCategory: .init(card.type))
+		track(event)
+	}
+
+	private func track(_ event: AppAnalyticsEvent) {
+		Task {
+			await analytics.capture(event)
 		}
 	}
 

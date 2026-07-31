@@ -73,13 +73,14 @@ class CardViewModel: ObservableObject {
 	private var authAttemptID: UInt64 = 0
 	private let authenticatorFactory: CardAuthenticatorFactory
 	private let sleeper: AsyncSleeper
+	private(set) var didUseScanner = false
 
 	#if os(iOS)
 	@Published var selectedItem: PhotosPickerItem?
 	#endif
 
 	var isAddNewFlow : Bool
-	var addUpdateCard: (CardData) -> Void
+	var addUpdateCard: (CardData) -> Bool
 
 	/// True while a device-owner evaluation is in flight for the current attempt.
 	var isAuthenticating: Bool { activeAuthenticator != nil }
@@ -88,7 +89,7 @@ class CardViewModel: ObservableObject {
 		card: CardData,
 		isEditing: Bool = false,
 		addNewFlow: Bool = false,
-		addUpdateCard: @escaping ((CardData) -> Void),
+		addUpdateCard: @escaping ((CardData) -> Bool),
 		authenticatorFactory: CardAuthenticatorFactory = DefaultCardAuthenticatorFactory(),
 		sleeper: AsyncSleeper = TaskAsyncSleeper()
 	) {
@@ -197,5 +198,9 @@ class CardViewModel: ObservableObject {
 		authAttemptID &+= 1
 		activeAuthenticator?.invalidate()
 		activeAuthenticator = nil
+	}
+
+	func markScannerCompleted() {
+		didUseScanner = true
 	}
 }

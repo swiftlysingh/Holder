@@ -58,7 +58,10 @@ struct AppSettingsView: View {
             Label("Support Holder", systemImage: "heart.fill")
         }
         .sheet(isPresented: $showsTipJar) {
-            SDKPaywallView(displayCloseButton: true)
+            SDKPaywallView(
+                displayCloseButton: true,
+                analyticsContext: SDKPaywallContext(source: "settings_support")
+            )
         }
     }
 }

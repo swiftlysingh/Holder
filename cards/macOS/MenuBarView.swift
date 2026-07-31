@@ -6,9 +6,10 @@
 //
 
 #if os(macOS)
-import SwiftUI
 import AppKit
 import LocalAuthentication
+import SinghDevKit
+import SwiftUI
 
 enum MenuBarContentState: Equatable {
     case locked
@@ -175,6 +176,7 @@ struct MenuBarView: View {
                 session.unlock(for: .seconds(authTimeout))
             }
         }
+        .sdkScreen(AppAnalyticsScreen.menuBar)
     }
 
     private var contentState: MenuBarContentState {

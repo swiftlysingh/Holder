@@ -7,6 +7,8 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		AA1000052F30000100000005 /* AppAnalyticsEvent.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA1000012F30000100000001 /* AppAnalyticsEvent.swift */; };
+		AA1000062F30000100000006 /* AppAnalyticsScreen.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA1000022F30000100000002 /* AppAnalyticsScreen.swift */; };
 		AA0000062F0BC0000000002A /* PlatformTypes.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000012F0BC0000000001A /* PlatformTypes.swift */; };
 		AA0000072F0BC0000000002B /* PasteboardService.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000022F0BC0000000001B /* PasteboardService.swift */; };
 		AA0000082F0BC0000000002C /* HapticService.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000032F0BC0000000001C /* HapticService.swift */; };
@@ -72,6 +74,8 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		AA1000012F30000100000001 /* AppAnalyticsEvent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppAnalyticsEvent.swift; sourceTree = "<group>"; };
+		AA1000022F30000100000002 /* AppAnalyticsScreen.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppAnalyticsScreen.swift; sourceTree = "<group>"; };
 		CD2900012F21000100000001 /* cardsTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = cardsTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		AA0000012F0BC0000000001A /* PlatformTypes.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlatformTypes.swift; sourceTree = "<group>"; };
 		AA0000022F0BC0000000001B /* PasteboardService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PasteboardService.swift; sourceTree = "<group>"; };
@@ -151,6 +155,15 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		AA1000032F30000100000003 /* Analytics */ = {
+			isa = PBXGroup;
+			children = (
+				AA1000012F30000100000001 /* AppAnalyticsEvent.swift */,
+				AA1000022F30000100000002 /* AppAnalyticsScreen.swift */,
+			);
+			path = Analytics;
+			sourceTree = "<group>";
+		};
 		AA00000B2F0BC0000000003A /* Platform */ = {
 			isa = PBXGroup;
 			children = (
@@ -245,6 +258,7 @@
 				EE7AF3E82B4C3A1300F2F7C0 /* Info.plist */,
 				FF9452F82BDE314E00731D8B /* Secrets.plist */,
 				EEBB52E92B238D6600035B92 /* CreditCard.swift */,
+				AA1000032F30000100000003 /* Analytics */,
 				EE1D3E8D2B66AE2A009733A5 /* Home */,
 				EE1D3E932B66B133009733A5 /* CardView */,
 				EEBED8C92B6D7F8A00BEBE87 /* ScanView */,
@@ -444,6 +458,8 @@
 			inputFileListPaths = (
 			);
 			inputPaths = (
+				"$(SRCROOT)/cards/Analytics/AppAnalyticsEvent.swift",
+				"$(SRCROOT)/cards/Analytics/AppAnalyticsScreen.swift",
 				"$(SRCROOT)/cards/CardView/CardView.swift",
 				"$(SRCROOT)/cards/CardView/CardViewModel.swift",
 				"$(SRCROOT)/cards/CardView/Tip.swift",
@@ -490,6 +506,8 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				AA1000052F30000100000005 /* AppAnalyticsEvent.swift in Sources */,
+				AA1000062F30000100000006 /* AppAnalyticsScreen.swift in Sources */,
 				EE1D3E922B66AE83009733A5 /* CardViewModel.swift in Sources */,
 				EE599BAC2B23900A002F49F8 /* AppSettingsView.swift in Sources */,
 				EE8ADBEF2B66A5B600F0DC29 /* HomeViewModel.swift in Sources */,
