@@ -45,6 +45,19 @@ final class CardDataPersistenceTests: XCTestCase {
 		XCTAssertEqual(partition.archivedCards.map(\.id), [archivedCard.id])
 	}
 
+	func testDebugFixturesSeedOnlyBeforeInitialization() {
+		XCTAssertTrue(CardDataStore.shouldSeedDebugFixtures(
+			isDebugOrSimulator: true,
+			hasStoredCards: false,
+			hasInitializedFixtures: false
+		))
+		XCTAssertFalse(CardDataStore.shouldSeedDebugFixtures(
+			isDebugOrSimulator: true,
+			hasStoredCards: false,
+			hasInitializedFixtures: true
+		))
+	}
+
 	private func makeCard(
 		id: UUID,
 		type: CardType = .creditCard,
