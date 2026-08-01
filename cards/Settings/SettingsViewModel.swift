@@ -18,7 +18,7 @@ struct SettingsViewModel: SettingsViewModelProtocol {
     }
 
     var privacyPolicyURL: URL? {
-        URL(string: "https://github.com/swiftlysingh/Holder/blob/release/2.2.0/PRIVACY.md")
+        URL(string: "https://docs.google.com/document/d/1OD3foirDwAsmZ8Mp6cYJlDpUjAyDpvgX7rvzosnNQes")
     }
 
     var sourceCodeURL: URL? {
