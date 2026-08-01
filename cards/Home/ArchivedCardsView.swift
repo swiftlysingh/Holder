@@ -57,15 +57,15 @@ struct ArchivedCardsView: View {
 
 	private func deleteCard(_ card: CardData) {
 		let event: AppAnalyticsEvent = model.deleteArchivedCard(card)
-			? .cardDeleted(cardCategory: .init(card.type), location: .archived)
-			: .cardDeleteFailed(cardCategory: .init(card.type), location: .archived)
+			? .cardDeleted(location: .archived)
+			: .cardDeleteFailed(location: .archived)
 		track(event)
 	}
 
 	private func unarchiveCard(_ card: CardData) {
 		let event: AppAnalyticsEvent = model.unarchiveCard(card)
-			? .cardUnarchived(cardCategory: .init(card.type))
-			: .cardUnarchiveFailed(cardCategory: .init(card.type))
+			? .cardUnarchived
+			: .cardUnarchiveFailed
 		track(event)
 	}
 

@@ -409,17 +409,14 @@ struct CardView: View {
 
 		let operation: AppAnalyticsEvent.SaveOperation = model.isAddNewFlow ? .create : .update
 		let inputMethod: AppAnalyticsEvent.InputMethod = model.didUseScanner ? .scanner : .manual
-		let cardCategory = AppAnalyticsEvent.CardCategory(model.card.type)
 		let succeeded = model.addUpdateCard(model.card)
 		let event: AppAnalyticsEvent = succeeded
 			? .cardSaveCompleted(
 				operation: operation,
-				cardCategory: cardCategory,
 				inputMethod: inputMethod
 			)
 			: .cardSaveFailed(
 				operation: operation,
-				cardCategory: cardCategory,
 				inputMethod: inputMethod
 			)
 		track(event)
