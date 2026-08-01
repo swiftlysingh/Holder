@@ -16,7 +16,7 @@ Recognising the challenges in regions without Apple Pay, Holder was created to m
 Holder provides effortless access to your card details, securely stored and ready to be used in any online transaction with just a tap.
 
 ## Why Choose Holder?
-Your card details are safely stored in the iOS Keychain and guarded by robust encryption. Operating entirely offline, Holder ensures maximum privacy and security. Holder integrates seamlessly with Face ID and Touch ID, ensuring that only you can access your sensitive card information.
+Your card details are safely stored in the Apple Keychain and are never sent to Holder's analytics or purchase providers. Holder uses limited pseudonymous usage analytics as described in the [privacy policy](PRIVACY.md). Holder integrates seamlessly with Face ID and Touch ID, ensuring that only you can access your sensitive card information.
 
 ## Key Features
 - Secure storage for Credit, Debit, and other cards.
@@ -26,7 +26,7 @@ Your card details are safely stored in the iOS Keychain and guarded by robust en
 - Committed to openness, soon to be open-source.
 
 ## Your Privacy, Our Priority
-We believe in transparency and security. Our open-source commitment allows you to understand how we protect your data and uphold privacy.
+We believe in transparency and security. Read the [privacy policy](PRIVACY.md) to see what stays in Apple-managed storage and what limited usage data is shared with service providers.
 
 ## Perfect for Digital Natives
 Ideal for online shoppers, travelers, and anyone seeking a simplified, secure digital wallet experience. Holder is your digital assistant for managing card details with ease and security.
