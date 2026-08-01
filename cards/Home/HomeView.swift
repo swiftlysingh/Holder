@@ -51,7 +51,7 @@ struct HomeView: View {
 								}
 						}
 						Button("Add a new \(type.rawValue)") {
-							track(.cardAddStarted(cardCategory: .init(type)))
+							track(.cardAddStarted)
 							model.addingType = type
 						}
 					}
@@ -148,15 +148,15 @@ struct HomeView: View {
 
 	private func deleteCard(_ card: CardData) {
 		let event: AppAnalyticsEvent = model.cardDataStore.deleteCard(with: card.id)
-			? .cardDeleted(cardCategory: .init(card.type), location: .active)
-			: .cardDeleteFailed(cardCategory: .init(card.type), location: .active)
+			? .cardDeleted(location: .active)
+			: .cardDeleteFailed(location: .active)
 		track(event)
 	}
 
 	private func archiveCard(_ card: CardData) {
 		let event: AppAnalyticsEvent = model.archiveCard(card)
-			? .cardArchived(cardCategory: .init(card.type))
-			: .cardArchiveFailed(cardCategory: .init(card.type))
+			? .cardArchived
+			: .cardArchiveFailed
 		track(event)
 	}
 
