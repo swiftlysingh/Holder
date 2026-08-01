@@ -1,23 +1,6 @@
 import SinghDevKit
 
 enum AppAnalyticsEvent: AnalyticsEvent {
-    enum CardCategory: String, Sendable {
-        case creditCard = "credit_card"
-        case debitCard = "debit_card"
-        case otherCard = "other_card"
-
-        init(_ cardType: CardType) {
-            switch cardType {
-            case .creditCard:
-                self = .creditCard
-            case .debitCard:
-                self = .debitCard
-            case .otherCard:
-                self = .otherCard
-            }
-        }
-    }
-
     enum SaveOperation: String, Sendable {
         case create
         case update
@@ -33,23 +16,21 @@ enum AppAnalyticsEvent: AnalyticsEvent {
         case archived
     }
 
-    case cardAddStarted(cardCategory: CardCategory)
+    case cardAddStarted
     case cardSaveCompleted(
         operation: SaveOperation,
-        cardCategory: CardCategory,
         inputMethod: InputMethod
     )
     case cardSaveFailed(
         operation: SaveOperation,
-        cardCategory: CardCategory,
         inputMethod: InputMethod
     )
-    case cardDeleted(cardCategory: CardCategory, location: CardLocation)
-    case cardDeleteFailed(cardCategory: CardCategory, location: CardLocation)
-    case cardArchived(cardCategory: CardCategory)
-    case cardArchiveFailed(cardCategory: CardCategory)
-    case cardUnarchived(cardCategory: CardCategory)
-    case cardUnarchiveFailed(cardCategory: CardCategory)
+    case cardDeleted(location: CardLocation)
+    case cardDeleteFailed(location: CardLocation)
+    case cardArchived
+    case cardArchiveFailed
+    case cardUnarchived
+    case cardUnarchiveFailed
     case cardScanStarted
     case cardScanCompleted
     case cardScanPermissionDenied
@@ -88,32 +69,25 @@ enum AppAnalyticsEvent: AnalyticsEvent {
 
     var properties: AnalyticsProperties {
         switch self {
-        case .cardAddStarted(let cardCategory),
-             .cardArchived(let cardCategory),
-             .cardArchiveFailed(let cardCategory),
-             .cardUnarchived(let cardCategory),
-             .cardUnarchiveFailed(let cardCategory):
-            cardProperties(cardCategory)
-        case .cardSaveCompleted(let operation, let cardCategory, let inputMethod),
-             .cardSaveFailed(let operation, let cardCategory, let inputMethod):
-            cardProperties(cardCategory).merging([
+        case .cardSaveCompleted(let operation, let inputMethod),
+             .cardSaveFailed(let operation, let inputMethod):
+            [
                 "operation": .string(operation.rawValue),
                 "input_method": .string(inputMethod.rawValue)
-            ]) { _, newValue in newValue }
-        case .cardDeleted(let cardCategory, let location),
-             .cardDeleteFailed(let cardCategory, let location):
-            cardProperties(cardCategory).merging([
-                "location": .string(location.rawValue)
-            ]) { _, newValue in newValue }
-        case .cardScanStarted,
+            ]
+        case .cardDeleted(let location),
+             .cardDeleteFailed(let location):
+            ["location": .string(location.rawValue)]
+        case .cardAddStarted,
+             .cardArchived,
+             .cardArchiveFailed,
+             .cardUnarchived,
+             .cardUnarchiveFailed,
+             .cardScanStarted,
              .cardScanCompleted,
              .cardScanPermissionDenied,
              .cardOpenedFromWidget:
             [:]
         }
-    }
-
-    private func cardProperties(_ cardCategory: CardCategory) -> AnalyticsProperties {
-        ["card_category": .string(cardCategory.rawValue)]
     }
 }
