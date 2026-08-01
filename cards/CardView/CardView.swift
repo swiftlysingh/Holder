@@ -17,12 +17,18 @@ import AppKit
 
 struct CardView: View {
 
-	@ObservedObject var model: CardViewModel
-	@Environment(\.scenePhase) var scenePhase
+	@StateObject private var model: CardViewModel
+	@Environment(\.scenePhase) private var scenePhase
+	@AppStorage("isAuthEnabled") private var isAuthEnabled = true
+	@AppStorage("timeout") private var authTimeout = 10
 	@Environment(\.analytics) private var analytics
 	#if os(macOS)
 	@State private var copiedField: String?
 	#endif
+
+	init(model: CardViewModel) {
+		_model = StateObject(wrappedValue: model)
+	}
 
 	/// Formats expiration date input (auto-inserts "/" after 2 digits, limits to 5 chars)
 	private func formatExpirationIfNeeded(_ newValue: String) {
@@ -36,27 +42,53 @@ struct CardView: View {
 	}
 
 	var body: some View {
-		#if os(macOS)
-		macOSCardView()
-			.onAppear {
+		Group {
+			#if os(macOS)
+			macOSCardView()
+			#else
+			getCardListView()
+			#endif
+		}
+		.onAppear {
+			model.authenticateUser()
+		}
+		.onChange(of: scenePhase) {
+			#if os(macOS)
+			let shouldScheduleLock = scenePhase == .inactive || scenePhase == .background
+			#else
+			let shouldScheduleLock = scenePhase == .background
+			#endif
+
+			if scenePhase == .active {
+				model.resolveScheduledLockOnActive()
+				// onChange does not fire for the initial phase, so onAppear owns the first prompt.
+				if isAuthEnabled
+					&& !model.isAuthenticated
+					&& !model.isAuthenticating {
+					model.authenticateUser()
+				}
+			} else if shouldScheduleLock && isAuthEnabled && !model.isAuthenticating {
+				model.scheduleLock(after: .seconds(authTimeout))
+			}
+		}
+		.onChange(of: isAuthEnabled) { _, isEnabled in
+			if isEnabled {
+				model.lock()
+				if scenePhase == .active {
+					model.authenticateUser()
+				}
+			} else {
 				model.authenticateUser()
 			}
-			.sdkScreen(
-				model.isAddNewFlow
-					? AppAnalyticsScreen.cardEditor
-					: AppAnalyticsScreen.cardDetails
-			)
-		#else
-		getCardListView()
-			.onAppear {
-				model.authenticateUser()
-			}
-			.sdkScreen(
-				model.isAddNewFlow
-					? AppAnalyticsScreen.cardEditor
-					: AppAnalyticsScreen.cardDetails
-			)
-		#endif
+		}
+		.onDisappear {
+			model.lock()
+		}
+		.sdkScreen(
+			model.isAddNewFlow
+				? AppAnalyticsScreen.cardEditor
+				: AppAnalyticsScreen.cardDetails
+		)
 	}
 
 	#if os(iOS)
@@ -367,22 +399,6 @@ struct CardView: View {
 			}
 		}
 		#endif
-		.onChange(of: scenePhase) {
-			if scenePhase == .background && UserSettings.shared.isAuthEnabled {
-				DispatchQueue.main.asyncAfter(deadline: .now() + .seconds(UserSettings.shared.authTimeout)) {
-					if scenePhase == .background {
-						Task { @MainActor in
-							self.model.isAuthenticated = false
-						}
-					}
-				}
-			}
-		}
-		.onDisappear(perform: {
-			Task { @MainActor in
-				model.isAuthenticated = false
-			}
-		})
 	}
 
 	private func saveCardIfNeeded() {
@@ -480,22 +496,6 @@ struct CardView: View {
 			}
 		}
 		.disabled(!model.isAuthenticated)
-		.onChange(of: scenePhase) {
-			if scenePhase == .background && UserSettings.shared.isAuthEnabled {
-				DispatchQueue.main.asyncAfter(deadline: .now() + .seconds(UserSettings.shared.authTimeout)) {
-					if scenePhase == .background {
-						Task { @MainActor in
-							self.model.isAuthenticated = false
-						}
-					}
-				}
-			}
-		}
-		.onDisappear {
-			Task { @MainActor in
-				model.isAuthenticated = false
-			}
-		}
 	}
 
 	@ViewBuilder

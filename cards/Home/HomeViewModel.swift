@@ -28,11 +28,9 @@ class HomeViewModel: ObservableObject {
 	}
 
 	func deleteCard(at offsets: IndexSet, inSection cardType: CardType) {
-		let cards = offsets.compactMap { cardDataStore.cardsByType[cardType]?[$0] }
-		for card in cards {
-			if !cardDataStore.deleteCard(with: card.id) {
-				print("Error deleting")
-			}
+		let cardIDs = offsets.compactMap { cardDataStore.cardsByType[cardType]?[$0].id }
+		for id in cardIDs where !cardDataStore.deleteCard(with: id) {
+			print("Error deleting")
 		}
 	}
 

@@ -99,6 +99,7 @@ struct HomeView: View {
 								addUpdateCard: { card in
 									model.cardDataStore.addCard(card)
 								}))
+					.id(card.id)
 			} 
 			else {
 				Text("Tap on a Card to view details")
@@ -116,6 +117,7 @@ struct HomeView: View {
 				addUpdateCard: { card in
 					model.cardDataStore.addCard(card)
 				}))
+			.id(card.id)
 		}
 		.sheet(item: $model.addingType) { type in
 			NavigationView {
@@ -131,8 +133,11 @@ struct HomeView: View {
 					isEditing: true,
 					addNewFlow: true,
 					addUpdateCard: { card in
+						// Keep the sheet open on failure so the entered form is preserved for retry.
 						let succeeded = model.cardDataStore.addCard(card)
-						model.addingType = nil
+						if succeeded {
+							model.addingType = nil
+						}
 						return succeeded
 					})
 				)

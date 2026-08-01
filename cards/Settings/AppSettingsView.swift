@@ -10,21 +10,34 @@ import SwiftUI
 
 struct AppSettingsView: View {
     @ObservedObject private var settings = UserSettings.shared
+    // Intentionally bypass UserSettings.shared: @AppStorage on the view invalidates
+    // reliably when the toggle changes (UserSettings' @AppStorage does not publish).
+    @AppStorage("isAuthEnabled") private var isAuthEnabled = true
     @State private var showsTipJar = false
 
     var body: some View {
-        Toggle("Toggle Biometrics", isOn: $settings.isAuthEnabled)
+        VStack(alignment: .leading, spacing: 4) {
+            Toggle("Require Authentication", isOn: $isAuthEnabled)
+            Text("Use Touch ID, Face ID, or your device password before showing card details.")
+                .font(.caption)
+                .foregroundStyle(.secondary)
+        }
         #if os(macOS)
-        Stepper("Timeout: \(settings.authTimeout) seconds",
+        Stepper("Lock after: \(settings.authTimeout) seconds",
                 value: $settings.authTimeout, in: 1...120)
+            .disabled(!isAuthEnabled)
         #else
         HStack(alignment: .center) {
-            Text("Timeout (in seconds)")
+            Text("Lock after (seconds)")
             Spacer()
             TextField("", value: $settings.authTimeout, format: .number)
                 .keyboardType(.numberPad)
                 .fixedSize()
+                .onChange(of: settings.authTimeout) { _, newValue in
+                    settings.authTimeout = min(max(newValue, 1), 120)
+                }
         }
+        .disabled(!isAuthEnabled)
         #endif
         VStack(alignment: .leading) {
             Text("Number of card digits visible on home (Restart Required)")

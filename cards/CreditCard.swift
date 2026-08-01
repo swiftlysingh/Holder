@@ -15,7 +15,102 @@ import SinghDevKit
 import AppKit
 #endif
 
+/// Stable scene id for the main SwiftUI window; used with `openWindow` on macOS.
+enum MainWindowScene {
+    static let id = "main"
+}
+
 #if os(macOS)
+/// Shared open path for Menu Bar "Open Holder" and Dock reopen.
+/// Registers the exact main `NSWindow` (never Settings / `canBecomeMain` search) plus
+/// `OpenWindowAction` so AppDelegate can recreate the singleton scene without SwiftUI environment.
+@MainActor
+enum MainWindowCoordinator {
+    private static weak var mainWindow: NSWindow?
+    private static var openWindow: OpenWindowAction?
+
+    static func register(window: NSWindow) {
+        mainWindow = window
+    }
+
+    /// Clears the registered window only when `window` is the currently tracked host,
+    /// so an obsolete accessor cannot unregister a newer main window.
+    static func unregister(window: NSWindow) {
+        guard mainWindow === window else { return }
+        mainWindow = nil
+    }
+
+    static func register(openWindow: OpenWindowAction) {
+        self.openWindow = openWindow
+    }
+
+    /// Restore Dock presence, focus/deminiaturize the registered main window, or open the singleton scene.
+    /// Returns false when SwiftUI has not registered either route yet so AppKit can use its default reopen behavior.
+    @discardableResult
+    static func open() -> Bool {
+        NSApp.setActivationPolicy(.regular)
+        NSApp.activate(ignoringOtherApps: true)
+
+        if let mainWindow {
+            if mainWindow.isMiniaturized {
+                mainWindow.deminiaturize(nil)
+            }
+            mainWindow.makeKeyAndOrderFront(nil)
+            return true
+        }
+
+        guard let openWindow else { return false }
+        openWindow(id: MainWindowScene.id)
+        return true
+    }
+}
+
+/// Bridge: SwiftUI `openWindow` is only in the environment; AppDelegate needs a stored action for Dock reopen.
+/// Also captures the exact main `NSWindow` hosting this content (not Settings).
+private struct MainWindowRegistrar: View {
+    @Environment(\.openWindow) private var openWindow
+
+    var body: some View {
+        Color.clear
+            .frame(width: 0, height: 0)
+            .accessibilityHidden(true)
+            .background(MainWindowAccessor())
+            .onAppear {
+                MainWindowCoordinator.register(openWindow: openWindow)
+            }
+    }
+}
+
+/// Bridge: AppKit window identity is not available from SwiftUI; bind the host `NSWindow` once attached.
+private struct MainWindowAccessor: NSViewRepresentable {
+    final class HostView: NSView {
+        var onWindowChange: ((NSWindow?, NSWindow?) -> Void)?
+        private weak var registeredWindow: NSWindow?
+
+        override func viewDidMoveToWindow() {
+            super.viewDidMoveToWindow()
+            let previous = registeredWindow
+            registeredWindow = window
+            onWindowChange?(previous, window)
+        }
+    }
+
+    func makeNSView(context: Context) -> HostView {
+        let view = HostView()
+        view.onWindowChange = { previous, window in
+            if let previous {
+                MainWindowCoordinator.unregister(window: previous)
+            }
+            if let window {
+                MainWindowCoordinator.register(window: window)
+            }
+        }
+        return view
+    }
+
+    func updateNSView(_ nsView: HostView, context: Context) {}
+}
+
 class AppDelegate: NSObject, NSApplicationDelegate {
     func applicationShouldTerminateAfterLastWindowClosed(_ sender: NSApplication) -> Bool {
         // If "Keep in Menu Bar" is enabled, don't quit when window closes
@@ -27,19 +122,9 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         return true
     }
 
-    func applicationShouldHandleReopen(_ sender: NSApplication, hasVisibleWindows flag: Bool) -> Bool {
-        // Restore dock icon
-        NSApp.setActivationPolicy(.regular)
-
-        // If no visible windows, open a new one
-        if !flag {
-            // Find and show an existing window, or the system will create a new one
-            for window in NSApp.windows where window.canBecomeMain {
-                window.makeKeyAndOrderFront(self)
-                return false // We handled it
-            }
-        }
-        return true
+    func applicationShouldHandleReopen(_ sender: NSApplication, hasVisibleWindows _: Bool) -> Bool {
+        // Ignore hasVisibleWindows: Settings-only still reports true, but Dock must restore main (P2).
+        return !MainWindowCoordinator.open()
     }
 }
 #endif
@@ -64,40 +149,51 @@ struct CreditCard: App {
     }
 
     var body: some Scene {
-        WindowGroup {
-            HomeView(cardDataStore: cardDataStore)
-                .task {
-                    try? Tips.configure([
-                        .displayFrequency(.immediate),
-                        .datastoreLocation(.applicationDefault)
-                    ])
-                }
-                .environment(
-                    \.whatsNew,
-                     WhatsNewEnvironment(
-                        versionStore: UserDefaultsWhatsNewVersionStore(),
-                        whatsNewCollection: self
-                     )
-                )
-                .showOnboardingIfNeeded(features: [.init(image: Image(systemName: "lock.shield"),
-                                                         title: "Secure Storage",
-                                                         content: "Keep your card details safe with state-of-the-art encryption."),
-                                                   .init(image: Image(systemName: "faceid"),
-                                                         title: "Biometric Authentication",
-                                                         content: "Access your cards securely using Face ID or Touch ID."),
-                                                   .init(image: Image(systemName: "square.and.arrow.up"),
-                                                         title: "Easily Shareable",
-                                                         content: "Quickly and securely share card details with trusted contacts."),
-                                                   .init(image: Image(systemName: "hand.raised.slash"),
-                                                         title: "Privacy First, Open Source",
-                                                         content: "Your data stays private and secure, and the app's code is open-source for transparency.")]
-                )
-                .withSDK(.shared)
-        }
         #if os(macOS)
+        // Single-instance main scene: openWindow focuses/recreates this window rather than spawning duplicates.
+        Window("Holder", id: MainWindowScene.id) {
+            rootContent
+                .background(MainWindowRegistrar())
+        }
         menuBarScene
         settingsScene
+        #else
+        WindowGroup {
+            rootContent
+        }
         #endif
+    }
+
+    @ViewBuilder
+    private var rootContent: some View {
+        HomeView(cardDataStore: cardDataStore)
+            .task {
+                try? Tips.configure([
+                    .displayFrequency(.immediate),
+                    .datastoreLocation(.applicationDefault)
+                ])
+            }
+            .environment(
+                \.whatsNew,
+                 WhatsNewEnvironment(
+                    versionStore: UserDefaultsWhatsNewVersionStore(),
+                    whatsNewCollection: self
+                 )
+            )
+            .withSDK(.shared)
+            .showOnboardingIfNeeded(features: [.init(image: Image(systemName: "lock.shield"),
+                                                     title: "Secure Storage",
+                                                     content: "Keep your card details safe with state-of-the-art encryption."),
+                                               .init(image: Image(systemName: "faceid"),
+                                                     title: "Biometric Authentication",
+                                                     content: "Access your cards securely using Face ID or Touch ID."),
+                                               .init(image: Image(systemName: "square.and.arrow.up"),
+                                                     title: "Easily Shareable",
+                                                     content: "Quickly and securely share card details with trusted contacts."),
+                                               .init(image: Image(systemName: "hand.raised.slash"),
+                                                     title: "Privacy First, Open Source",
+                                                     content: "Your data stays private and secure, and the app's code is open-source for transparency.")]
+            )
     }
 
     #if os(macOS)

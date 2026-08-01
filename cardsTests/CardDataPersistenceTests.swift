@@ -45,6 +45,42 @@ final class CardDataPersistenceTests: XCTestCase {
 		XCTAssertEqual(partition.archivedCards.map(\.id), [archivedCard.id])
 	}
 
+	func testCardRetrievalKindDistinguishesEmptyFromFailure() {
+		XCTAssertEqual(CardDataStore.cardRetrievalKind(forStatus: errSecSuccess), .success)
+		XCTAssertEqual(CardDataStore.cardRetrievalKind(forStatus: errSecItemNotFound), .empty)
+		XCTAssertEqual(CardDataStore.cardRetrievalKind(forStatus: errSecAuthFailed), .failure)
+		XCTAssertEqual(CardDataStore.cardRetrievalKind(forStatus: errSecInteractionNotAllowed), .failure)
+	}
+
+	func testLoadCardsReportsFailureAndPreservesExistingCards() {
+		let card = makeCard(id: UUID())
+		let stub = CardRetrievalStub(result: .success([card]))
+		let store = CardDataStore { _ in stub.result }
+
+		XCTAssertEqual(store.findCard(by: card.id), card)
+
+		stub.result = .failure
+		XCTAssertFalse(store.loadCards())
+		XCTAssertEqual(store.findCard(by: card.id), card)
+
+		stub.result = .empty
+		XCTAssertTrue(store.loadCards())
+		// Sample/debug cards use fresh UUIDs, so the previously stubbed id must not resolve.
+		XCTAssertNil(store.findCard(by: card.id))
+	}
+
+	func testDecodeAllCardDataRecoversValidPayloads() throws {
+		let valid = try JSONEncoder().encode(makeCard(id: UUID()))
+		let invalid = Data("{}".utf8)
+
+		XCTAssertNil(CardDataStore.decodeAllCardData(from: [nil]))
+		XCTAssertNil(CardDataStore.decodeAllCardData(from: [invalid]))
+		XCTAssertEqual(CardDataStore.decodeAllCardData(from: [])?.count, 0)
+
+		let decoded = try XCTUnwrap(CardDataStore.decodeAllCardData(from: [valid, invalid, nil]))
+		XCTAssertEqual(decoded.count, 1)
+	}
+
 	func testDebugFixturesSeedOnlyBeforeInitialization() {
 		XCTAssertTrue(CardDataStore.shouldSeedDebugFixtures(
 			isDebugOrSimulator: true,
@@ -74,5 +110,13 @@ final class CardDataPersistenceTests: XCTestCase {
 			network: .visa,
 			isArchived: isArchived
 		)
+	}
+}
+
+private final class CardRetrievalStub {
+	var result: CardDataStore.CardRetrievalResult
+
+	init(result: CardDataStore.CardRetrievalResult) {
+		self.result = result
 	}
 }

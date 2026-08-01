@@ -31,15 +31,47 @@ class CardDataStore {
 	#endif
 	}()
 
-	init() {
+	/// Distinguishes confirmed empty Keychain results from Security failures.
+	enum CardRetrievalKind: Equatable {
+		case success
+		case empty
+		case failure
+	}
+
+	enum CardRetrievalResult {
+		case success([CardData])
+		case empty
+		case failure
+	}
+
+	@ObservationIgnored
+	private let retrieveCards: (String) -> CardRetrievalResult
+
+	init(retrieveCards: ((String) -> CardRetrievalResult)? = nil) {
+		self.retrieveCards = retrieveCards ?? Self.retrieveAllCardData
 		loadCards()
 	}
 
-	func loadCards() {
-		var retrievedCard = retrieveAllCardData(service: Bundle.main.bundleIdentifier ?? "com.myApp.defaultService") ?? []
+	@discardableResult
+	func loadCards() -> Bool {
+		switch retrieveCards(Bundle.main.bundleIdentifier ?? "com.myApp.defaultService") {
+		case .failure:
+			// Preserve in-memory cards and widget snapshot on real Keychain/decode errors.
+			return false
+		case .empty:
+			commitRetrievedCards([])
+			return true
+		case .success(let cards):
+			commitRetrievedCards(cards)
+			return true
+		}
+	}
+
+	private func commitRetrievedCards(_ cards: [CardData]) {
+		var retrievedCard = cards
 		let hasInitializedDebugFixtures = UserDefaults.standard.bool(forKey: debugFixturesInitializedKey)
 
-			//		Add default data for simulator
+		#if DEBUG || BETA
 		if Self.shouldSeedDebugFixtures(
 			isDebugOrSimulator: isDebugOrSimulator,
 			hasStoredCards: !retrievedCard.isEmpty,
@@ -80,10 +112,46 @@ class CardDataStore {
 		if isDebugOrSimulator && !hasInitializedDebugFixtures && !retrievedCard.isEmpty {
 			UserDefaults.standard.set(true, forKey: debugFixturesInitializedKey)
 		}
+		#endif
+
 		let partition = Self.partition(retrievedCard)
 		cardsByType = partition.cardsByType
 		archivedCards = partition.archivedCards
 		syncCardsToWidget()
+	}
+
+	static func cardRetrievalKind(forStatus status: OSStatus) -> CardRetrievalKind {
+		switch status {
+		case errSecSuccess:
+			return .success
+		case errSecItemNotFound:
+			return .empty
+		default:
+			return .failure
+		}
+	}
+
+	/// Decodes every usable Keychain payload. A non-empty batch fails only when no
+	/// records can be recovered, preserving existing in-memory state on total corruption.
+	static func decodeAllCardData(from payloads: [Data?]) -> [CardData]? {
+		var cards: [CardData] = []
+		cards.reserveCapacity(payloads.count)
+		var hadInvalidPayload = false
+		for payload in payloads {
+			guard let data = payload else {
+				hadInvalidPayload = true
+				continue
+			}
+			do {
+				cards.append(try JSONDecoder().decode(CardData.self, from: data))
+			} catch {
+				hadInvalidPayload = true
+			}
+		}
+		if cards.isEmpty && hadInvalidPayload {
+			return nil
+		}
+		return cards
 	}
 
 	static func shouldSeedDebugFixtures(
@@ -104,11 +172,11 @@ class CardDataStore {
 
 	@discardableResult
 	func addCard(_ card: CardData) -> Bool {
-		let succeeded = saveOrUpdateCardData(card)
-		if succeeded {
-			loadCards()
+		guard saveOrUpdateCardData(card) else {
+			print("Failed to save card: \(card.id)")
+			return false
 		}
-		return succeeded
+		return loadCards()
 	}
 
 	/// Finds a card by its UUID (used for deep linking from widgets)
@@ -152,8 +220,7 @@ class CardDataStore {
 			print("Failed to archive card: \(card.id)")
 			return false
 		}
-		loadCards()
-		return true
+		return loadCards()
 	}
 
 	@discardableResult
@@ -164,8 +231,7 @@ class CardDataStore {
 			print("Failed to unarchive card: \(card.id)")
 			return false
 		}
-		loadCards()
-		return true
+		return loadCards()
 	}
 /// Returns if success
 	private func saveOrUpdateCardData(_ cardData: CardData) -> Bool {
@@ -205,7 +271,7 @@ class CardDataStore {
 		}
 	}
 
-	private func retrieveAllCardData(service: String) -> [CardData]? {
+	private static func retrieveAllCardData(service: String) -> CardRetrievalResult {
 		let query: [String: Any] = [
 			kSecClass as String: kSecClassGenericPassword,
 			kSecAttrService as String: service,
@@ -218,31 +284,32 @@ class CardDataStore {
 		var items: CFTypeRef?
 		let status = SecItemCopyMatching(query as CFDictionary, &items)
 
-		guard status == errSecSuccess else {
+		switch Self.cardRetrievalKind(forStatus: status) {
+		case .empty:
+			print("No items found in the Keychain")
+			return .empty
+		case .failure:
 			print("Error retrieving from Keychain: \(status)")
-			return nil
+			return .failure
+		case .success:
+			break
 		}
 
 		guard let existingItems = items as? [[String: Any]] else {
-			print("No items found in the Keychain")
-			return nil
+			print("Error retrieving from Keychain: unexpected item payload")
+			return .failure
 		}
 
-		var cardDataArray = [CardData]()
-
-		for item in existingItems {
-
-			if let data = item[kSecValueData as String] as? Data {
-				do {
-					let cardData = try JSONDecoder().decode(CardData.self, from: data)
-					cardDataArray.append(cardData)
-				} catch {
-					print("Error decoding CardData: \(error)")
-					// Optionally handle the error, e.g., continue with next item
-				}
-			}
+		let payloads = existingItems.map { $0[kSecValueData as String] as? Data }
+		guard let cardDataArray = Self.decodeAllCardData(from: payloads) else {
+			print("Error decoding CardData: missing or invalid Keychain payload")
+			return .failure
 		}
-		return cardDataArray
+		if cardDataArray.count != payloads.count {
+			print("Warning: skipped \(payloads.count - cardDataArray.count) invalid Keychain card payload(s)")
+		}
+
+		return .success(cardDataArray)
 	}
 
 	// MARK: - Widget Sync

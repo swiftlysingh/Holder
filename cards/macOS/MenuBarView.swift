@@ -11,25 +11,131 @@ import LocalAuthentication
 import SinghDevKit
 import SwiftUI
 
+enum MenuBarContentState: Equatable {
+    case locked
+    case unavailable
+    case empty
+    case cards
+
+    init(isAuthEnabled: Bool, isUnlocked: Bool, hasActiveCards: Bool, didLoadFail: Bool) {
+        if isAuthEnabled && !isUnlocked {
+            self = .locked
+        } else if hasActiveCards {
+            self = .cards
+        } else if didLoadFail {
+            self = .unavailable
+        } else {
+            self = .empty
+        }
+    }
+}
+
+@MainActor
+final class MenuBarSession: ObservableObject {
+    @Published private(set) var isUnlocked = false
+    private var lockTask: Task<Void, Never>?
+    private let sleeper: AsyncSleeper
+
+    init(sleeper: AsyncSleeper = TaskAsyncSleeper()) {
+        self.sleeper = sleeper
+    }
+
+    func unlock(for timeout: Duration) {
+        lockTask?.cancel()
+        isUnlocked = true
+        let sleeper = self.sleeper
+        lockTask = Task { [weak self, sleeper] in
+            do {
+                try await sleeper.sleep(for: timeout)
+            } catch {
+                // Includes cancellation and injected sleeper failures.
+                return
+            }
+            guard !Task.isCancelled else { return }
+            self?.lock()
+        }
+    }
+
+    func lock() {
+        lockTask?.cancel()
+        lockTask = nil
+        isUnlocked = false
+    }
+}
+
+/// Window-style MenuBarExtra content is retained across opens. Observe the hosting
+/// panel becoming key so card data refreshes on every open, not only the first appear.
+private struct MenuBarPanelAppearObserver: NSViewRepresentable {
+    var onPanelAppear: () -> Void
+
+    func makeNSView(context: Context) -> NSView {
+        let view = PanelAppearView()
+        view.onPanelAppear = onPanelAppear
+        return view
+    }
+
+    func updateNSView(_ nsView: NSView, context: Context) {
+        (nsView as? PanelAppearView)?.onPanelAppear = onPanelAppear
+    }
+
+    private final class PanelAppearView: NSView {
+        var onPanelAppear: (() -> Void)?
+        private var observer: NSObjectProtocol?
+
+        override func viewDidMoveToWindow() {
+            super.viewDidMoveToWindow()
+            removeObserver()
+            guard let window else { return }
+
+            observer = NotificationCenter.default.addObserver(
+                forName: NSWindow.didBecomeKeyNotification,
+                object: window,
+                queue: .main
+            ) { [weak self] _ in
+                self?.onPanelAppear?()
+            }
+
+            if window.isKeyWindow {
+                onPanelAppear?()
+            }
+        }
+
+        deinit {
+            removeObserver()
+        }
+
+        private func removeObserver() {
+            if let observer {
+                NotificationCenter.default.removeObserver(observer)
+                self.observer = nil
+            }
+        }
+    }
+}
+
 struct MenuBarView: View {
     var cardStore: CardDataStore
-    @State private var isAuthenticated = false
-    @State private var authError: String?
-    @State private var biometricLabel = "Unlock"
-    @State private var biometricIcon = "key.fill"
-
-    // Check if auth is required based on settings
-    private var requiresAuth: Bool {
-        UserSettings.shared.isAuthEnabled
-    }
+    @Environment(\.openWindow) private var openWindow
+    // Same keys as UserSettings; @AppStorage on the view observes changes reliably
+    // (UserSettings' @AppStorage properties do not publish via ObservableObject).
+    @AppStorage("isAuthEnabled") private var isAuthEnabled = true
+    @AppStorage("timeout") private var authTimeout = 10
+    @AppStorage("keepInMenuBar") private var keepInMenuBar = false
+    @StateObject private var session = MenuBarSession()
+    @State private var authStatus: String?
+    @State private var authContext: LAContext?
+    @State private var didCardLoadFail = false
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
-            if allCards.isEmpty {
-                emptyStateView
-            } else if requiresAuth && !isAuthenticated {
+            switch contentState {
+            case .locked:
                 lockedStateView
-            } else {
+            case .unavailable:
+                unavailableStateView
+            case .empty:
+                emptyStateView
+            case .cards:
                 cardListView
             }
 
@@ -38,41 +144,48 @@ struct MenuBarView: View {
             openHolderButton
 
             // Show Quit button when running in menu bar-only mode
-            if UserSettings.shared.keepInMenuBar {
+            if keepInMenuBar {
                 Divider()
                 quitButton
             }
         }
         .frame(width: 320)
-        .onAppear {
-            // Auto-authenticate if auth is disabled
-            if !requiresAuth {
-                isAuthenticated = true
+        .background {
+            MenuBarPanelAppearObserver {
+                refreshCards()
             }
-            // Detect biometric type once
-            detectBiometricType()
+        }
+        .onAppear {
+            // Keep a live OpenWindowAction for Dock reopen after the main window is closed.
+            MainWindowCoordinator.register(openWindow: openWindow)
+            refreshCards()
+        }
+        // Successful unlock is bounded only by MenuBarSession timeout (and settings
+        // changes below). Do not lock on disappear: LA presentation dismisses the
+        // panel and would race the unlock callback.
+        .onChange(of: isAuthEnabled) { _, isEnabled in
+            cancelAuthentication()
+            session.lock()
+            authStatus = nil
+            if !isEnabled {
+                refreshCards()
+            }
+        }
+        .onChange(of: authTimeout) {
+            if isAuthEnabled && session.isUnlocked {
+                session.unlock(for: .seconds(authTimeout))
+            }
         }
         .sdkScreen(AppAnalyticsScreen.menuBar)
     }
 
-    private func detectBiometricType() {
-        let context = LAContext()
-        var error: NSError?
-        _ = context.canEvaluatePolicy(.deviceOwnerAuthenticationWithBiometrics, error: &error)
-        switch context.biometryType {
-        case .touchID:
-            biometricLabel = "Unlock with Touch ID"
-            biometricIcon = "touchid"
-        case .faceID:
-            biometricLabel = "Unlock with Face ID"
-            biometricIcon = "faceid"
-        case .opticID:
-            biometricLabel = "Unlock with Optic ID"
-            biometricIcon = "opticid"
-        default:
-            biometricLabel = "Unlock with Password"
-            biometricIcon = "key.fill"
-        }
+    private var contentState: MenuBarContentState {
+        MenuBarContentState(
+            isAuthEnabled: isAuthEnabled,
+            isUnlocked: session.isUnlocked,
+            hasActiveCards: !allCards.isEmpty,
+            didLoadFail: didCardLoadFail
+        )
     }
 
     // MARK: - Subviews
@@ -92,16 +205,37 @@ struct MenuBarView: View {
         .padding(.vertical, 20)
     }
 
+    private var unavailableStateView: some View {
+        VStack(spacing: 12) {
+            Image(systemName: "exclamationmark.icloud")
+                .font(.largeTitle)
+                .foregroundStyle(.secondary)
+            Text("Cards Unavailable")
+                .font(.headline)
+            Text("Holder couldn’t refresh your cards. Your saved data has not been changed.")
+                .font(.caption)
+                .foregroundStyle(.secondary)
+                .multilineTextAlignment(.center)
+            Button("Try Again") {
+                refreshCards()
+            }
+            .buttonStyle(.bordered)
+        }
+        .frame(maxWidth: .infinity)
+        .padding(.vertical, 24)
+        .padding(.horizontal, 20)
+    }
+
     private var lockedStateView: some View {
         VStack(spacing: 16) {
             Image(systemName: "lock.fill")
                 .font(.system(size: 40))
                 .foregroundStyle(.secondary)
 
-            Text("Cards Locked")
+            Text("Vault Locked")
                 .font(.headline)
 
-            Text("Authenticate to view your cards")
+            Text("Unlock with Touch ID or your Mac password")
                 .font(.caption)
                 .foregroundStyle(.secondary)
 
@@ -109,18 +243,18 @@ struct MenuBarView: View {
                 authenticate()
             } label: {
                 HStack {
-                    Image(systemName: biometricIcon)
-                    Text(biometricLabel)
+                    Image(systemName: "lock.open.fill")
+                    Text("Unlock Vault")
                 }
                 .frame(maxWidth: .infinity)
             }
             .buttonStyle(.borderedProminent)
             .controlSize(.large)
 
-            if let error = authError {
-                Text(error)
+            if let status = authStatus {
+                Text(status)
                     .font(.caption)
-                    .foregroundStyle(.red)
+                    .foregroundStyle(.secondary)
             }
         }
         .frame(maxWidth: .infinity)
@@ -129,18 +263,21 @@ struct MenuBarView: View {
     }
 
     private var cardListView: some View {
-        ScrollView {
+        let cards = allCards
+        return ScrollView {
             LazyVStack(spacing: 0) {
-                ForEach(allCards) { card in
-                    MenuBarCardRow(card: card, isAuthenticated: isAuthenticated)
-                    if card.id != allCards.last?.id {
+                ForEach(cards) { card in
+                    MenuBarCardRow(card: card, isAuthenticated: contentState != .locked)
+                    if card.id != cards.last?.id {
                         Divider()
                             .padding(.horizontal, 12)
                     }
                 }
             }
         }
-        .frame(maxHeight: 400)
+        // MenuBarExtra windows do not always recompute their intrinsic height when
+        // the card store refreshes after opening, so reserve the collapsed row height.
+        .frame(height: min(CGFloat(cards.count) * 58, 400))
     }
 
     private var openHolderButton: some View {
@@ -183,63 +320,61 @@ struct MenuBarView: View {
 
     // MARK: - Helpers
 
+    private func refreshCards() {
+        didCardLoadFail = !cardStore.loadCards()
+    }
+
     private var allCards: [CardData] {
         CardType.allCases.flatMap { cardStore.cardsByType[$0] ?? [] }
     }
 
     private func openMainApp() {
-        // Restore dock icon if running in menu bar-only mode
-        NSApp.setActivationPolicy(.regular)
+        // Same path as Dock reopen: focus/deminiaturize the registered main window, else open singleton scene.
+        MainWindowCoordinator.register(openWindow: openWindow)
+        MainWindowCoordinator.open()
+    }
+
+    private func authenticate() {
+        cancelAuthentication()
+        authStatus = nil
         NSApp.activate(ignoringOtherApps: true)
 
-        if let window = NSApp.windows.first(where: { $0.canBecomeMain }) {
-            window.makeKeyAndOrderFront(nil)
-        } else {
-            // If no window exists, create one
-            if let window = NSApp.windows.first(where: { $0.title == "Holder" || $0.title.contains("Card") }) {
-                window.makeKeyAndOrderFront(nil)
+        let context = LAContext()
+        var error: NSError?
+        guard context.canEvaluatePolicy(.deviceOwnerAuthentication, error: &error) else {
+            if let error {
+                print("Menu bar unlock unavailable: \(error.localizedDescription) (\(error.domain) \(error.code))")
             } else {
-                // Try to open a new window
-                NSApp.sendAction(Selector(("newWindowForTab:")), to: nil, from: nil)
+                print("Menu bar unlock unavailable: device owner authentication cannot be evaluated")
+            }
+            session.lock()
+            authStatus = "Unlock isn’t available on this Mac. Open Holder to manage your cards."
+            return
+        }
+
+        authContext = context
+        context.evaluatePolicy(
+            .deviceOwnerAuthentication,
+            localizedReason: "Unlock your Holder vault"
+        ) { success, _ in
+            Task { @MainActor in
+                guard authContext === context else { return }
+                authContext = nil
+
+                if success && isAuthEnabled {
+                    session.unlock(for: .seconds(authTimeout))
+                    authStatus = nil
+                } else if isAuthEnabled {
+                    session.lock()
+                    authStatus = "Your vault is still locked. Try again when you're ready."
+                }
             }
         }
     }
 
-    private func authenticate() {
-        let context = LAContext()
-        var error: NSError?
-
-        // Check if biometric authentication is available
-        if context.canEvaluatePolicy(.deviceOwnerAuthenticationWithBiometrics, error: &error) {
-            let reason = "Authenticate to access your cards"
-            context.evaluatePolicy(.deviceOwnerAuthenticationWithBiometrics, localizedReason: reason) { success, authenticationError in
-                Task { @MainActor in
-                    if success {
-                        isAuthenticated = true
-                        authError = nil
-                    } else {
-                        authError = authenticationError?.localizedDescription ?? "Authentication failed"
-                    }
-                }
-            }
-        } else {
-            // Fallback to password if biometrics unavailable
-            if context.canEvaluatePolicy(.deviceOwnerAuthentication, error: &error) {
-                let reason = "Authenticate to access your cards"
-                context.evaluatePolicy(.deviceOwnerAuthentication, localizedReason: reason) { success, authenticationError in
-                    Task { @MainActor in
-                        if success {
-                            isAuthenticated = true
-                            authError = nil
-                        } else {
-                            authError = authenticationError?.localizedDescription ?? "Authentication failed"
-                        }
-                    }
-                }
-            } else {
-                authError = error?.localizedDescription ?? "Authentication not available"
-            }
-        }
+    private func cancelAuthentication() {
+        authContext?.invalidate()
+        authContext = nil
     }
 }
 
