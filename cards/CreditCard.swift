@@ -133,6 +133,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 struct CreditCard: App {
     #if os(macOS)
     @NSApplicationDelegateAdaptor(AppDelegate.self) var appDelegate
+    @AppStorage("keepInMenuBar") private var keepInMenuBar = false
     #endif
 
     /// Shared card data store for menu bar access on macOS
@@ -198,7 +199,7 @@ struct CreditCard: App {
 
     #if os(macOS)
     var menuBarScene: some Scene {
-        MenuBarExtra("Holder", systemImage: "creditcard.fill") {
+        MenuBarExtra("Holder", systemImage: "creditcard.fill", isInserted: $keepInMenuBar) {
             MenuBarView(cardStore: cardDataStore)
                 .withSDK(.shared)
         }
