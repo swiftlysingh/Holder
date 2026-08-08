@@ -475,8 +475,7 @@ struct MenuBarCardRow: View {
                         )
                     }
                 }
-                .padding(.leading, 60)
-                .padding(.trailing, 12)
+                .padding(.horizontal, 12)
                 .padding(.bottom, 8)
                 .background(Color.primary.opacity(0.03))
             }
