@@ -2,7 +2,10 @@
 //  LockScreenCardWidget.swift
 //  HolderWidgets
 //
-//  Lock screen widget displaying a single card
+//  A masked lock-screen shortcut. The circular family stays generic; inline
+//  families show only the selected display label and masked tail from the
+//  widget-safe projection. Full numbers, expiry, CVV, and documents never enter
+//  this timeline.
 //
 
 #if os(iOS)
@@ -17,18 +20,29 @@ struct LockScreenCardProvider: AppIntentTimelineProvider {
     }
 
     func snapshot(for configuration: SelectCardIntent, in context: Context) async -> LockScreenCardEntry {
-        let card = configuration.card.flatMap { entity in
-            SharedDataManager.shared.getCard(by: entity.id)
-        } ?? SharedDataManager.shared.loadAvailableCards().first
-        return LockScreenCardEntry(date: Date(), card: card, configuration: configuration)
+        LockScreenCardEntry(
+            date: Date(),
+            card: selectedCard(for: configuration),
+            configuration: configuration
+        )
     }
 
     func timeline(for configuration: SelectCardIntent, in context: Context) async -> Timeline<LockScreenCardEntry> {
-        let card = configuration.card.flatMap { entity in
-            SharedDataManager.shared.getCard(by: entity.id)
-        } ?? SharedDataManager.shared.loadAvailableCards().first
-        let entry = LockScreenCardEntry(date: Date(), card: card, configuration: configuration)
+        let entry = LockScreenCardEntry(
+            date: Date(),
+            card: selectedCard(for: configuration),
+            configuration: configuration
+        )
         return Timeline(entries: [entry], policy: .never)
+    }
+
+    private func selectedCard(for configuration: SelectCardIntent) -> WidgetCardData? {
+        if let configuredID = configuration.card?.id,
+           let configuredCard = SharedDataManager.shared.getCard(by: configuredID) {
+            return configuredCard
+        }
+
+        return SharedDataManager.shared.loadAvailableCards().first
     }
 }
 
@@ -36,6 +50,8 @@ struct LockScreenCardProvider: AppIntentTimelineProvider {
 
 struct LockScreenCardEntry: TimelineEntry {
     let date: Date
+    /// Widget-safe state only: a display label and masked tail. Sensitive card
+    /// fields and all document data remain in the authenticated app.
     let card: WidgetCardData?
     let configuration: SelectCardIntent
 }
@@ -43,8 +59,29 @@ struct LockScreenCardEntry: TimelineEntry {
 // MARK: - Widget View
 
 struct LockScreenCardWidgetView: View {
-    var entry: LockScreenCardEntry
-    @Environment(\.widgetFamily) var family
+    let entry: LockScreenCardEntry
+    @Environment(\.widgetFamily) private var family
+
+    private var hasCardShortcut: Bool {
+        entry.card != nil
+    }
+
+    private var destination: URL? {
+        entry.card.flatMap { HolderWidgetURL.card($0.id) }
+    }
+
+    private var maskedTail: String? {
+        guard let tail = entry.card?.lastFourDigits, !tail.isEmpty else { return nil }
+        return "•• \(tail)"
+    }
+
+    private var selectedCardAccessibilityLabel: String? {
+        guard let card = entry.card else { return nil }
+        if !card.lastFourDigits.isEmpty {
+            return "\(card.displayName), card ending in \(card.lastFourDigits)."
+        }
+        return "\(card.displayName), card details masked."
+    }
 
     var body: some View {
         switch family {
@@ -64,57 +101,51 @@ struct LockScreenCardWidgetView: View {
     private var accessoryCircularView: some View {
         ZStack {
             AccessoryWidgetBackground()
-            VStack(spacing: 2) {
-                Image(systemName: "creditcard.fill")
-                    .font(.title3)
-                if let card = entry.card {
-                    Text(card.lastFourDigits)
-                        .font(.caption2)
-                        .fontWeight(.medium)
-                        .fontDesign(.monospaced)
-                }
-            }
+            Image(systemName: hasCardShortcut ? "lock.shield.fill" : "plus.circle.fill")
+                .font(.title3)
+                .accessibilityHidden(true)
         }
-        .widgetURL(entry.card.map { URL(string: "holder://card/\($0.id.uuidString)") } ?? nil)
+        .widgetURL(destination)
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(hasCardShortcut ? "Holder is ready to unlock." : "Holder. Add a card in the app.")
     }
 
     // MARK: - Rectangular View
 
     private var accessoryRectangularView: some View {
         HStack(spacing: 8) {
-            Image(systemName: "creditcard.fill")
+            Image(systemName: hasCardShortcut ? "lock.shield.fill" : "plus.circle.fill")
                 .font(.title2)
+                .accessibilityHidden(true)
 
-            if let card = entry.card {
-                VStack(alignment: .leading, spacing: 2) {
-                    Text(card.displayName)
-                        .font(.headline)
-                        .lineLimit(1)
+            VStack(alignment: .leading, spacing: 2) {
+                Text(entry.card?.displayName ?? "Holder")
+                    .font(.headline)
+                    .lineLimit(1)
 
-                    Text(card.displayText)
-                        .font(.caption)
-                        .fontDesign(.monospaced)
-                }
-            } else {
-                Text("Select a Card")
+                Text(maskedTail ?? (hasCardShortcut ? "Details masked" : "Add a card in the app"))
                     .font(.caption)
+                    .monospacedDigit()
             }
 
-            Spacer()
+            Spacer(minLength: 0)
         }
-        .widgetURL(entry.card.map { URL(string: "holder://card/\($0.id.uuidString)") } ?? nil)
+        .widgetURL(destination)
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(selectedCardAccessibilityLabel ?? "Holder. Add a card in the app.")
+        .accessibilityHint(hasCardShortcut ? "Opens Holder and requests authentication." : "Open Holder to add a card.")
     }
 
     // MARK: - Inline View
 
-    @ViewBuilder
     private var accessoryInlineView: some View {
-        if let card = entry.card {
-            Text("\(card.displayName) \(card.displayText)")
-                .widgetURL(URL(string: "holder://card/\(card.id.uuidString)"))
-        } else {
-            Text("No Card Selected")
-        }
+        Text(entry.card.map { card in
+            let tail = card.lastFourDigits.isEmpty ? "masked" : "•• \(card.lastFourDigits)"
+            return "\(card.displayName) \(tail)"
+        } ?? "Holder: add a card")
+            .widgetURL(destination)
+            .accessibilityLabel(selectedCardAccessibilityLabel ?? "Holder. Add a card in the app.")
+            .accessibilityHint(hasCardShortcut ? "Opens Holder and requests authentication." : "Open Holder to add a card.")
     }
 }
 
@@ -130,10 +161,11 @@ struct LockScreenCardWidget: Widget {
             provider: LockScreenCardProvider()
         ) { entry in
             LockScreenCardWidgetView(entry: entry)
-                .containerBackground(.fill.tertiary, for: .widget)
+                .foregroundStyle(.white)
+                .containerBackground(HolderWidgetPalette.ink, for: .widget)
         }
-        .configurationDisplayName("Lock Screen Card")
-        .description("Quick view of a card on lock screen")
+        .configurationDisplayName("Private card shortcut")
+        .description("Shows a selected card's masked identity and opens it in Holder for authentication.")
         .supportedFamilies([.accessoryCircular, .accessoryRectangular, .accessoryInline])
     }
 }
@@ -147,12 +179,12 @@ struct LockScreenCardWidget: Widget {
         date: .now,
         card: WidgetCardData(
             id: UUID(),
-            displayName: "Axis Visa",
-            lastFourDigits: "3456",
-            cardType: "Credit Card",
-            network: "Visa"
+            displayName: "Amex Platinum",
+            lastFourDigits: "5106",
+            network: "Amex"
         ),
         configuration: SelectCardIntent()
     )
+    LockScreenCardEntry(date: .now, card: nil, configuration: SelectCardIntent())
 }
 #endif

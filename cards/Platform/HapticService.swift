@@ -13,6 +13,7 @@ import UIKit
 
 struct HapticService {
     enum FeedbackType {
+        case light
         case success
         case error
         case warning
@@ -20,14 +21,15 @@ struct HapticService {
 
     static func trigger(_ type: FeedbackType) {
         #if os(iOS)
-        let generator = UINotificationFeedbackGenerator()
         switch type {
+        case .light:
+            UIImpactFeedbackGenerator(style: .light).impactOccurred()
         case .success:
-            generator.notificationOccurred(.success)
+            UINotificationFeedbackGenerator().notificationOccurred(.success)
         case .error:
-            generator.notificationOccurred(.error)
+            UINotificationFeedbackGenerator().notificationOccurred(.error)
         case .warning:
-            generator.notificationOccurred(.warning)
+            UINotificationFeedbackGenerator().notificationOccurred(.warning)
         }
         #endif
         // No haptic feedback on macOS - silent no-op
