@@ -265,7 +265,8 @@ struct HolderDeckCard: View {
 				background
 				artworkContent
 			}
-			.frame(maxWidth: .infinity, minHeight: 120, alignment: .topLeading)
+			.frame(maxWidth: .infinity, alignment: .topLeading)
+			.frame(height: 120, alignment: .topLeading)
 			.clipShape(RoundedRectangle(cornerRadius: HolderTheme.deckCornerRadius, style: .continuous))
 			.overlay {
 				RoundedRectangle(cornerRadius: HolderTheme.deckCornerRadius, style: .continuous)
@@ -369,14 +370,10 @@ struct HolderDeckCard: View {
 					.foregroundStyle(.white.opacity(0.82))
 			}
 
-			HStack(spacing: 6) {
-				Image(systemName: "eye.slash")
-					.font(.caption2.weight(.semibold))
-				Text(type.rawValue.uppercased())
-					.font(.caption2.weight(.semibold))
-					.tracking(0.65)
-					.lineLimit(1)
-			}
+			Text(type.rawValue.uppercased())
+				.font(.caption2.weight(.semibold))
+				.tracking(0.65)
+				.lineLimit(1)
 			.foregroundStyle(.white.opacity(0.66))
 			.padding(.top, 7)
 		}
@@ -412,11 +409,6 @@ struct HolderDeckCard: View {
 				.foregroundStyle(HolderTheme.secondaryText(for: colorScheme))
 			}
 			Spacer(minLength: 0)
-			Text("DOCUMENT")
-				.font(.caption2.weight(.semibold))
-				.tracking(0.65)
-				.foregroundStyle(HolderTheme.secondaryText(for: colorScheme))
-				.lineLimit(1)
 		}
 		.padding(14)
 	}
@@ -479,21 +471,10 @@ struct HolderDeckCard: View {
 		case .other:
 			Image(systemName: "creditcard.fill")
 				.font(.caption.weight(.bold))
-				.padding(5)
-				.overlay {
-					RoundedRectangle(cornerRadius: 5, style: .continuous)
-						.stroke(.white.opacity(0.46), lineWidth: 1)
-				}
 		default:
 			Text(network.rawValue.uppercased())
 				.font(.caption2.weight(.bold))
 				.tracking(0.45)
-				.padding(.horizontal, 6)
-				.padding(.vertical, 4)
-				.overlay {
-					RoundedRectangle(cornerRadius: 5, style: .continuous)
-						.stroke(.white.opacity(0.46), lineWidth: 1)
-				}
 		}
 	}
 

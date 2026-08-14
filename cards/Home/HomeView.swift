@@ -168,25 +168,24 @@ struct HomeView: View {
 							model.filter = filter
 						} label: {
 							Text(filter.rawValue)
-								.font(.subheadline.weight(.semibold))
-								.foregroundStyle(model.filter == filter ? Color.white : HolderTheme.secondaryText(for: colorScheme))
-								.padding(.horizontal, 14)
-								.frame(minHeight: 34)
-								.background(
+								.font(.subheadline.weight(model.filter == filter ? .semibold : .medium))
+								.foregroundStyle(
 									model.filter == filter
-										? HolderTheme.brand
-										: HolderTheme.raisedSurface(for: colorScheme),
-									in: Capsule()
+										? HolderTheme.primaryText(for: colorScheme)
+										: HolderTheme.secondaryText(for: colorScheme)
 								)
-								.overlay {
-									Capsule().stroke(
-										model.filter == filter ? .clear : HolderTheme.separator(for: colorScheme),
-										lineWidth: 1
-									)
+								.padding(.horizontal, 10)
+								.frame(minHeight: 44)
+								.overlay(alignment: .bottom) {
+									if model.filter == filter {
+										Capsule()
+											.fill(HolderTheme.brandRaised)
+											.frame(height: 3)
+											.padding(.horizontal, 10)
+									}
 								}
 						}
 						.buttonStyle(.plain)
-						.frame(minHeight: 44)
 						.accessibilityAddTraits(model.filter == filter ? .isSelected : [])
 					}
 				}
@@ -195,9 +194,8 @@ struct HomeView: View {
 			Button(action: toggleSearch) {
 				Image(systemName: model.isSearching ? "xmark" : "magnifyingglass")
 					.font(.subheadline.weight(.semibold))
+					.foregroundStyle(HolderTheme.primaryText(for: colorScheme))
 					.frame(width: 44, height: 44)
-					.background(HolderTheme.raisedSurface(for: colorScheme), in: Circle())
-					.overlay { Circle().stroke(HolderTheme.separator(for: colorScheme), lineWidth: 1) }
 			}
 			.buttonStyle(.plain)
 			.accessibilityLabel(model.isSearching ? "Close search" : "Search card labels and document names")
@@ -217,9 +215,13 @@ struct HomeView: View {
 					.frame(minWidth: 44, minHeight: 44)
 			}
 		}
-		.padding(.horizontal, 14)
+		.padding(.horizontal, 4)
 		.frame(minHeight: 48)
-		.holderSurface(colorScheme, cornerRadius: 14)
+		.overlay(alignment: .bottom) {
+			Rectangle()
+				.fill(HolderTheme.separator(for: colorScheme))
+				.frame(height: 1)
+		}
 	}
 
 	@ViewBuilder
@@ -240,10 +242,9 @@ struct HomeView: View {
 		} else {
 			VStack(alignment: .leading, spacing: 12) {
 				HStack {
-					Text("YOUR DECK")
-						.font(.caption.weight(.semibold))
-						.tracking(0.8)
-						.foregroundStyle(HolderTheme.secondaryText(for: colorScheme))
+					Text("Your deck")
+						.font(.subheadline.weight(.semibold))
+						.foregroundStyle(HolderTheme.primaryText(for: colorScheme))
 					Spacer()
 					favoriteDropTarget
 				}
@@ -291,12 +292,10 @@ struct HomeView: View {
 
 	private var favoriteDropTarget: some View {
 		Label("Favorites", systemImage: "star.fill")
-			.font(.caption.weight(.semibold))
-			.foregroundStyle(HolderTheme.secondaryText(for: colorScheme))
-			.padding(.horizontal, 10)
+			.font(.subheadline.weight(.semibold))
+			.foregroundStyle(HolderTheme.primaryText(for: colorScheme))
+			.padding(.horizontal, 4)
 			.frame(minHeight: 44)
-			.background(HolderTheme.raisedSurface(for: colorScheme), in: Capsule())
-			.overlay { Capsule().stroke(HolderTheme.separator(for: colorScheme), lineWidth: 1) }
 			.dropDestination(for: String.self) { identifiers, _ in
 				guard let itemID = identifiers.first,
 					let item = model.visibleItems.first(where: { $0.id == itemID }) else {
