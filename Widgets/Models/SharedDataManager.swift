@@ -45,7 +45,6 @@ final class SharedDataManager {
                   let id = UUID(uuidString: idString),
                   let displayName = dict["displayName"] as? String,
                   let lastFourDigits = dict["lastFourDigits"] as? String,
-                  let cardType = dict["cardType"] as? String,
                   let network = dict["network"] as? String else {
                 return nil
             }
@@ -53,7 +52,6 @@ final class SharedDataManager {
                 id: id,
                 displayName: displayName,
                 lastFourDigits: lastFourDigits,
-                cardType: cardType,
                 network: network
             )
         }

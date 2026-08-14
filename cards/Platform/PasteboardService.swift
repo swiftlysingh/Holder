@@ -11,6 +11,7 @@ import Foundation
 import AppKit
 #else
 import UIKit
+import UniformTypeIdentifiers
 #endif
 
 struct PasteboardService {
@@ -20,7 +21,13 @@ struct PasteboardService {
         pasteboard.clearContents()
         pasteboard.setString(string, forType: .string)
         #else
-        UIPasteboard.general.string = string
+        UIPasteboard.general.setItems(
+            [[UTType.utf8PlainText.identifier: string]],
+            options: [
+                .localOnly: true,
+                .expirationDate: Date().addingTimeInterval(60)
+            ]
+        )
         #endif
     }
 }

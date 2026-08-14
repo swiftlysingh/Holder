@@ -2,7 +2,7 @@
 //  ControlCenterCardWidget.swift
 //  HolderWidgets
 //
-//  Control Center widget displaying a single card (iOS 18+)
+//  Private Control Center shortcut for a selected card (iOS 18+).
 //
 
 #if os(iOS)
@@ -22,25 +22,16 @@ struct ControlCenterCardWidget: ControlWidget {
             intent: ControlCenterCardIntent.self
         ) { configuration in
             ControlWidgetButton(action: OpenHolderCardIntent(cardID: configuration.card?.id)) {
-                let card = configuration.card.flatMap { entity in
-                    SharedDataManager.shared.getCard(by: entity.id)
-                }
-
                 Label {
-                    if let card = card {
-                        Text(card.displayName)
-                        Text(card.displayText)
-                    } else {
-                        Text("Holder")
-                        Text("Select a card")
-                    }
+                    Text("Holder")
+                    Text(configuration.card == nil ? "Select a card" : "Unlock in Holder")
                 } icon: {
-                    Image(systemName: "creditcard.fill")
+                    Image(systemName: configuration.card == nil ? "plus.circle.fill" : "lock.shield.fill")
                 }
             }
         }
-        .displayName("Card")
-        .description("View card info")
+        .displayName("Private card shortcut")
+        .description("Open a selected card in Holder without showing card details in Control Center.")
     }
 }
 
@@ -60,9 +51,23 @@ struct OpenHolderCardIntent: AppIntent {
         self.cardIDString = cardID?.uuidString
     }
 
-    func perform() async throws -> some IntentResult {
-        // The app will handle the deep link via URL scheme
-        return .result()
+    func perform() async throws -> some IntentResult & OpensIntent {
+        // Validate the selected ID against the current shared card list. This
+        // avoids routing stale Control Center configurations to an arbitrary
+        // card while still preserving the selected card's deep-link behavior.
+        let destination: URL
+        if let cardIDString,
+           let cardID = UUID(uuidString: cardIDString),
+           SharedDataManager.shared.getCard(by: cardID) != nil,
+           let cardURL = HolderWidgetURL.card(cardID) {
+            destination = cardURL
+        } else {
+            // The app still opens for an unconfigured/stale control, but its
+            // deep-link handler will intentionally select nothing.
+            destination = URL(string: "holder://open")!
+        }
+
+        return .result(opensIntent: OpenURLIntent(destination))
     }
 }
 #endif

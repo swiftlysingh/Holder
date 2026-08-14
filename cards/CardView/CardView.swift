@@ -1,822 +1,895 @@
 //
 //  CardView.swift
-//  credit-card
-//
-//  Created by Pushpinder Pal Singh on 09/12/23.
+//  Holder
 //
 
 import SinghDevKit
 import SwiftUI
-import UniformTypeIdentifiers
 
-#if os(iOS)
-import PhotosUI
-#elseif os(macOS)
+#if os(macOS)
 import AppKit
+#else
+import PhotosUI
+import UIKit
 #endif
 
 struct CardView: View {
-
 	@StateObject private var model: CardViewModel
-	@Environment(\.scenePhase) private var scenePhase
-	@AppStorage("isAuthEnabled") private var isAuthEnabled = true
-	@AppStorage("timeout") private var authTimeout = 10
+	private let onArchive: ((CardData) -> Bool)?
+	private let onDelete: ((CardData) -> Bool)?
+	private let onMigrateLegacyImage: ((CardData, DocumentKind) -> Result<DocumentData, LegacyImageMigrationError>)?
+
 	@Environment(\.analytics) private var analytics
-	#if os(macOS)
-	@State private var copiedField: String?
+	@Environment(\.dismiss) private var dismiss
+	@Environment(\.scenePhase) private var scenePhase
+	@Environment(\.colorScheme) private var colorScheme
+	@AppStorage("isAuthEnabled") private var isAuthEnabled = true
+	@AppStorage("timeout") private var authTimeout = 60
+	@State private var showArchiveConfirmation = false
+	@State private var showDeleteConfirmation = false
+	@State private var showMigrationKindChooser = false
+	@State private var isMigratingLegacyImage = false
+	#if os(iOS)
+	@State private var cardScannerRequest: CardScannerRequest?
 	#endif
 
-	init(model: CardViewModel) {
+	init(
+		model: CardViewModel,
+		onArchive: ((CardData) -> Bool)? = nil,
+		onDelete: ((CardData) -> Bool)? = nil,
+		onMigrateLegacyImage: ((CardData, DocumentKind) -> Result<DocumentData, LegacyImageMigrationError>)? = nil
+	) {
 		_model = StateObject(wrappedValue: model)
-	}
-
-	/// Formats expiration date input (auto-inserts "/" after 2 digits, limits to 5 chars)
-	private func formatExpirationIfNeeded(_ newValue: String) {
-		Task { @MainActor in
-			if newValue.count == 2 && !newValue.contains("/") {
-				model.card.expiration = newValue + "/"
-			} else if newValue.count > 5 {
-				model.card.expiration = String(newValue.prefix(5))
-			}
-		}
+		self.onArchive = onArchive
+		self.onDelete = onDelete
+		self.onMigrateLegacyImage = onMigrateLegacyImage
 	}
 
 	var body: some View {
 		Group {
 			#if os(macOS)
-			macOSCardView()
+			macOSCardView
 			#else
-			getCardListView()
+			iosCardView
 			#endif
 		}
+		.background(HolderTheme.background(for: colorScheme).ignoresSafeArea())
 		.onAppear {
+			// The card gate runs on every detail/editor presentation. When the owner
+			// disabled card authentication this resolves immediately without a prompt.
 			model.authenticateUser()
 		}
-		.onChange(of: scenePhase) {
-			#if os(macOS)
-			let shouldScheduleLock = scenePhase == .inactive || scenePhase == .background
-			#else
-			let shouldScheduleLock = scenePhase == .background
-			#endif
-
-			if scenePhase == .active {
+		.onChange(of: model.isAuthenticated) { _, authenticated in
+			if authenticated { refreshAuthenticationTimeout() }
+		}
+		.onChange(of: model.card) {
+			// Typing in the editor is user activity too, not only tapping a field.
+			refreshAuthenticationTimeout()
+		}
+		.onChange(of: scenePhase) { _, phase in
+			if phase == .active {
 				model.resolveScheduledLockOnActive()
-				// onChange does not fire for the initial phase, so onAppear owns the first prompt.
-				if isAuthEnabled
-					&& !model.isAuthenticated
-					&& !model.isAuthenticating {
-					model.authenticateUser()
+				refreshAuthenticationTimeout()
+			} else {
+				// A reveal session never survives leaving the foreground, even when the
+				// longer app-level auth timeout has not elapsed yet.
+				model.hideSensitiveValues()
+				if phase == .background && model.isAuthenticating {
+					// A system authentication prompt can make the scene inactive, but a
+					// real background transition must invalidate that attempt immediately.
+					model.lock()
+				} else if isAuthEnabled && !model.isAuthenticating {
+					model.scheduleLock(after: .seconds(authTimeout))
 				}
-			} else if shouldScheduleLock && isAuthEnabled && !model.isAuthenticating {
-				model.scheduleLock(after: .seconds(authTimeout))
 			}
 		}
-		.onChange(of: isAuthEnabled) { _, isEnabled in
-			if isEnabled {
+		.onChange(of: isAuthEnabled) { _, enabled in
+			if enabled {
 				model.lock()
-				if scenePhase == .active {
-					model.authenticateUser()
-				}
 			} else {
 				model.authenticateUser()
 			}
 		}
 		.onDisappear {
 			model.lock()
+			model.discardLegacyImageChanges()
 		}
-		.sdkScreen(
-			model.isAddNewFlow
-				? AppAnalyticsScreen.cardEditor
-				: AppAnalyticsScreen.cardDetails
-		)
+		.simultaneousGesture(TapGesture().onEnded { _ in refreshAuthenticationTimeout() })
+		.alert("Archive this card?", isPresented: $showArchiveConfirmation) {
+			Button("Archive", role: .destructive, action: archiveCard)
+			Button("Cancel", role: .cancel) {}
+		} message: {
+			Text("You can restore it from Archived.")
+		}
+		.alert("Delete this card?", isPresented: $showDeleteConfirmation) {
+			Button("Delete", role: .destructive, action: deleteCard)
+			Button("Cancel", role: .cancel) {}
+		} message: {
+			Text("This removes the card from Holder. Legacy Other Card images are removed from iCloud first.")
+		}
+		.alert("Card error", isPresented: $model.showErrorAlert) {
+			Button("OK", role: .cancel) {}
+		} message: {
+			Text(model.errorMessage ?? "Holder could not complete that action.")
+		}
+		.confirmationDialog(
+			"Move to encrypted document",
+			isPresented: $showMigrationKindChooser,
+			titleVisibility: .visible
+		) {
+			ForEach(DocumentKind.allCases) { kind in
+				Button(kind.rawValue) { migrateLegacyImage(as: kind) }
+			}
+			Button("Cancel", role: .cancel) {}
+		} message: {
+			Text("Choose the document type. Holder encrypts and verifies the photo on this device before removing the legacy card and iCloud image.")
+		}
+		.sdkScreen(model.isEditing ? AppAnalyticsScreen.cardEditor : AppAnalyticsScreen.cardDetails)
 	}
 
-	#if os(iOS)
-	fileprivate func itemView(heading: String, value: Binding<String>, _ type: UIKeyboardType) -> some View {
-		return HStack {
-			Text(heading)
-				.bold()
-			Spacer()
-			if !model.isAuthenticated {
-				SecureField("", text: value)
-					.multilineTextAlignment(.trailing)
-			} else {
-				TextField("", text: value)
-					.multilineTextAlignment(.trailing)
-					.disabled(!model.isEditing)
-					.foregroundColor(model.isEditing ? .blue : .accentColor)
-					.keyboardType(type)
-					.contextMenu(menuItems: {
-						Button(action: {
-							model.copyAction(with: value.wrappedValue)
-							UserSettings.shared.requestReview()
-						}) {
-							Text("Copy to clipboard")
-							Image(systemName: "doc.on.doc")
-						}
-					})
+	/// A fixed, five-slot palette control. `nil` continues to mean the legacy
+	/// automatic appearance until a person deliberately picks a color.
+	private var cardPalettePicker: some View {
+		VStack(alignment: .leading, spacing: 10) {
+			Text("CARD COLOR")
+				.font(.caption.weight(.semibold))
+				.tracking(0.7)
+				.foregroundStyle(HolderTheme.secondaryText(for: colorScheme))
+
+			HStack(spacing: 12) {
+				ForEach(CardPalette.allCases) { palette in
+					paletteSwatch(
+						palette,
+						isSelected: model.card.palette == palette,
+						hint: "Sets this card's color."
+					) {
+						model.card.palette = palette
+					}
+				}
 			}
 		}
-		.if(!model.isEditing, transform: { view in
-			view.onTapGesture(count: 2, perform: {
-				model.copyAction(with: value.wrappedValue)
-			})
-		})
+		.padding(14)
+		.holderSurface(colorScheme)
+		.accessibilityElement(children: .contain)
+		.accessibilityLabel("Card color")
 	}
-	#else
-	fileprivate func itemView(heading: String, value: Binding<String>) -> some View {
-		return HStack {
-			Text(heading)
-				.bold()
-			Spacer()
-			if !model.isAuthenticated {
-				SecureField("", text: value)
-					.multilineTextAlignment(.trailing)
-			} else {
-				TextField("", text: value)
-					.multilineTextAlignment(.trailing)
-					.disabled(!model.isEditing)
-					.foregroundColor(model.isEditing ? .blue : .accentColor)
-					.contextMenu(menuItems: {
-						Button(action: {
-							model.copyAction(with: value.wrappedValue)
-							UserSettings.shared.requestReview()
-						}) {
-							Text("Copy to clipboard")
-							Image(systemName: "doc.on.doc")
-						}
-					})
-			}
+
+	private func paletteSwatch(
+		_ palette: CardPalette,
+		isSelected: Bool,
+		hint: String,
+		action: @escaping () -> Void
+	) -> some View {
+		Button(action: action) {
+			Circle()
+				.fill(HolderTheme.paletteColor(for: palette, identifier: model.card.id))
+				.frame(width: 34, height: 34)
+				.overlay {
+					if isSelected {
+						Image(systemName: "checkmark")
+							.font(.caption.weight(.bold))
+							.foregroundStyle(palette == .amber ? HolderTheme.ink : .white)
+					}
+				}
+				.overlay {
+					Circle()
+						.stroke(
+							isSelected ? HolderTheme.primaryText(for: colorScheme) : .white.opacity(0.72),
+							lineWidth: isSelected ? 2 : 1
+						)
+				}
+				.frame(width: 44, height: 44)
 		}
-		.if(!model.isEditing, transform: { view in
-			view.onTapGesture(count: 2, perform: {
-				model.copyAction(with: value.wrappedValue)
-			})
-		})
+		.buttonStyle(.plain)
+		.accessibilityLabel("\(palette.rawValue.capitalized) card color")
+		.accessibilityValue(isSelected ? "Selected" : "Not selected")
+		.accessibilityHint(hint)
+		.accessibilityAddTraits(isSelected ? .isSelected : [])
 	}
-	#endif
 
-	fileprivate func getCardListView() -> some View {
-		let tip = DoubleTapTip()
+	#if !os(macOS)
+	private var iosCardView: some View {
+		ScrollView {
+			VStack(alignment: .leading, spacing: 20) {
+				if model.isEditing {
+					cardEditor
+				} else {
+					cardDetails
+				}
+			}
+			.padding(.horizontal, 20)
+			.padding(.vertical, 18)
+			.frame(maxWidth: .infinity, alignment: .leading)
+		}
+		.scrollIndicators(.hidden)
+		.interactiveDismissDisabled(model.hasUnresolvedLegacyImageMutation)
+		.navigationTitle(model.isAddNewFlow ? "New card" : cardTitle)
+		.navigationBarTitleDisplayMode(.inline)
+		.toolbar {
+			if model.isAddNewFlow {
+				ToolbarItem(placement: .topBarLeading) {
+					Button("Cancel") { dismiss() }
+						.holderTapTarget()
+						.disabled(model.hasUnresolvedLegacyImageMutation)
+				}
+			}
 
-		return List {
-			Section {
-				#if os(iOS)
-				let fields: [(String, Binding<String>, UIKeyboardType)] = [
-					("Name", $model.card.name, .alphabet),
-					("Number", $model.card.number, .numbersAndPunctuation),
-					("Expiration", $model.card.expiration, .numberPad),
-					("Security Code", $model.card.cvv, .numberPad),
-					("Description", $model.card.description, .alphabet)
-				]
-
-				ForEach(fields, id: \.0) { heading, value, keyboardType in
-					if !value.wrappedValue.isEmpty || model.isEditing {
-						let view = itemView(heading: heading, value: value, keyboardType)
-
-						if heading == "Number" && !model.isEditing {
-							view.popoverTip(tip, arrowEdge: .top)
-						} else if heading == "Expiration" {
-							view.onChange(of: model.card.expiration) { _, newValue in
-								formatExpirationIfNeeded(newValue)
+			ToolbarItem(placement: .topBarTrailing) {
+				if model.isEditing {
+					Button("Done", action: finishEditing)
+						.holderTapTarget()
+						.disabled(!model.isAuthenticated || model.isAuthenticating)
+				} else {
+					Menu {
+						Button("Edit", systemImage: "pencil") {
+							if model.isAuthenticated {
+								model.isEditing = true
+							} else {
+								requestUnlock()
 							}
-						} else {
-							view
 						}
-					}
-				}
-				#else
-				let fields: [(String, Binding<String>)] = [
-					("Name", $model.card.name),
-					("Number", $model.card.number),
-					("Expiration", $model.card.expiration),
-					("Security Code", $model.card.cvv),
-					("Description", $model.card.description)
-				]
-
-				ForEach(fields, id: \.0) { heading, value in
-					if !value.wrappedValue.isEmpty || model.isEditing {
-						let view = itemView(heading: heading, value: value)
-
-						if heading == "Number" && !model.isEditing {
-							view.popoverTip(tip, arrowEdge: .top)
-						} else if heading == "Expiration" {
-							view.onChange(of: model.card.expiration) { _, newValue in
-								formatExpirationIfNeeded(newValue)
+						if model.isAuthenticated, onArchive != nil {
+							Button("Archive", systemImage: "archivebox") {
+								showArchiveConfirmation = true
 							}
-						} else {
-							view
 						}
-					}
-				}
-				#endif
-
-				Group {
-				  if model.card.type != .otherCard {
-					Picker("Card Network", selection: $model.card.network) {
-					  ForEach(CardNetwork.allCases) { pref in
-						Text(pref.rawValue)
-					  }
-					}
-
-					.disabled(!model.isEditing)
-					.bold()
-				  }
-					Picker("Card Type", selection: $model.card.type) {
-						ForEach(CardType.allCases) { pref in
-							Text(pref.rawValue)
+						if model.isAuthenticated, onDelete != nil {
+							Divider()
+							Button("Delete", systemImage: "trash", role: .destructive) {
+								showDeleteConfirmation = true
+							}
 						}
+					} label: {
+						Label("Card actions", systemImage: "ellipsis.circle")
 					}
-					.disabled(!model.isEditing)
-					.bold()
-				}
-			}
-
-			if let image = model.cardImage, model.card.type == .otherCard {
-				Section {
-					#if os(iOS)
-					Image(uiImage: image)
-						.resizable()
-						.scaledToFit()
-						.if(!model.isAuthenticated, transform: { view in
-							view.blur(radius: 10, opaque: true)
-						})
-					#else
-					Image(nsImage: image)
-						.resizable()
-						.scaledToFit()
-						.if(!model.isAuthenticated, transform: { view in
-							view.blur(radius: 10, opaque: true)
-						})
-					#endif
+					.holderTapTarget()
 				}
 			}
 
 			#if os(iOS)
-			if model.isEditing && model.card.type == .otherCard {
-				Section {
-					PhotosPicker(selection: $model.selectedItem, matching: .images) {
-						VStack(alignment: .leading) {
-							HStack {
-								Image(systemName: "photo")
-								Text(model.cardImage == nil ? "Add Card Image" : "Change Card Image")
-							}
-							.padding(.bottom)
-
-							Text("Images are stored in iCloud storage instead of more secure Keychain, please be mindful while adding sensitive images")
-								.font(.footnote)
-								.foregroundStyle(.gray)
+				if model.isEditing && model.isAddNewFlow {
+					ToolbarItem(placement: .topBarLeading) {
+						Button(action: beginCardScan) {
+							Label("Scan card", systemImage: "camera.viewfinder")
 						}
-					}
-				.onChange(of: model.selectedItem) {
-					Task {
-						do {
-							guard let data = try await model.selectedItem?.loadTransferable(type: Data.self) else {
-								throw URLError(.cannotDecodeContentData)
-							}
-
-							guard let uiImage = UIImage(data: data) else {
-								throw URLError(.cannotDecodeContentData)
-							}
-
-							guard ICloudDataManager.shared.saveImage(uiImage, for: model.card.id) else {
-								throw URLError(.cannotCreateFile)
-							}
-
-							model.cardImage = uiImage
-							model.errorMessage = nil
-						} catch {
-							model.errorMessage = "Unable to save image: \(error.localizedDescription)"
-							model.showErrorAlert = true
-						}
-					}
-				}
-
-
-					if model.cardImage != nil {
-						Button(role: .destructive) {
-							model.cardImage = nil
-							ICloudDataManager.shared.deleteImage(for: model.card.id)
-						} label: {
-							HStack {
-								Image(systemName: "trash")
-								Text("Remove Image")
-							}
-						}
-					}
-				}
-			}
-			#else
-			if model.isEditing && model.card.type == .otherCard {
-				Section {
-					Button {
-						selectImageFile()
-					} label: {
-						VStack(alignment: .leading) {
-							HStack {
-								Image(systemName: "photo")
-								Text(model.cardImage == nil ? "Add Card Image" : "Change Card Image")
-							}
-							.padding(.bottom)
-
-							Text("Images are stored in iCloud storage instead of more secure Keychain, please be mindful while adding sensitive images")
-								.font(.footnote)
-								.foregroundStyle(.gray)
-						}
-					}
-					.buttonStyle(.plain)
-
-					if model.cardImage != nil {
-						Button(role: .destructive) {
-							model.cardImage = nil
-							ICloudDataManager.shared.deleteImage(for: model.card.id)
-						} label: {
-							HStack {
-								Image(systemName: "trash")
-								Text("Remove Image")
-							}
-						}
-					}
+						.holderTapTarget()
 				}
 			}
 			#endif
 		}
-		.alert("Image Error", isPresented: $model.showErrorAlert) {
-			Button("OK", role: .cancel) {
-				model.showErrorAlert = false
-			}
-		} message: {
-			if let message = model.errorMessage {
-				Text(message)
-			} else {
-				Text("An unknown error occurred")
-			}
-		}
-		.toolbar {
-			ShareLink(item: model.card.toShareString()) {
-				Label("Click to share", systemImage: "square.and.arrow.up")
-			}
-			Button(action: {
-				model.isEditing.toggle()
-				saveCardIfNeeded()
-			}) {
-				Text(model.isEditing ? "Done" : "Edit")
-			}
-		}
-		.disabled(!$model.isAuthenticated.wrappedValue)
 		#if os(iOS)
-		.toolbar {
-			if model.card.number.isEmpty {
-				ToolbarItem(placement: .topBarLeading) {
-					Button(action: {
-						track(.cardScanStarted)
-						model.isShowingScanner = true
-					}, label: {
-						Image(systemName: "camera.on.rectangle")
-					})
-					.if(!model.isAddNewFlow, transform: { view in
-						view.hidden()
-					})
-					.fullScreenCover(isPresented: $model.isShowingScanner) {
-						SharkCardScanViewRepresentable(
-							noPermissionAction: {
-								track(.cardScanPermissionDenied)
-							},
-							successHandler: { response in
-								DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
-									model.card.number = response.number
-									model.card.name = response.holder ?? ""
-									model.card.expiration = response.expiry ?? ""
-									model.markScannerCompleted()
-									track(.cardScanCompleted)
-									model.isShowingScanner = false
-								}
-							}
-						)
-						.sdkScreen(AppAnalyticsScreen.cardScanner)
+		.fullScreenCover(item: $cardScannerRequest) { request in
+			SharkCardScanViewRepresentable(
+				noPermissionAction: { track(.cardScanPermissionDenied) },
+				successHandler: { response in
+					Task { @MainActor in
+						guard cardScannerRequest?.id == request.id else { return }
+						defer { cardScannerRequest = nil }
+						guard model.applyScannerResult(
+							number: response.number,
+							holder: response.holder,
+							expiration: response.expiry,
+							authenticationGeneration: request.authenticationGeneration
+						) else { return }
+						track(.cardScanCompleted)
 					}
 				}
-			}
+			)
+			.sdkScreen(AppAnalyticsScreen.cardScanner)
 		}
 		#endif
 	}
 
-	private func saveCardIfNeeded() {
-		guard !model.isEditing,
-			  model.card.type == .otherCard || !model.card.number.isEmpty else {
+	#if os(iOS)
+	private func beginCardScan() {
+		guard model.isAuthenticated, model.isEditing, model.isAddNewFlow else {
+			requestUnlock()
+			return
+		}
+		track(.cardScanStarted)
+		cardScannerRequest = CardScannerRequest(
+			authenticationGeneration: model.authenticationGeneration
+		)
+	}
+	#endif
+
+	private var cardDetails: some View {
+		VStack(alignment: .leading, spacing: 18) {
+			if !model.isAuthenticated {
+				unlockNotice
+			}
+
+			ZStack(alignment: .top) {
+				HolderCardFace(
+					card: model.card,
+					isLocked: !model.isAuthenticated,
+					isNumberRevealed: model.isRevealed(.number),
+					isHolderRevealed: model.isRevealed(.holderName),
+					isExpirationRevealed: model.isRevealed(.expiration),
+					isShowingBack: model.isShowingBack,
+					copiedField: model.copiedField,
+					onRequestUnlock: requestUnlock,
+					onNumber: { handleSensitiveField(.number) },
+					onHolder: { handleSensitiveField(.holderName) },
+					onExpiration: { handleSensitiveField(.expiration) },
+					onSecurityCode: { handleSensitiveField(.securityCode) },
+					onFlip: handleFlip
+				)
+				.privacySensitive()
+
+				if let copiedField = model.copiedField {
+					copiedToast(for: copiedField)
+						.offset(y: -20)
+				}
+			}
+
+			Text(model.isShowingBack ? "Tap the security code to copy. Tap the card to return to the front." : "Tap a field to copy it and reveal it for 12 seconds. Tap the card for its security code.")
+				.font(.footnote)
+				.foregroundStyle(HolderTheme.secondaryText(for: colorScheme))
+				.frame(maxWidth: .infinity, alignment: .center)
+				.multilineTextAlignment(.center)
+
+			if model.revealedField != nil {
+				TimelineView(.periodic(from: .now, by: 1)) { context in
+					if let seconds = model.remainingRevealSeconds(at: context.date) {
+						Label("Hides in \(seconds)s", systemImage: "timer")
+							.font(.caption.weight(.semibold))
+							.foregroundStyle(HolderTheme.secondaryText(for: colorScheme))
+							.accessibilityLabel("Sensitive field hides in \(seconds) seconds")
+					}
+				}
+				.frame(maxWidth: .infinity)
+			}
+
+			if !model.card.description.isEmpty {
+				infoSection(title: "About", value: model.card.description)
+			}
+
+			if model.isAuthenticated, model.card.type == .otherCard, let image = model.cardImage {
+				legacyImageSection(image)
+					.privacySensitive()
+			}
+
+			if model.isAuthenticated, (canOfferLegacyMigration || onArchive != nil || onDelete != nil) {
+				managementSection
+			}
+		}
+	}
+
+	private var unlockNotice: some View {
+		HStack(alignment: .top, spacing: 12) {
+			Image(systemName: "lock.fill")
+				.foregroundStyle(HolderTheme.mintInk)
+				.frame(width: 26, height: 26)
+				.background(HolderTheme.mint, in: Circle())
+			VStack(alignment: .leading, spacing: 4) {
+				Text("Details are masked")
+					.font(.subheadline.weight(.semibold))
+				Text("Unlock with Face ID, Touch ID, or your device passcode to reveal fields temporarily.")
+					.font(.footnote)
+					.foregroundStyle(HolderTheme.secondaryText(for: colorScheme))
+			}
+			Spacer(minLength: 8)
+			Button(action: requestUnlock) {
+				if model.isAuthenticating {
+					ProgressView()
+				} else {
+					Text("Unlock")
+				}
+			}
+			.buttonStyle(.borderedProminent)
+			.tint(HolderTheme.brandRaised)
+			.disabled(model.isAuthenticating)
+			.holderTapTarget()
+		}
+		.padding(14)
+		.holderSurface(colorScheme)
+	}
+
+	private var cardEditor: some View {
+		VStack(alignment: .leading, spacing: 16) {
+			if !model.isAuthenticated {
+				unlockNotice
+			} else {
+				Text(model.isAddNewFlow ? "Save a card" : "Edit card")
+					.font(.title2.weight(.bold))
+					.foregroundStyle(HolderTheme.primaryText(for: colorScheme))
+
+				Text("Cards use the system Keychain and may follow your iCloud Keychain settings. Photos belong in encrypted document items, not here.")
+					.font(.footnote)
+					.foregroundStyle(HolderTheme.secondaryText(for: colorScheme))
+
+				VStack(spacing: 0) {
+					editorRow("Card label") {
+						TextField("e.g. Daily Visa", text: $model.card.description)
+							.multilineTextAlignment(.trailing)
+					}
+					Divider()
+					editorRow("Cardholder") {
+						TextField("Name on card", text: $model.card.name)
+							.multilineTextAlignment(.trailing)
+					}
+					Divider()
+					editorRow("Card number") {
+						TextField("1234 5678 9012 3456", text: $model.card.number)
+							.multilineTextAlignment(.trailing)
+							.keyboardType(.numbersAndPunctuation)
+					}
+					Divider()
+					editorRow("Expiration") {
+						TextField("MM/YY", text: $model.card.expiration)
+							.multilineTextAlignment(.trailing)
+							.keyboardType(.numberPad)
+							.onChange(of: model.card.expiration) { _, value in
+								formatExpirationIfNeeded(value)
+							}
+					}
+					Divider()
+					editorRow("Security code") {
+						SecureField("CVV", text: $model.card.cvv)
+							.multilineTextAlignment(.trailing)
+							.keyboardType(.numberPad)
+					}
+				}
+				.holderSurface(colorScheme)
+				.privacySensitive()
+
+				VStack(spacing: 0) {
+					Picker("Card type", selection: $model.card.type) {
+						ForEach(CardType.allCases) { type in
+							Text(type.rawValue).tag(type)
+						}
+					}
+					.padding(14)
+					Divider()
+					if model.card.type != .otherCard {
+						Picker("Network", selection: $model.card.network) {
+							ForEach(CardNetwork.allCases) { network in
+								Text(network.rawValue).tag(network)
+							}
+						}
+						.padding(14)
+					}
+				}
+				.holderSurface(colorScheme)
+
+				cardPalettePicker
+
+				if model.card.type == .otherCard {
+					legacyImageEditor
+				}
+			}
+		}
+	}
+
+	private func editorRow<Content: View>(_ label: String, @ViewBuilder content: () -> Content) -> some View {
+		HStack(alignment: .firstTextBaseline, spacing: 12) {
+			Text(label)
+				.font(.subheadline)
+				.foregroundStyle(HolderTheme.secondaryText(for: colorScheme))
+				.frame(maxWidth: 112, alignment: .leading)
+			content()
+				.font(.body)
+				.foregroundStyle(HolderTheme.primaryText(for: colorScheme))
+		}
+		.padding(14)
+		.frame(minHeight: 52)
+	}
+
+	private func infoSection(title: String, value: String) -> some View {
+		VStack(alignment: .leading, spacing: 6) {
+			Text(title.uppercased())
+				.font(.caption.weight(.semibold))
+				.tracking(0.7)
+				.foregroundStyle(HolderTheme.secondaryText(for: colorScheme))
+			Text(value)
+				.font(.body)
+				.foregroundStyle(HolderTheme.primaryText(for: colorScheme))
+		}
+		.frame(maxWidth: .infinity, alignment: .leading)
+		.padding(16)
+		.holderSurface(colorScheme)
+	}
+
+		private func legacyImageSection(_ image: UIImage) -> some View {
+		VStack(alignment: .leading, spacing: 10) {
+			Text("LEGACY CARD IMAGE")
+				.font(.caption.weight(.semibold))
+				.tracking(0.7)
+				.foregroundStyle(HolderTheme.secondaryText(for: colorScheme))
+			Image(uiImage: image)
+				.resizable()
+				.scaledToFit()
+				.clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+			Text("Legacy Other Card images remain in iCloud Drive. New document photos are encrypted and stored on this device.")
+				.font(.footnote)
+				.foregroundStyle(HolderTheme.secondaryText(for: colorScheme))
+		}
+		.padding(16)
+		.holderSurface(colorScheme)
+	}
+
+	private var legacyImageEditor: some View {
+		VStack(alignment: .leading, spacing: 12) {
+			Text("LEGACY CARD IMAGE")
+				.font(.caption.weight(.semibold))
+				.tracking(0.7)
+				.foregroundStyle(HolderTheme.secondaryText(for: colorScheme))
+			PhotosPicker(selection: $model.selectedItem, matching: .images) {
+				Label(model.cardImage == nil ? "Add legacy card image" : "Replace legacy card image", systemImage: "photo")
+					.frame(maxWidth: .infinity, minHeight: 44)
+			}
+			.buttonStyle(.bordered)
+			.onChange(of: model.selectedItem) { _, selection in
+				let authenticationGeneration = model.authenticationGeneration
+				Task {
+					do {
+						guard let data = try await selection?.loadTransferable(type: Data.self),
+							let image = UIImage(data: data) else {
+							throw URLError(.cannotCreateFile)
+						}
+						guard model.stageLegacyImage(
+							image,
+							authenticationGeneration: authenticationGeneration
+						) else { return }
+					} catch {
+						guard authenticationGeneration == model.authenticationGeneration,
+							model.isAuthenticated else { return }
+						model.errorMessage = "Unable to save the legacy card image."
+						model.showErrorAlert = true
+					}
+				}
+			}
+			if model.cardImage != nil {
+				Button("Remove legacy card image", systemImage: "trash", role: .destructive) {
+					model.stageLegacyImageRemoval()
+				}
+				.frame(minHeight: 44)
+			}
+			Text("This compatibility image uses iCloud Drive, not the encrypted document vault. Changes are saved only when you tap Done.")
+				.font(.footnote)
+				.foregroundStyle(HolderTheme.secondaryText(for: colorScheme))
+		}
+		.padding(16)
+		.holderSurface(colorScheme)
+	}
+		#endif
+
+	private var managementSection: some View {
+		VStack(spacing: 0) {
+			if canOfferLegacyMigration {
+				Button("Move to encrypted document", systemImage: "lock.doc") {
+					showMigrationKindChooser = true
+				}
+				.frame(maxWidth: .infinity, minHeight: 48, alignment: .leading)
+				.padding(.horizontal, 16)
+				.disabled(isMigratingLegacyImage)
+				.accessibilityHint("Choose a document type, encrypt and verify the image, then remove the legacy card.")
+			}
+			if canOfferLegacyMigration, onArchive != nil || onDelete != nil { Divider() }
+			if onArchive != nil {
+				Button("Archive card", systemImage: "archivebox") {
+					showArchiveConfirmation = true
+				}
+				.frame(maxWidth: .infinity, minHeight: 48, alignment: .leading)
+				.padding(.horizontal, 16)
+			}
+			if onArchive != nil, onDelete != nil { Divider() }
+			if onDelete != nil {
+				Button("Delete card", systemImage: "trash", role: .destructive) {
+					showDeleteConfirmation = true
+				}
+				.frame(maxWidth: .infinity, minHeight: 48, alignment: .leading)
+				.padding(.horizontal, 16)
+			}
+		}
+		.holderSurface(colorScheme)
+	}
+
+	private var canOfferLegacyMigration: Bool {
+		model.card.type == .otherCard
+			&& onMigrateLegacyImage != nil
+			&& (model.cardImage != nil || model.card.hasLegacyImage != false)
+	}
+
+	private func copiedToast(for field: CardSensitiveField) -> some View {
+		Label("\(field.accessibilityName.capitalized) copied", systemImage: "checkmark.circle.fill")
+			.font(.subheadline.weight(.semibold))
+			.foregroundStyle(HolderTheme.primaryText(for: colorScheme))
+			.padding(.horizontal, 14)
+			.padding(.vertical, 9)
+			.background(HolderTheme.raisedSurface(for: colorScheme), in: Capsule())
+			.overlay {
+				Capsule().stroke(HolderTheme.separator(for: colorScheme), lineWidth: 1)
+			}
+			.shadow(color: .black.opacity(0.18), radius: 10, y: 4)
+			.accessibilityLabel("\(field.accessibilityName.capitalized) copied")
+	}
+
+	private var cardTitle: String {
+		model.card.displayLabel
+	}
+
+	private func requestUnlock() {
+		guard !model.isAuthenticating else { return }
+		model.authenticateUser()
+	}
+
+	private func refreshAuthenticationTimeout() {
+		guard isAuthEnabled, model.isAuthenticated else { return }
+		model.scheduleLock(after: .seconds(authTimeout))
+	}
+
+	private func handleSensitiveField(_ field: CardSensitiveField) {
+		guard model.isAuthenticated else {
+			requestUnlock()
+			return
+		}
+		let value: String
+		switch field {
+		case .number: value = model.card.number
+		case .expiration: value = model.card.expiration
+		case .securityCode: value = model.card.cvv
+		case .holderName: value = model.card.name
+		}
+		model.reveal(field)
+		model.copyAction(with: value, field: field)
+		UserSettings.shared.requestReview()
+	}
+
+	private func handleFlip() {
+		guard model.isAuthenticated else {
+			requestUnlock()
+			return
+		}
+		model.flipCard()
+	}
+
+	private func formatExpirationIfNeeded(_ value: String) {
+		if value.count == 2 && !value.contains("/") {
+			model.card.expiration = value + "/"
+		} else if value.count > 5 {
+			model.card.expiration = String(value.prefix(5))
+		}
+	}
+
+	private func finishEditing() {
+		guard model.isAuthenticated else {
+			requestUnlock()
+			return
+		}
+		guard model.card.type == .otherCard || !model.card.number.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
+			model.errorMessage = "Enter a card number before saving."
+			model.showErrorAlert = true
 			return
 		}
 
 		let operation: AppAnalyticsEvent.SaveOperation = model.isAddNewFlow ? .create : .update
 		let inputMethod: AppAnalyticsEvent.InputMethod = model.didUseScanner ? .scanner : .manual
-		let succeeded = model.addUpdateCard(model.card)
-		let event: AppAnalyticsEvent = succeeded
-			? .cardSaveCompleted(
-				operation: operation,
-				inputMethod: inputMethod
-			)
-			: .cardSaveFailed(
-				operation: operation,
-				inputMethod: inputMethod
-			)
-		track(event)
+		model.stageLegacyImageRemovalIfNoLongerNeeded()
+		guard model.persistLegacyImageMutationMarkerForSave() else {
+			model.errorMessage = "Holder could not create a durable cleanup marker for the legacy iCloud image. No image change was made; keep this editor open and retry Done."
+			model.showErrorAlert = true
+			track(.cardSaveFailed(operation: operation, inputMethod: inputMethod))
+			return
+		}
+		guard model.applyLegacyImageChangesForSave() else {
+			model.errorMessage = "Holder could not update the legacy iCloud image. Its durable cleanup marker remains saved; keep this editor open and retry Done."
+			model.showErrorAlert = true
+			track(.cardSaveFailed(operation: operation, inputMethod: inputMethod))
+			return
+		}
+		guard model.addUpdateCard(model.card) else {
+			model.errorMessage = "Holder could not finish saving this card. Its durable cleanup marker remains saved, so the legacy image cannot become orphaned; retry Done."
+			model.showErrorAlert = true
+			track(.cardSaveFailed(operation: operation, inputMethod: inputMethod))
+			return
+		}
+		model.finalizeLegacyImageChangesAfterSave()
+		track(.cardSaveCompleted(operation: operation, inputMethod: inputMethod))
+		model.isEditing = false
+		if model.isAddNewFlow {
+			dismiss()
+		}
+	}
+
+	private func archiveCard() {
+		guard model.isAuthenticated else {
+			requestUnlock()
+			return
+		}
+		guard let onArchive, onArchive(model.card) else {
+			model.errorMessage = "Unable to archive this card. Try again."
+			model.showErrorAlert = true
+			return
+		}
+		dismiss()
+	}
+
+	private func deleteCard() {
+		guard model.isAuthenticated else {
+			requestUnlock()
+			return
+		}
+		guard let onDelete, onDelete(model.card) else {
+			model.errorMessage = "Unable to delete this card. Try again."
+			model.showErrorAlert = true
+			return
+		}
+		dismiss()
+	}
+
+	private func migrateLegacyImage(as kind: DocumentKind) {
+		guard model.isAuthenticated else {
+			requestUnlock()
+			return
+		}
+		guard let onMigrateLegacyImage else { return }
+		isMigratingLegacyImage = true
+		defer { isMigratingLegacyImage = false }
+
+		switch onMigrateLegacyImage(model.card, kind) {
+		case .success:
+			track(.legacyCardMigrationCompleted)
+			dismiss()
+		case .failure(let error):
+			track(.legacyCardMigrationFailed)
+			model.errorMessage = error.localizedDescription
+			model.showErrorAlert = true
+		}
 	}
 
 	private func track(_ event: AppAnalyticsEvent) {
-		Task {
-			await analytics.capture(event)
-		}
+		Task { await analytics.capture(event) }
 	}
 
 	#if os(macOS)
-	private func selectImageFile() {
-		let panel = NSOpenPanel()
-		panel.allowedContentTypes = [.image]
-		panel.allowsMultipleSelection = false
-		panel.canChooseDirectories = false
-		panel.canCreateDirectories = false
-		panel.title = "Select Card Image"
-
-		if panel.runModal() == .OK, let url = panel.url {
-			if let image = NSImage(contentsOf: url) {
-				if ICloudDataManager.shared.saveImage(image, for: model.card.id) {
-					model.cardImage = image
-				} else {
-					model.errorMessage = "Failed to save image to iCloud"
-					model.showErrorAlert = true
-				}
-			}
-		}
-	}
-
-	// MARK: - macOS Card View
-	@ViewBuilder
-	private func macOSCardView() -> some View {
+	private var macOSCardView: some View {
 		ScrollView {
-			VStack(spacing: 24) {
-				// Visual Card Preview (only for credit/debit cards)
-				if model.card.type != .otherCard && model.isAuthenticated && !model.isEditing {
-					macOSCardPreview()
+			VStack(alignment: .leading, spacing: 20) {
+				if !model.isAuthenticated {
+					macOSUnlockNotice
 				}
-
-				// Card Image for Other Cards
-				if let image = model.cardImage, model.card.type == .otherCard {
-					Image(nsImage: image)
-						.resizable()
-						.scaledToFit()
-						.frame(maxHeight: 300)
-						.clipShape(RoundedRectangle(cornerRadius: 12))
-						.if(!model.isAuthenticated, transform: { view in
-							view.blur(radius: 10, opaque: true)
-						})
+				HolderCardFace(
+					card: model.card,
+					isLocked: !model.isAuthenticated,
+					isNumberRevealed: model.isRevealed(.number),
+					isHolderRevealed: model.isRevealed(.holderName),
+					isExpirationRevealed: model.isRevealed(.expiration),
+					isShowingBack: model.isShowingBack,
+					copiedField: model.copiedField,
+					onRequestUnlock: requestUnlock,
+					onNumber: { handleSensitiveField(.number) },
+					onHolder: { handleSensitiveField(.holderName) },
+					onExpiration: { handleSensitiveField(.expiration) },
+					onSecurityCode: { handleSensitiveField(.securityCode) },
+					onFlip: handleFlip
+				)
+				.privacySensitive()
+				if model.isEditing, model.isAuthenticated {
+					macOSEditor
+				} else if !model.card.description.isEmpty {
+					macOSInfoSection(title: "About", value: model.card.description)
 				}
-
-				// Card Details Form
-				macOSCardForm()
 			}
-			.padding(.top, 24)
-			.padding(.bottom, 24)
-			.padding(.horizontal, 24)
+			.padding(24)
+			.frame(maxWidth: 520)
 			.frame(maxWidth: .infinity)
 		}
-		.scrollContentBackground(.hidden)
-		.contentMargins(0)
+		.navigationTitle(cardTitle)
 		.toolbar {
-			ShareLink(item: model.card.toShareString()) {
-				Label("Share", systemImage: "square.and.arrow.up")
-			}
-			Button(action: {
-				model.isEditing.toggle()
-				saveCardIfNeeded()
-			}) {
-				Text(model.isEditing ? "Done" : "Edit")
-			}
-		}
-		.disabled(!model.isAuthenticated)
-	}
-
-	@ViewBuilder
-	private func macOSCardPreview() -> some View {
-		ZStack {
-			// Card Background
-			RoundedRectangle(cornerRadius: 16)
-				.fill(
-					LinearGradient(
-						colors: [Color.accentColor.opacity(0.8), Color.accentColor.opacity(0.6)],
-						startPoint: .topLeading,
-						endPoint: .bottomTrailing
-					)
-				)
-				.shadow(color: .black.opacity(0.2), radius: 10, x: 0, y: 5)
-
-			VStack(alignment: .leading, spacing: 16) {
-				// Top row: Network logo and type
-				HStack {
-					// Show network logo if available, otherwise show icon
-					if model.card.network != .other {
-						Image(model.card.network.rawValue)
-							.renderingMode(.original)
-							.resizable()
-							.scaledToFit()
-							.frame(height: 36)
-					} else {
-						Image(systemName: "creditcard.fill")
-							.font(.system(size: 24))
-							.foregroundStyle(.white.opacity(0.9))
+			if model.isEditing {
+				Button("Done", action: finishEditing)
+					.disabled(!model.isAuthenticated || model.isAuthenticating)
+			} else {
+				Menu {
+					Button("Edit", systemImage: "pencil") {
+						if model.isAuthenticated { model.isEditing = true }
+						else { requestUnlock() }
 					}
-					Spacer()
-					Text(model.card.type.rawValue)
-						.font(.caption)
-						.fontWeight(.medium)
-						.foregroundStyle(.white.opacity(0.8))
-				}
-
-				Spacer()
-
-				// Card Number
-				Text(formatCardNumber(model.card.number))
-					.font(.system(size: 20, weight: .medium, design: .monospaced))
-					.foregroundStyle(.white)
-					.onTapGesture {
-						copyToClipboard(model.card.number, field: "number")
-					}
-
-				// Bottom row: Name and Expiry
-				HStack(alignment: .bottom) {
-					VStack(alignment: .leading, spacing: 2) {
-						Text("CARDHOLDER")
-							.font(.system(size: 9, weight: .medium))
-							.foregroundStyle(.white.opacity(0.6))
-						Text(model.card.name.isEmpty ? "Your Name" : model.card.name.uppercased())
-							.font(.system(size: 13, weight: .medium))
-							.foregroundStyle(.white)
-							.lineLimit(1)
-					}
-					.onTapGesture {
-						if !model.card.name.isEmpty {
-							copyToClipboard(model.card.name, field: "name")
+					if model.isAuthenticated, onArchive != nil {
+						Button("Archive", systemImage: "archivebox") {
+							showArchiveConfirmation = true
 						}
 					}
-
-					Spacer()
-
-					if !model.card.expiration.isEmpty {
-						VStack(alignment: .trailing, spacing: 2) {
-							Text("EXPIRES")
-								.font(.system(size: 9, weight: .medium))
-								.foregroundStyle(.white.opacity(0.6))
-							Text(model.card.expiration)
-								.font(.system(size: 13, weight: .medium, design: .monospaced))
-								.foregroundStyle(.white)
-						}
-						.onTapGesture {
-							copyToClipboard(model.card.expiration, field: "exp")
+					if model.isAuthenticated, onDelete != nil {
+						Divider()
+						Button("Delete", systemImage: "trash", role: .destructive) {
+							showDeleteConfirmation = true
 						}
 					}
-
-					if !model.card.cvv.isEmpty {
-						VStack(alignment: .trailing, spacing: 2) {
-							Text("CVV")
-								.font(.system(size: 9, weight: .medium))
-								.foregroundStyle(.white.opacity(0.6))
-							Text("•••")
-								.font(.system(size: 13, weight: .medium, design: .monospaced))
-								.foregroundStyle(.white)
+					if canOfferLegacyMigration {
+						Divider()
+						Button("Move to encrypted document", systemImage: "lock.doc") {
+							showMigrationKindChooser = true
 						}
-						.onTapGesture {
-							copyToClipboard(model.card.cvv, field: "cvv")
-						}
+						.disabled(isMigratingLegacyImage)
 					}
-				}
-			}
-			.padding(20)
-
-			// Copied feedback overlay
-			if let field = copiedField {
-				VStack {
-					HStack {
-						Image(systemName: "checkmark.circle.fill")
-						Text("Copied \(fieldName(field))!")
-					}
-					.font(.headline)
-					.foregroundStyle(.white)
-					.padding(.horizontal, 16)
-					.padding(.vertical, 10)
-					.background(.black.opacity(0.7))
-					.clipShape(Capsule())
+				} label: {
+					Label("Card actions", systemImage: "ellipsis.circle")
 				}
 			}
 		}
-		.frame(width: 340, height: 200)
 	}
 
-	@ViewBuilder
-	private func macOSCardForm() -> some View {
-		GroupBox {
+	private var macOSEditor: some View {
+		VStack(alignment: .leading, spacing: 16) {
 			VStack(spacing: 0) {
-				if model.isEditing {
-					// Editing mode - show all fields
-					macOSFormRow(label: "Name", value: $model.card.name, isEditing: true)
-					Divider()
-					macOSFormRow(label: "Number", value: $model.card.number, isEditing: true)
-					Divider()
-					macOSFormRow(label: "Expiration", value: $model.card.expiration, isEditing: true)
-						.onChange(of: model.card.expiration) { _, newValue in
-							formatExpirationIfNeeded(newValue)
-						}
-					Divider()
-					macOSFormRow(label: "CVV", value: $model.card.cvv, isEditing: true)
-					Divider()
-					macOSFormRow(label: "Description", value: $model.card.description, isEditing: true)
-				} else {
-					// View mode - show non-empty fields with copy on click
-					if !model.card.name.isEmpty {
-						macOSCopyableRow(label: "Name", value: model.card.name, field: "name")
-						Divider()
-					}
-					if !model.card.number.isEmpty {
-						macOSCopyableRow(label: "Number", value: model.isAuthenticated ? model.card.number : "••••••••••••••••", field: "number")
-						Divider()
-					}
-					if !model.card.expiration.isEmpty {
-						macOSCopyableRow(label: "Expiration", value: model.isAuthenticated ? model.card.expiration : "••/••", field: "exp")
-						Divider()
-					}
-					if !model.card.cvv.isEmpty {
-						macOSCopyableRow(label: "CVV", value: model.isAuthenticated ? model.card.cvv : "•••", field: "cvv")
-						Divider()
-					}
-					if !model.card.description.isEmpty {
-						macOSCopyableRow(label: "Description", value: model.card.description, field: "desc")
-					}
-				}
-
-				// Pickers
-				if model.card.type != .otherCard {
-					Divider()
-					HStack {
-						Text("Network")
-							.foregroundStyle(.secondary)
-						Spacer()
-						Picker("", selection: $model.card.network) {
-							ForEach(CardNetwork.allCases) { network in
-								Text(network.rawValue).tag(network)
-							}
-						}
-						.labelsHidden()
-						.disabled(!model.isEditing)
-					}
-					.padding(.horizontal, 12)
-					.padding(.vertical, 8)
-				}
-
+				macOSFormRow("Card label", text: $model.card.description)
 				Divider()
-				HStack {
-					Text("Type")
-						.foregroundStyle(.secondary)
-					Spacer()
-					Picker("", selection: $model.card.type) {
-						ForEach(CardType.allCases) { type in
-							Text(type.rawValue).tag(type)
-						}
-					}
-					.labelsHidden()
-					.disabled(!model.isEditing)
-				}
-				.padding(.horizontal, 12)
-				.padding(.vertical, 8)
+				macOSFormRow("Cardholder", text: $model.card.name)
+				Divider()
+				macOSFormRow("Card number", text: $model.card.number)
+				Divider()
+				macOSFormRow("Expiration", text: $model.card.expiration)
+				Divider()
+				macOSFormRow("Security code", text: $model.card.cvv, isSecure: true)
 			}
-		} label: {
-			Text("Card Details")
-				.font(.headline)
-		}
-		.frame(maxWidth: 400)
+			.holderSurface(colorScheme)
+			.privacySensitive()
 
-		// Image section for Other Cards
-		if model.isEditing && model.card.type == .otherCard {
-			GroupBox {
-				VStack(spacing: 12) {
-					Button {
-						selectImageFile()
-					} label: {
-						HStack {
-							Image(systemName: "photo")
-							Text(model.cardImage == nil ? "Add Card Image" : "Change Card Image")
-						}
-					}
-
-					if model.cardImage != nil {
-						Button(role: .destructive) {
-							model.cardImage = nil
-							ICloudDataManager.shared.deleteImage(for: model.card.id)
-						} label: {
-							HStack {
-								Image(systemName: "trash")
-								Text("Remove Image")
-							}
-						}
-					}
-
-					Text("Images are stored in iCloud storage")
-						.font(.caption)
-						.foregroundStyle(.secondary)
-				}
-				.padding(.vertical, 4)
-			} label: {
-				Text("Card Image")
-					.font(.headline)
-			}
-			.frame(maxWidth: 400)
+			cardPalettePicker
 		}
 	}
 
-	@ViewBuilder
-	private func macOSFormRow(label: String, value: Binding<String>, isEditing: Bool) -> some View {
+	private var macOSUnlockNotice: some View {
+		HStack(spacing: 12) {
+			Image(systemName: "lock.fill")
+				.foregroundStyle(HolderTheme.mintInk)
+				.frame(width: 28, height: 28)
+				.background(HolderTheme.mint, in: Circle())
+			VStack(alignment: .leading, spacing: 3) {
+				Text("Details are masked")
+					.font(.headline)
+				Text("Unlock with Touch ID or your device passcode to reveal fields temporarily.")
+					.font(.footnote)
+					.foregroundStyle(HolderTheme.secondaryText(for: colorScheme))
+			}
+			Spacer()
+			Button("Unlock", action: requestUnlock)
+				.buttonStyle(.borderedProminent)
+				.tint(HolderTheme.brandRaised)
+		}
+		.padding(14)
+		.holderSurface(colorScheme)
+	}
+
+	private func macOSInfoSection(title: String, value: String) -> some View {
+		VStack(alignment: .leading, spacing: 6) {
+			Text(title.uppercased())
+				.font(.caption.weight(.semibold))
+				.tracking(0.7)
+				.foregroundStyle(HolderTheme.secondaryText(for: colorScheme))
+			Text(value)
+				.foregroundStyle(HolderTheme.primaryText(for: colorScheme))
+		}
+		.padding(16)
+		.frame(maxWidth: .infinity, alignment: .leading)
+		.holderSurface(colorScheme)
+	}
+
+	private func macOSFormRow(_ label: String, text: Binding<String>, isSecure: Bool = false) -> some View {
 		HStack {
 			Text(label)
-				.foregroundStyle(.secondary)
+				.foregroundStyle(HolderTheme.secondaryText(for: colorScheme))
 			Spacer()
-			TextField("", text: value)
-				.textFieldStyle(.plain)
-				.multilineTextAlignment(.trailing)
-				.disabled(!isEditing)
-		}
-		.padding(.horizontal, 12)
-		.padding(.vertical, 8)
-	}
-
-	@ViewBuilder
-	private func macOSCopyableRow(label: String, value: String, field: String) -> some View {
-		Button {
-			if model.isAuthenticated {
-				copyToClipboard(getActualValue(for: field), field: field)
-			}
-		} label: {
-			HStack {
-				Text(label)
-					.foregroundStyle(.secondary)
-				Spacer()
-				if copiedField == field {
-					HStack(spacing: 4) {
-						Image(systemName: "checkmark")
-							.foregroundStyle(.green)
-						Text("Copied!")
-							.foregroundStyle(.green)
-					}
-				} else {
-					Text(value)
-						.foregroundStyle(.primary)
-				}
-			}
-			.padding(.horizontal, 12)
-			.padding(.vertical, 8)
-			.contentShape(Rectangle())
-		}
-		.buttonStyle(.plain)
-	}
-
-	private func getActualValue(for field: String) -> String {
-		switch field {
-		case "name": return model.card.name
-		case "number": return model.card.number
-		case "exp": return model.card.expiration
-		case "cvv": return model.card.cvv
-		case "desc": return model.card.description
-		default: return ""
-		}
-	}
-
-	private func formatCardNumber(_ number: String) -> String {
-		let clean = number.replacingOccurrences(of: " ", with: "")
-		var result = ""
-		for (index, char) in clean.enumerated() {
-			if index > 0 && index % 4 == 0 {
-				result += " "
-			}
-			result.append(char)
-		}
-		return result.isEmpty ? "•••• •••• •••• ••••" : result
-	}
-
-	private func fieldName(_ field: String) -> String {
-		switch field {
-		case "number": return "number"
-		case "name": return "name"
-		case "exp": return "expiry"
-		case "cvv": return "CVV"
-		case "desc": return "description"
-		default: return field
-		}
-	}
-
-	private func copyToClipboard(_ value: String, field: String) {
-		PasteboardService.copy(value)
-		copiedField = field
-		DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
-			if copiedField == field {
-				copiedField = nil
+			if isSecure {
+				SecureField(label, text: text)
+					.multilineTextAlignment(.trailing)
+			} else {
+				TextField(label, text: text)
+					.multilineTextAlignment(.trailing)
 			}
 		}
+		.padding(14)
+		.frame(minHeight: 52)
 	}
 	#endif
 }
+
+#if os(iOS)
+private struct CardScannerRequest: Identifiable {
+	let id = UUID()
+	let authenticationGeneration: UInt64
+}
+#endif

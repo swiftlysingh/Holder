@@ -65,16 +65,41 @@ class ICloudDataManager {
 	}
 
 	func loadImage(for uuid: UUID) -> PlatformImage? {
-		guard let imageURL = getImageURL(for: uuid),
-			  let imageData = try? Data(contentsOf: imageURL),
+		guard let imageData = loadImageData(for: uuid),
 			  let image = PlatformImage(data: imageData) else {
 			return nil
 		}
 		return image
 	}
 
-	func deleteImage(for uuid: UUID) {
-		guard let imageURL = getImageURL(for: uuid) else { return }
-		try? fileManager.removeItem(at: imageURL)
+	/// Reads the exact legacy JPEG bytes for the explicit, verified migration
+	/// path into the encrypted device-local document vault.
+	func loadImageData(for uuid: UUID) -> Data? {
+		guard let imageURL = getImageURL(for: uuid) else { return nil }
+		return try? Data(contentsOf: imageURL)
+	}
+
+	/// Removes a legacy Other Card image from iCloud before its Keychain metadata is deleted.
+	/// Returns `false` when iCloud is unavailable or the removal fails so callers can keep
+	/// the visible card record and offer a retry instead of silently orphaning plaintext data.
+	@discardableResult
+	func deleteImage(for uuid: UUID) -> Bool {
+		guard let imageURL = getImageURL(for: uuid) else {
+			print("Error: Cannot delete legacy image - iCloud is not available")
+			return false
+		}
+
+		do {
+			// Attempt removal even when there is no downloaded local representation.
+			// Ubiquitous items can be evicted placeholders while still existing remotely.
+			try fileManager.removeItem(at: imageURL)
+			return true
+		} catch let error as CocoaError where error.code == .fileNoSuchFile {
+			// A confirmed missing item is already the desired idempotent state.
+			return true
+		} catch {
+			print("Error deleting legacy iCloud image: \(error)")
+			return false
+		}
 	}
 }

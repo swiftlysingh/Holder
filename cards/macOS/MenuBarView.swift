@@ -119,7 +119,7 @@ struct MenuBarView: View {
     // Same keys as UserSettings; @AppStorage on the view observes changes reliably
     // (UserSettings' @AppStorage properties do not publish via ObservableObject).
     @AppStorage("isAuthEnabled") private var isAuthEnabled = true
-    @AppStorage("timeout") private var authTimeout = 10
+    @AppStorage("timeout") private var authTimeout = 60
     @AppStorage("keepInMenuBar") private var keepInMenuBar = false
     @StateObject private var session = MenuBarSession()
     @State private var authStatus: String?
@@ -463,16 +463,16 @@ struct MenuBarCardRow: View {
                         )
                     }
 
-                    // Name on card (not sensitive)
-                    if !card.name.isEmpty {
-                        copyableDetailRow(
-                            icon: "person.fill",
-                            label: "Name",
-                            displayValue: card.name,
-                            copyValue: card.name,
-                            field: "name",
-                            isSensitive: false
-                        )
+					// Cardholder name is personal data and follows the same auth gate.
+					if !card.name.isEmpty {
+						copyableDetailRow(
+							icon: "person.fill",
+							label: "Name",
+							displayValue: isAuthenticated ? card.name : "••••••",
+							copyValue: card.name,
+							field: "name",
+							isSensitive: true
+						)
                     }
                 }
                 .padding(.horizontal, 12)
@@ -538,15 +538,9 @@ struct MenuBarCardRow: View {
         .disabled(isSensitive && !isAuthenticated)
     }
 
-    private var cardDisplayName: String {
-        if !card.description.isEmpty {
-            return card.description
-        } else if !card.name.isEmpty {
-            return card.name
-        } else {
-            return card.type.rawValue
-        }
-    }
+	private var cardDisplayName: String {
+		card.displayLabel
+	}
 
     private var maskedNumber: String {
         let cleanNumber = card.number.replacingOccurrences(of: " ", with: "")

@@ -16,6 +16,11 @@ enum AppAnalyticsEvent: AnalyticsEvent {
         case archived
     }
 
+    enum DocumentLocation: String, Sendable {
+        case active
+        case archived
+    }
+
     case cardAddStarted
     case cardSaveCompleted(
         operation: SaveOperation,
@@ -35,6 +40,17 @@ enum AppAnalyticsEvent: AnalyticsEvent {
     case cardScanCompleted
     case cardScanPermissionDenied
     case cardOpenedFromWidget
+    case legacyCardMigrationCompleted
+    case legacyCardMigrationFailed
+    case documentAddStarted
+    case documentSaveCompleted(operation: SaveOperation)
+    case documentSaveFailed(operation: SaveOperation)
+    case documentDeleted(location: DocumentLocation)
+    case documentDeleteFailed(location: DocumentLocation)
+    case documentArchived
+    case documentArchiveFailed
+    case documentUnarchived
+    case documentUnarchiveFailed
 
     var name: String {
         switch self {
@@ -64,6 +80,28 @@ enum AppAnalyticsEvent: AnalyticsEvent {
             "card_scan_permission_denied"
         case .cardOpenedFromWidget:
             "card_opened_from_widget"
+        case .legacyCardMigrationCompleted:
+            "legacy_card_migration_completed"
+        case .legacyCardMigrationFailed:
+            "legacy_card_migration_failed"
+        case .documentAddStarted:
+            "document_add_started"
+        case .documentSaveCompleted:
+            "document_save_completed"
+        case .documentSaveFailed:
+            "document_save_failed"
+        case .documentDeleted:
+            "document_deleted"
+        case .documentDeleteFailed:
+            "document_delete_failed"
+        case .documentArchived:
+            "document_archived"
+        case .documentArchiveFailed:
+            "document_archive_failed"
+        case .documentUnarchived:
+            "document_unarchived"
+        case .documentUnarchiveFailed:
+            "document_unarchive_failed"
         }
     }
 
@@ -78,6 +116,12 @@ enum AppAnalyticsEvent: AnalyticsEvent {
         case .cardDeleted(let location),
              .cardDeleteFailed(let location):
             ["location": .string(location.rawValue)]
+        case .documentSaveCompleted(let operation),
+             .documentSaveFailed(let operation):
+            ["operation": .string(operation.rawValue)]
+        case .documentDeleted(let location),
+             .documentDeleteFailed(let location):
+            ["location": .string(location.rawValue)]
         case .cardAddStarted,
              .cardArchived,
              .cardArchiveFailed,
@@ -86,7 +130,14 @@ enum AppAnalyticsEvent: AnalyticsEvent {
              .cardScanStarted,
              .cardScanCompleted,
              .cardScanPermissionDenied,
-             .cardOpenedFromWidget:
+             .cardOpenedFromWidget,
+             .legacyCardMigrationCompleted,
+             .legacyCardMigrationFailed,
+             .documentAddStarted,
+             .documentArchived,
+             .documentArchiveFailed,
+             .documentUnarchived,
+             .documentUnarchiveFailed:
             [:]
         }
     }

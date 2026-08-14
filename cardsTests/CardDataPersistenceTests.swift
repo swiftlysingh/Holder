@@ -30,6 +30,115 @@ final class CardDataPersistenceTests: XCTestCase {
 		XCTAssertEqual(card.id, id)
 		XCTAssertEqual(card.network, .visa)
 		XCTAssertFalse(card.isArchived)
+		XCTAssertNil(card.sortIndex)
+		XCTAssertFalse(card.isFavorite)
+		XCTAssertNil(card.palette)
+		XCTAssertNil(card.hasLegacyImage)
+	}
+
+	func testCardDeckMetadataRoundTripsWithoutChangingSensitiveFields() throws {
+		var card = makeCard(id: UUID())
+		card.sortIndex = 7
+		card.isFavorite = true
+
+		let decoded = try JSONDecoder().decode(CardData.self, from: JSONEncoder().encode(card))
+
+		XCTAssertEqual(decoded.sortIndex, 7)
+		XCTAssertTrue(decoded.isFavorite)
+		XCTAssertEqual(decoded.number, card.number)
+		XCTAssertEqual(decoded.cvv, card.cvv)
+	}
+
+	func testCardOrderingPrefersFavoritesThenPersistedIndexThenStableLegacyID() {
+		var favorite = makeCard(id: UUID(uuidString: "00000000-0000-0000-0000-000000000004")!)
+		favorite.isFavorite = true
+		favorite.sortIndex = 99
+
+		var firstManual = makeCard(id: UUID(uuidString: "00000000-0000-0000-0000-000000000003")!)
+		firstManual.sortIndex = 2
+		var secondManual = makeCard(id: UUID(uuidString: "00000000-0000-0000-0000-000000000002")!)
+		secondManual.sortIndex = 8
+		let firstLegacy = makeCard(id: UUID(uuidString: "00000000-0000-0000-0000-000000000000")!)
+		let secondLegacy = makeCard(id: UUID(uuidString: "00000000-0000-0000-0000-000000000001")!)
+
+		let ordered = CardDataStore.deckOrdered([
+			secondLegacy,
+			secondManual,
+			favorite,
+			firstLegacy,
+			firstManual
+		])
+
+		XCTAssertEqual(
+			ordered.map(\.id),
+			[favorite.id, firstManual.id, secondManual.id, firstLegacy.id, secondLegacy.id]
+		)
+	}
+
+	func testLoyaltyCardPaletteRoundTripPreservesExistingCardFields() throws {
+		let card = CardData(
+			id: UUID(),
+			number: "12345678",
+			cvv: "",
+			expiration: "",
+			name: "Rema",
+			description: "Rema 1000",
+			type: .loyaltyCard,
+			network: .other,
+			palette: .forest
+		)
+
+		let decoded = try JSONDecoder().decode(CardData.self, from: JSONEncoder().encode(card))
+
+		XCTAssertEqual(decoded.type, .loyaltyCard)
+		XCTAssertEqual(decoded.palette, .forest)
+		XCTAssertEqual(decoded.number, "1234 5678")
+	}
+
+	func testTravelCardRoundTripPreservesType() throws {
+		let card = CardData(
+			id: UUID(),
+			number: "992441",
+			cvv: "",
+			expiration: "",
+			name: "",
+			description: "SAS EuroBonus",
+			type: .travelCard,
+			network: .other,
+			palette: .berry
+		)
+
+		let decoded = try JSONDecoder().decode(CardData.self, from: JSONEncoder().encode(card))
+
+		XCTAssertEqual(decoded.type, .travelCard)
+		XCTAssertEqual(decoded.palette, .berry)
+		XCTAssertEqual(decoded.number, "9924 41")
+	}
+
+	func testKnownLegacyImageAbsenceRoundTripsForNewCards() throws {
+		var card = makeCard(id: UUID(), type: .otherCard)
+		card.hasLegacyImage = false
+
+		let decoded = try JSONDecoder().decode(CardData.self, from: JSONEncoder().encode(card))
+
+		XCTAssertEqual(decoded.hasLegacyImage, false)
+	}
+
+	func testLegacyOtherCardRawValueRemainsAvailableForExplicitMigration() throws {
+		let data = try JSONSerialization.data(withJSONObject: [
+			"id": UUID().uuidString,
+			"number": "",
+			"cvv": "",
+			"expiration": "",
+			"name": "Legacy image card",
+			"description": "",
+			"type": CardType.otherCard.rawValue
+		])
+
+		let card = try JSONDecoder().decode(CardData.self, from: data)
+
+		XCTAssertEqual(card.type, .otherCard)
+		XCTAssertEqual(card.type.rawValue, "Other Card")
 	}
 
 	func testPartitionSeparatesActiveAndArchivedCards() {
@@ -55,7 +164,7 @@ final class CardDataPersistenceTests: XCTestCase {
 	func testLoadCardsReportsFailureAndPreservesExistingCards() {
 		let card = makeCard(id: UUID())
 		let stub = CardRetrievalStub(result: .success([card]))
-		let store = CardDataStore { _ in stub.result }
+		let store = CardDataStore(retrieveCards: { _ in stub.result })
 
 		XCTAssertEqual(store.findCard(by: card.id), card)
 
@@ -66,6 +175,157 @@ final class CardDataPersistenceTests: XCTestCase {
 		stub.result = .empty
 		XCTAssertTrue(store.loadCards())
 		// Sample/debug cards use fresh UUIDs, so the previously stubbed id must not resolve.
+		XCTAssertNil(store.findCard(by: card.id))
+	}
+
+	func testFailedCardFavoriteSaveDoesNotMutateInMemoryState() {
+		let card = makeCard(id: UUID())
+		let store = CardDataStore(
+			retrieveCards: { _ in .success([card]) },
+			saveStoredCard: { _ in false }
+		)
+
+		XCTAssertFalse(store.setFavorite(cardID: card.id, isFavorite: true))
+		XCTAssertFalse(store.findCard(by: card.id)?.isFavorite ?? true)
+		XCTAssertEqual(store.lastError, .persistenceFailed)
+	}
+
+	func testFailedCardDeckReorderExposesOnlyPersistedPrefix() {
+		let first = makeCard(id: UUID())
+		let second = makeCard(id: UUID())
+		var saveCount = 0
+		let store = CardDataStore(
+			retrieveCards: { _ in .success([first, second]) },
+			saveStoredCard: { _ in
+				saveCount += 1
+				return saveCount != 2
+			}
+		)
+
+		var firstReordered = first
+		firstReordered.sortIndex = 1
+		var secondReordered = second
+		secondReordered.sortIndex = 0
+
+		XCTAssertFalse(store.updateDeckOrder([firstReordered, secondReordered]))
+		XCTAssertEqual(store.findCard(by: first.id)?.sortIndex, 1)
+		XCTAssertNil(store.findCard(by: second.id)?.sortIndex)
+		XCTAssertEqual(store.lastError, .persistenceFailed)
+	}
+
+	func testArchivedCardCanBeFoundForDeletionAndDeepLinkRecovery() {
+		let archivedCard = makeCard(id: UUID(), type: .otherCard, isArchived: true)
+		let store = CardDataStore(
+			retrieveCards: { _ in .success([archivedCard]) },
+			deleteStoredCard: { _ in true },
+			deleteLegacyImage: { _ in true }
+		)
+
+		XCTAssertEqual(store.findCard(by: archivedCard.id), archivedCard)
+	}
+
+	func testOtherCardDeletionKeepsRetryableRecordWhenLegacyImageDeletionFails() {
+		let card = makeCard(id: UUID(), type: .otherCard)
+		var metadataDeleteCount = 0
+		let store = CardDataStore(
+			retrieveCards: { _ in .success([card]) },
+			deleteStoredCard: { _ in
+				metadataDeleteCount += 1
+				return true
+			},
+			deleteLegacyImage: { _ in false }
+		)
+
+		XCTAssertFalse(store.deleteCard(with: card.id))
+		XCTAssertEqual(metadataDeleteCount, 0)
+		XCTAssertEqual(store.findCard(by: card.id), card)
+	}
+
+	func testOtherCardDeletionRemovesMetadataOnlyAfterLegacyImage() {
+		let card = makeCard(id: UUID(), type: .otherCard)
+		var operations: [String] = []
+		let store = CardDataStore(
+			retrieveCards: { _ in .success([card]) },
+			deleteStoredCard: { _ in
+				operations.append("metadata")
+				return true
+			},
+			deleteLegacyImage: { _ in
+				operations.append("image")
+				return true
+			}
+		)
+
+		XCTAssertTrue(store.deleteCard(with: card.id))
+		XCTAssertEqual(operations, ["image", "metadata"])
+		XCTAssertNil(store.findCard(by: card.id))
+	}
+
+	func testMetadataDeletionFailureRestoresVisibleCardForRetry() {
+		let card = makeCard(id: UUID())
+		let store = CardDataStore(
+			retrieveCards: { _ in .success([card]) },
+			deleteStoredCard: { _ in false },
+			deleteLegacyImage: { _ in true }
+		)
+
+		XCTAssertFalse(store.deleteCard(with: card.id))
+		XCTAssertEqual(store.findCard(by: card.id), card)
+		XCTAssertEqual(store.lastError, .persistenceFailed)
+	}
+
+	func testPaymentCardDeletionDoesNotTouchLegacyImageStore() {
+		let card = makeCard(id: UUID())
+		var legacyImageDeleteCount = 0
+		let store = CardDataStore(
+			retrieveCards: { _ in .success([card]) },
+			deleteStoredCard: { _ in true },
+			deleteLegacyImage: { _ in
+				legacyImageDeleteCount += 1
+				return true
+			}
+		)
+
+		XCTAssertTrue(store.deleteCard(with: card.id))
+		XCTAssertEqual(legacyImageDeleteCount, 0)
+	}
+
+	func testInterruptedLegacyImageMarkerOnPaymentCardDeletesImageFirst() {
+		var card = makeCard(id: UUID())
+		card.hasLegacyImage = true
+		var operations: [String] = []
+		let store = CardDataStore(
+			retrieveCards: { _ in .success([card]) },
+			deleteStoredCard: { _ in
+				operations.append("metadata")
+				return true
+			},
+			deleteLegacyImage: { _ in
+				operations.append("image")
+				return true
+			}
+		)
+
+		XCTAssertTrue(store.deleteCard(with: card.id))
+		XCTAssertEqual(operations, ["image", "metadata"])
+		XCTAssertNil(store.findCard(by: card.id))
+	}
+
+	func testKnownImageFreeOtherCardDeletesWithoutRequiringICloud() {
+		var card = makeCard(id: UUID(), type: .otherCard)
+		card.hasLegacyImage = false
+		var legacyImageDeleteCount = 0
+		let store = CardDataStore(
+			retrieveCards: { _ in .success([card]) },
+			deleteStoredCard: { _ in true },
+			deleteLegacyImage: { _ in
+				legacyImageDeleteCount += 1
+				return false
+			}
+		)
+
+		XCTAssertTrue(store.deleteCard(with: card.id))
+		XCTAssertEqual(legacyImageDeleteCount, 0)
 		XCTAssertNil(store.findCard(by: card.id))
 	}
 

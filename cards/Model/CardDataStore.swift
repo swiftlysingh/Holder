@@ -7,11 +7,35 @@
 import SwiftUI
 import WidgetKit
 
+enum CardDataStoreError: Error, LocalizedError, Equatable {
+	case retrievalFailed
+	case persistenceFailed
+	case invalidDeckOrder
+	case cardNotFound
+	case legacyImageDeletionFailed
+
+	var errorDescription: String? {
+		switch self {
+		case .retrievalFailed:
+			return "Holder could not refresh cards."
+		case .persistenceFailed:
+			return "Holder could not save the card changes."
+		case .invalidDeckOrder:
+			return "Holder could not save that deck order."
+		case .cardNotFound:
+			return "That card is no longer available."
+		case .legacyImageDeletionFailed:
+			return "Holder could not remove the legacy card image."
+		}
+	}
+}
+
 @Observable
 class CardDataStore {
 
 	var cardsByType: [CardType: [CardData]] = [:]
 	var archivedCards: [CardData] = []
+	private(set) var lastError: CardDataStoreError?
 
 	// MARK: - Widget Data Sharing
 
@@ -46,9 +70,23 @@ class CardDataStore {
 
 	@ObservationIgnored
 	private let retrieveCards: (String) -> CardRetrievalResult
+	@ObservationIgnored
+	private let deleteStoredCard: (UUID) -> Bool
+	@ObservationIgnored
+	private let deleteLegacyImage: (UUID) -> Bool
+	@ObservationIgnored
+	private let saveStoredCard: (CardData) -> Bool
 
-	init(retrieveCards: ((String) -> CardRetrievalResult)? = nil) {
+	init(
+		retrieveCards: ((String) -> CardRetrievalResult)? = nil,
+		deleteStoredCard: ((UUID) -> Bool)? = nil,
+		deleteLegacyImage: ((UUID) -> Bool)? = nil,
+		saveStoredCard: ((CardData) -> Bool)? = nil
+	) {
 		self.retrieveCards = retrieveCards ?? Self.retrieveAllCardData
+		self.deleteStoredCard = deleteStoredCard ?? Self.deleteStoredCardData
+		self.deleteLegacyImage = deleteLegacyImage ?? { ICloudDataManager.shared.deleteImage(for: $0) }
+		self.saveStoredCard = saveStoredCard ?? Self.saveOrUpdateCardData
 		loadCards()
 	}
 
@@ -57,12 +95,15 @@ class CardDataStore {
 		switch retrieveCards(Bundle.main.bundleIdentifier ?? "com.myApp.defaultService") {
 		case .failure:
 			// Preserve in-memory cards and widget snapshot on real Keychain/decode errors.
+			lastError = .retrievalFailed
 			return false
 		case .empty:
 			commitRetrievedCards([])
+			lastError = nil
 			return true
 		case .success(let cards):
 			commitRetrievedCards(cards)
+			lastError = nil
 			return true
 		}
 	}
@@ -104,7 +145,7 @@ class CardDataStore {
 				)
 			]
 			for fixture in fixtures {
-				if saveOrUpdateCardData(fixture) {
+				if saveStoredCard(fixture) {
 					retrievedCard.append(fixture)
 				}
 			}
@@ -163,20 +204,85 @@ class CardDataStore {
 	}
 
 	static func partition(_ cards: [CardData]) -> (cardsByType: [CardType: [CardData]], archivedCards: [CardData]) {
-		let activeCards = cards.filter { !$0.isArchived }
+		let activeCards = deckOrdered(cards.filter { !$0.isArchived })
 		let cardsByType = Dictionary(uniqueKeysWithValues: CardType.allCases.map { type in
 			(type, activeCards.filter { $0.type == type })
 		})
-		return (cardsByType, cards.filter { $0.isArchived })
+		return (cardsByType, deckOrdered(cards.filter { $0.isArchived }))
+	}
+
+	/// Shared ordering policy for every card surface. Older records have no
+	/// `sortIndex`, so their UUID string supplies a deterministic fallback rather
+	/// than letting Keychain iteration order or a title sort change the deck.
+	static func deckOrdered(_ cards: [CardData]) -> [CardData] {
+		cards.sorted { lhs, rhs in
+			if lhs.isFavorite != rhs.isFavorite {
+				return lhs.isFavorite
+			}
+			let lhsIndex = lhs.sortIndex ?? Int.max
+			let rhsIndex = rhs.sortIndex ?? Int.max
+			if lhsIndex != rhsIndex {
+				return lhsIndex < rhsIndex
+			}
+			return lhs.id.uuidString < rhs.id.uuidString
+		}
 	}
 
 	@discardableResult
 	func addCard(_ card: CardData) -> Bool {
-		guard saveOrUpdateCardData(card) else {
-			print("Failed to save card: \(card.id)")
+		updateCard(card)
+	}
+
+	/// Persists before mutating observable state so card editors and the deck
+	/// never show a favorite or order value that did not reach Keychain.
+	@discardableResult
+	func updateCard(_ card: CardData) -> Bool {
+		guard saveStoredCard(card) else {
+			lastError = .persistenceFailed
 			return false
 		}
-		return loadCards()
+		commitPersistedCards([card])
+		lastError = nil
+		return true
+	}
+
+	@discardableResult
+	func setFavorite(cardID: UUID, isFavorite: Bool) -> Bool {
+		guard var card = findCard(by: cardID) else {
+			lastError = .cardNotFound
+			return false
+		}
+		card.isFavorite = isFavorite
+		return updateCard(card)
+	}
+
+	/// Saves the supplied cards one at a time, updating observable state only
+	/// after each durable write. Keychain has no multi-record transaction; if a
+	/// later write fails, the successful prefix remains visible because it is the
+	/// truthful persisted state, and `lastError` reports the incomplete reorder.
+	@discardableResult
+	func updateDeckOrder(_ orderedCards: [CardData]) -> Bool {
+		let currentIDs = Set(allStoredCards.map(\.id))
+		let orderedIDs = orderedCards.map(\.id)
+		guard orderedIDs.count == Set(orderedIDs).count,
+			orderedIDs.allSatisfy({ currentIDs.contains($0) }) else {
+			lastError = .invalidDeckOrder
+			return false
+		}
+
+		var persistedCards: [CardData] = []
+		for card in orderedCards {
+			guard saveStoredCard(card) else {
+				commitPersistedCards(persistedCards)
+				lastError = .persistenceFailed
+				return false
+			}
+			persistedCards.append(card)
+		}
+
+		commitPersistedCards(persistedCards)
+		lastError = nil
+		return true
 	}
 
 	/// Finds a card by its UUID (used for deep linking from widgets)
@@ -186,10 +292,44 @@ class CardDataStore {
 				return card
 			}
 		}
-		return nil
+		return archivedCards.first { $0.id == id }
 	}
 
 	func deleteCard(with id: UUID) -> Bool {
+		// Legacy Other Card images are plaintext iCloud files. Remove them before
+		// metadata so a failed file deletion keeps a visible, retryable record.
+		if let card = findCard(by: id),
+			(card.hasLegacyImage == true || (card.type == .otherCard && card.hasLegacyImage == nil)),
+		   !deleteLegacyImage(id) {
+			lastError = .legacyImageDeletionFailed
+			return false
+		}
+
+		// Remove the minimized App Group projection before Keychain metadata. If
+		// Holder terminates between those writes, a widget may temporarily omit a
+		// still-stored card, but it can never keep showing a card that was deleted.
+		// A normal Keychain failure restores the observable deck and projection.
+		let previousCardsByType = cardsByType
+		let previousArchivedCards = archivedCards
+		for type in CardType.allCases {
+			cardsByType[type]?.removeAll { $0.id == id }
+		}
+		archivedCards.removeAll { $0.id == id }
+		syncCardsToWidget()
+
+		guard deleteStoredCard(id) else {
+			cardsByType = previousCardsByType
+			archivedCards = previousArchivedCards
+			syncCardsToWidget()
+			lastError = .persistenceFailed
+			return false
+		}
+
+		lastError = nil
+		return true
+	}
+
+	private static func deleteStoredCardData(with id: UUID) -> Bool {
 		let query: [String: Any] = [
 			kSecClass as String: kSecClassGenericPassword,
 			kSecAttrService as String: Bundle.main.bundleIdentifier ?? "com.myApp.defaultService",
@@ -197,17 +337,8 @@ class CardDataStore {
 			kSecAttrSynchronizable as String: kCFBooleanTrue!
 		]
 
-		guard SecItemDelete(query as CFDictionary) == errSecSuccess else {
-			return false
-		}
-
-		// Drop in-memory copies before widget sync so timelines match persistence.
-		for type in CardType.allCases {
-			cardsByType[type]?.removeAll { $0.id == id }
-		}
-		archivedCards.removeAll { $0.id == id }
-		syncCardsToWidget()
-		return true
+		let deletionStatus = SecItemDelete(query as CFDictionary)
+		return deletionStatus == errSecSuccess || deletionStatus == errSecItemNotFound
 	}
 
 	// MARK: - Archive
@@ -216,25 +347,35 @@ class CardDataStore {
 	func archiveCard(_ card: CardData) -> Bool {
 		var archivedCard = card
 		archivedCard.isArchived = true
-		guard saveOrUpdateCardData(archivedCard) else {
-			print("Failed to archive card: \(card.id)")
-			return false
-		}
-		return loadCards()
+		return updateCard(archivedCard)
 	}
 
 	@discardableResult
 	func unarchiveCard(_ card: CardData) -> Bool {
 		var unarchivedCard = card
 		unarchivedCard.isArchived = false
-		guard saveOrUpdateCardData(unarchivedCard) else {
-			print("Failed to unarchive card: \(card.id)")
-			return false
-		}
-		return loadCards()
+		return updateCard(unarchivedCard)
 	}
-/// Returns if success
-	private func saveOrUpdateCardData(_ cardData: CardData) -> Bool {
+
+	private var allStoredCards: [CardData] {
+		CardType.allCases.flatMap { cardsByType[$0] ?? [] } + archivedCards
+	}
+
+	private func commitPersistedCards(_ replacements: [CardData]) {
+		guard !replacements.isEmpty else { return }
+		var currentCards = allStoredCards
+		for replacement in replacements {
+			currentCards.removeAll { $0.id == replacement.id }
+			currentCards.append(replacement)
+		}
+		let partition = Self.partition(currentCards)
+		cardsByType = partition.cardsByType
+		archivedCards = partition.archivedCards
+		syncCardsToWidget()
+	}
+
+	/// Returns whether the Keychain write succeeded.
+	private static func saveOrUpdateCardData(_ cardData: CardData) -> Bool {
 		let service = Bundle.main.bundleIdentifier ?? "com.myApp.defaultService"
 		let account = cardData.id.uuidString
 
@@ -318,14 +459,10 @@ class CardDataStore {
 	func syncCardsToWidget() {
 		let allCards = CardType.allCases.flatMap { cardsByType[$0] ?? [] }
 		let widgetCards = allCards.map { card -> [String: Any] in
-			let cleanNumber = card.number.replacingOccurrences(of: " ", with: "")
-			let lastFour = String(cleanNumber.suffix(4))
-			let displayName = card.description.isEmpty ? card.name : card.description
 			return [
 				"id": card.id.uuidString,
-				"displayName": displayName,
-				"lastFourDigits": lastFour,
-				"cardType": card.type.rawValue,
+				"displayName": Self.widgetDisplayName(for: card),
+				"lastFourDigits": Self.widgetLastFourDigits(for: card),
 				"network": card.network.rawValue
 			]
 		}
@@ -334,6 +471,21 @@ class CardDataStore {
 			sharedDefaults?.set(data, forKey: widgetCardsKey)
 		}
 		WidgetCenter.shared.reloadAllTimelines()
+	}
+
+	/// `name` is the cardholder field, not a safe brand-label fallback for a widget.
+	/// When no explicit card label exists, use the generic type instead.
+	static func widgetDisplayName(for card: CardData) -> String {
+		card.displayLabel
+	}
+
+	/// A widget tail is safe only when it hides at least one leading character.
+	/// Short loyalty, travel, or Other Card identifiers are omitted rather than
+	/// being copied in full into the App Group projection.
+	static func widgetLastFourDigits(for card: CardData) -> String {
+		let identifier = card.number.filter { !$0.isWhitespace }
+		guard identifier.count > 4 else { return "" }
+		return String(identifier.suffix(4))
 	}
 
 }

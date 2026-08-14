@@ -184,13 +184,13 @@ struct CreditCard: App {
             .withSDK(.shared)
             .showOnboardingIfNeeded(features: [.init(image: Image(systemName: "lock.shield"),
                                                      title: "Secure Storage",
-                                                     content: "Keep your card details safe with state-of-the-art encryption."),
+                                                     content: "Cards are protected by Keychain. New document photos are encrypted and kept on this device."),
                                                .init(image: Image(systemName: "faceid"),
                                                      title: "Biometric Authentication",
-                                                     content: "Access your cards securely using Face ID or Touch ID."),
-                                               .init(image: Image(systemName: "square.and.arrow.up"),
-                                                     title: "Easily Shareable",
-                                                     content: "Quickly and securely share card details with trusted contacts."),
+                                                     content: "Access sensitive details with Face ID, Touch ID, or your device passcode."),
+                                               .init(image: Image(systemName: "doc.on.doc"),
+                                                     title: "Controlled Copying",
+                                                     content: "Reveal one field briefly, then copy only the value you need."),
                                                .init(image: Image(systemName: "hand.raised.slash"),
                                                      title: "Privacy First, Open Source",
                                                      content: "Your data stays private and secure, and the app's code is open-source for transparency.")]

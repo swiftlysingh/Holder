@@ -16,13 +16,14 @@ Recognising the challenges in regions without Apple Pay, Holder was created to m
 Holder provides effortless access to your card details, securely stored and ready to be used in any online transaction with just a tap.
 
 ## Why Choose Holder?
-Your card details are safely stored in the iOS Keychain and guarded by robust encryption. Operating entirely offline, Holder ensures maximum privacy and security. Holder integrates seamlessly with Face ID and Touch ID, ensuring that only you can access your sensitive card information.
+Card details are protected by the system Keychain and can follow your iCloud Keychain settings. New document photos are encrypted and stored on-device; legacy Other Card images may remain in iCloud until removed. Holder uses Face ID, Touch ID, or the device passcode to gate sensitive details, and documents re-lock individually.
 
 ## Key Features
-- Secure storage for Credit, Debit, and other cards.
-- Biometric authentication for enhanced security.
-- User-friendly interface for effortless navigation.
-- Quick copy-paste feature for online transactions.
+- Masked payment, loyalty, and travel cards in a reorderable pass deck.
+- Encrypted, device-local document photos with front/back scanning and typed fields.
+- Face ID, Touch ID, or device-passcode gates with short-lived sensitive-field reveals.
+- Small, medium, Lock Screen, and Control Center widgets that expose at most masked state.
+- Explicit migration of legacy Other Card photos into the encrypted document vault.
 - Committed to openness, soon to be open-source.
 
 ## Your Privacy, Our Priority

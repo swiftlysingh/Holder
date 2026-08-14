@@ -14,6 +14,14 @@
 		AA0000082F0BC0000000002C /* HapticService.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000032F0BC0000000001C /* HapticService.swift */; };
 		AA0000092F0BC0000000002D /* ReviewService.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000042F0BC0000000001D /* ReviewService.swift */; };
 		AA00000A2F0BC0000000002E /* MenuBarView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000052F0BC0000000001E /* MenuBarView.swift */; platformFilters = (macos, ); };
+		F10000012F40000100000001 /* HolderTheme.swift in Sources */ = {isa = PBXBuildFile; fileRef = F10000112F40000100000011 /* HolderTheme.swift */; };
+		F10000022F40000100000002 /* HolderCardFace.swift in Sources */ = {isa = PBXBuildFile; fileRef = F10000122F40000100000012 /* HolderCardFace.swift */; };
+		F10000032F40000100000003 /* DocumentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F10000132F40000100000013 /* DocumentView.swift */; };
+		F10000082F40000100000008 /* DocumentScannerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F10000182F40000100000018 /* DocumentScannerView.swift */; };
+		F10000042F40000100000004 /* DocumentData.swift in Sources */ = {isa = PBXBuildFile; fileRef = F10000142F40000100000014 /* DocumentData.swift */; };
+		F10000052F40000100000005 /* DocumentAttachmentStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = F10000152F40000100000015 /* DocumentAttachmentStore.swift */; };
+		F10000062F40000100000006 /* DocumentDataStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = F10000162F40000100000016 /* DocumentDataStore.swift */; };
+		F10000072F40000100000007 /* LegacyImageMigrationService.swift in Sources */ = {isa = PBXBuildFile; fileRef = F10000172F40000100000017 /* LegacyImageMigrationService.swift */; };
 		EE1D3E902B66AE66009733A5 /* Tip.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE1D3E8F2B66AE66009733A5 /* Tip.swift */; };
 		EE1D3E922B66AE83009733A5 /* CardViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE1D3E912B66AE83009733A5 /* CardViewModel.swift */; };
 		EE1D3E982B69379E009733A5 /* SettingsViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE1D3E972B69379E009733A5 /* SettingsViewModel.swift */; };
@@ -82,6 +90,14 @@
 		AA0000032F0BC0000000001C /* HapticService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HapticService.swift; sourceTree = "<group>"; };
 		AA0000042F0BC0000000001D /* ReviewService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReviewService.swift; sourceTree = "<group>"; };
 		AA0000052F0BC0000000001E /* MenuBarView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MenuBarView.swift; sourceTree = "<group>"; };
+		F10000112F40000100000011 /* HolderTheme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HolderTheme.swift; sourceTree = "<group>"; };
+		F10000122F40000100000012 /* HolderCardFace.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HolderCardFace.swift; sourceTree = "<group>"; };
+		F10000132F40000100000013 /* DocumentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DocumentView.swift; sourceTree = "<group>"; };
+		F10000182F40000100000018 /* DocumentScannerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DocumentScannerView.swift; sourceTree = "<group>"; };
+		F10000142F40000100000014 /* DocumentData.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DocumentData.swift; sourceTree = "<group>"; };
+		F10000152F40000100000015 /* DocumentAttachmentStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DocumentAttachmentStore.swift; sourceTree = "<group>"; };
+		F10000162F40000100000016 /* DocumentDataStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DocumentDataStore.swift; sourceTree = "<group>"; };
+		F10000172F40000100000017 /* LegacyImageMigrationService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LegacyImageMigrationService.swift; sourceTree = "<group>"; };
 		EE1D3E8F2B66AE66009733A5 /* Tip.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Tip.swift; sourceTree = "<group>"; };
 		EE1D3E912B66AE83009733A5 /* CardViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CardViewModel.swift; sourceTree = "<group>"; };
 		EE1D3E972B69379E009733A5 /* SettingsViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsViewModel.swift; sourceTree = "<group>"; };
@@ -183,6 +199,24 @@
 			path = macOS;
 			sourceTree = "<group>";
 		};
+		F10000212F40000100000021 /* Design */ = {
+			isa = PBXGroup;
+			children = (
+				F10000112F40000100000011 /* HolderTheme.swift */,
+				F10000122F40000100000012 /* HolderCardFace.swift */,
+			);
+			path = Design;
+			sourceTree = "<group>";
+		};
+		F10000222F40000100000022 /* DocumentView */ = {
+			isa = PBXGroup;
+			children = (
+				F10000132F40000100000013 /* DocumentView.swift */,
+				F10000182F40000100000018 /* DocumentScannerView.swift */,
+			);
+			path = DocumentView;
+			sourceTree = "<group>";
+		};
 		EE1D3E8D2B66AE2A009733A5 /* Home */ = {
 			isa = PBXGroup;
 			children = (
@@ -218,6 +252,10 @@
 			children = (
 				EE960C4E2B4AC00B00B67805 /* CardDataStore.swift */,
 				EE599BB52B24495F002F49F8 /* CardData.swift */,
+				F10000142F40000100000014 /* DocumentData.swift */,
+				F10000152F40000100000015 /* DocumentAttachmentStore.swift */,
+				F10000162F40000100000016 /* DocumentDataStore.swift */,
+				F10000172F40000100000017 /* LegacyImageMigrationService.swift */,
 			);
 			path = Model;
 			sourceTree = "<group>";
@@ -259,8 +297,10 @@
 				FF9452F82BDE314E00731D8B /* Secrets.plist */,
 				EEBB52E92B238D6600035B92 /* CreditCard.swift */,
 				AA1000032F30000100000003 /* Analytics */,
+				F10000212F40000100000021 /* Design */,
 				EE1D3E8D2B66AE2A009733A5 /* Home */,
 				EE1D3E932B66B133009733A5 /* CardView */,
+				F10000222F40000100000022 /* DocumentView */,
 				EEBED8C92B6D7F8A00BEBE87 /* ScanView */,
 				EE1D3E8E2B66AE36009733A5 /* Settings */,
 				EE1D3E942B66B156009733A5 /* Model */,
@@ -464,12 +504,20 @@
 				"$(SRCROOT)/cards/CardView/CardViewModel.swift",
 				"$(SRCROOT)/cards/CardView/Tip.swift",
 				"$(SRCROOT)/cards/CreditCard.swift",
+				"$(SRCROOT)/cards/Design/HolderCardFace.swift",
+				"$(SRCROOT)/cards/Design/HolderTheme.swift",
+				"$(SRCROOT)/cards/DocumentView/DocumentScannerView.swift",
+				"$(SRCROOT)/cards/DocumentView/DocumentView.swift",
 				"$(SRCROOT)/cards/Extensions.swift",
 				"$(SRCROOT)/cards/Home/ArchivedCardsView.swift",
 				"$(SRCROOT)/cards/Home/HomeView.swift",
 				"$(SRCROOT)/cards/Home/HomeViewModel.swift",
 				"$(SRCROOT)/cards/Model/CardData.swift",
 				"$(SRCROOT)/cards/Model/CardDataStore.swift",
+				"$(SRCROOT)/cards/Model/DocumentAttachmentStore.swift",
+				"$(SRCROOT)/cards/Model/DocumentData.swift",
+				"$(SRCROOT)/cards/Model/DocumentDataStore.swift",
+				"$(SRCROOT)/cards/Model/LegacyImageMigrationService.swift",
 				"$(SRCROOT)/cards/Model/ICloudDataManager.swift",
 				"$(SRCROOT)/cards/Platform/HapticService.swift",
 				"$(SRCROOT)/cards/Platform/PasteboardService.swift",
@@ -508,6 +556,14 @@
 			files = (
 				AA1000052F30000100000005 /* AppAnalyticsEvent.swift in Sources */,
 				AA1000062F30000100000006 /* AppAnalyticsScreen.swift in Sources */,
+				F10000012F40000100000001 /* HolderTheme.swift in Sources */,
+				F10000022F40000100000002 /* HolderCardFace.swift in Sources */,
+				F10000032F40000100000003 /* DocumentView.swift in Sources */,
+				F10000082F40000100000008 /* DocumentScannerView.swift in Sources */,
+				F10000042F40000100000004 /* DocumentData.swift in Sources */,
+				F10000052F40000100000005 /* DocumentAttachmentStore.swift in Sources */,
+				F10000062F40000100000006 /* DocumentDataStore.swift in Sources */,
+				F10000072F40000100000007 /* LegacyImageMigrationService.swift in Sources */,
 				EE1D3E922B66AE83009733A5 /* CardViewModel.swift in Sources */,
 				EE599BAC2B23900A002F49F8 /* AppSettingsView.swift in Sources */,
 				EE8ADBEF2B66A5B600F0DC29 /* HomeViewModel.swift in Sources */,
@@ -706,7 +762,7 @@
 				INFOPLIST_FILE = cards/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = "Holder Beta";
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.utilities";
-				INFOPLIST_KEY_NSCameraUsageDescription = "To scan cards";
+				INFOPLIST_KEY_NSCameraUsageDescription = "Holder uses the camera to scan cards and document photos.";
 				INFOPLIST_KEY_NSFaceIDUsageDescription = "To protect card details";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
@@ -865,7 +921,7 @@
 				INFOPLIST_FILE = cards/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = "Holder-debug";
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.utilities";
-				INFOPLIST_KEY_NSCameraUsageDescription = "To scan cards";
+				INFOPLIST_KEY_NSCameraUsageDescription = "Holder uses the camera to scan cards and document photos.";
 				INFOPLIST_KEY_NSFaceIDUsageDescription = "To protect card details";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
@@ -905,7 +961,7 @@
 				INFOPLIST_FILE = cards/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = Holder;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.utilities";
-				INFOPLIST_KEY_NSCameraUsageDescription = "To scan cards";
+				INFOPLIST_KEY_NSCameraUsageDescription = "Holder uses the camera to scan cards and document photos.";
 				INFOPLIST_KEY_NSFaceIDUsageDescription = "To protect card details";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;

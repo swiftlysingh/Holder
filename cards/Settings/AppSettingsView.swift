@@ -18,17 +18,17 @@ struct AppSettingsView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 4) {
             Toggle("Require Authentication", isOn: $isAuthEnabled)
-            Text("Use Touch ID, Face ID, or your device password before showing card details.")
+            Text("Use Touch ID, Face ID, or your device passcode before showing card details. Documents always re-lock individually.")
                 .font(.caption)
                 .foregroundStyle(.secondary)
         }
         #if os(macOS)
-        Stepper("Lock after: \(settings.authTimeout) seconds",
+		Stepper("Lock after inactivity: \(settings.authTimeout) seconds",
                 value: $settings.authTimeout, in: 1...120)
             .disabled(!isAuthEnabled)
         #else
         HStack(alignment: .center) {
-            Text("Lock after (seconds)")
+			Text("Lock after inactivity (seconds)")
             Spacer()
             TextField("", value: $settings.authTimeout, format: .number)
                 .keyboardType(.numberPad)
@@ -39,16 +39,15 @@ struct AppSettingsView: View {
         }
         .disabled(!isAuthEnabled)
         #endif
-        VStack(alignment: .leading) {
-            Text("Number of card digits visible on home (Restart Required)")
-            Slider(value: $settings.showNumber, in: 1...10, step: 1) {
-                Text("Steps")
-            } minimumValueLabel: {
-                Text("1")
-            } maximumValueLabel: {
-                Text("10")
-            }
+        VStack(alignment: .leading, spacing: 4) {
+            Label("Storage & Privacy", systemImage: "lock.shield")
+                .font(.headline)
+            Text("Cards are protected by Keychain and may sync through iCloud Keychain when you enable it. New document photos are encrypted and stored only on this device. Legacy Other Card images may remain in iCloud until you remove them.")
+                .font(.caption)
+                .foregroundStyle(.secondary)
+                .fixedSize(horizontal: false, vertical: true)
         }
+        .accessibilityElement(children: .combine)
         #if os(macOS)
         Toggle("Keep in Menu Bar", isOn: $settings.keepInMenuBar)
         #endif
