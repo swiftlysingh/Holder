@@ -10,7 +10,9 @@ import SwiftUI
 
 struct ArchivedCardsView: View {
 	@ObservedObject var model: HomeViewModel
+	@EnvironmentObject private var authenticationSession: AuthenticationSession
 	@Environment(\.analytics) private var analytics
+	@State private var cardPendingDeletion: CardData?
 
 	var body: some View {
 		List {
@@ -25,7 +27,7 @@ struct ArchivedCardsView: View {
 					cardRow(for: card)
 						.swipeActions(edge: .trailing, allowsFullSwipe: false) {
 							Button(role: .destructive) {
-								deleteCard(card)
+								cardPendingDeletion = card
 							} label: {
 								Label("Delete", systemImage: "trash")
 							}
@@ -43,7 +45,7 @@ struct ArchivedCardsView: View {
 								Label("Unarchive", systemImage: "arrow.uturn.backward")
 							}
 							Button(role: .destructive) {
-								deleteCard(card)
+								cardPendingDeletion = card
 							} label: {
 								Label("Delete", systemImage: "trash")
 							}
@@ -52,6 +54,20 @@ struct ArchivedCardsView: View {
 			}
 		}
 		.navigationTitle("Archived Cards")
+		.confirmationDialog(
+			"Delete this card?",
+			isPresented: Binding(
+				get: { cardPendingDeletion != nil },
+				set: { if !$0 { cardPendingDeletion = nil } }
+			),
+			presenting: cardPendingDeletion
+		) { card in
+			Button("Delete Card", role: .destructive) {
+				authenticateAndDelete(card)
+			}
+		} message: { _ in
+			Text("This cannot be undone.")
+		}
 		.sdkScreen(AppAnalyticsScreen.archivedCards)
 	}
 
@@ -60,6 +76,16 @@ struct ArchivedCardsView: View {
 			? .cardDeleted(location: .archived)
 			: .cardDeleteFailed(location: .archived)
 		track(event)
+	}
+
+	private func authenticateAndDelete(_ card: CardData) {
+		authenticationSession.authenticateForSensitiveAccess(
+			reason: "Authenticate to delete this card."
+		) { success in
+			guard success else { return }
+			deleteCard(card)
+			cardPendingDeletion = nil
+		}
 	}
 
 	private func unarchiveCard(_ card: CardData) {
@@ -88,7 +114,7 @@ struct ArchivedCardsView: View {
 				} else {
 					Text(card.name)
 				}
-				Text(card.number.toSecureCard())
+				Text(card.number.maskedCardNumber())
 					.foregroundStyle(.secondary)
 			}
 		}

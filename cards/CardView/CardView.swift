@@ -18,9 +18,7 @@ import AppKit
 struct CardView: View {
 
 	@StateObject private var model: CardViewModel
-	@Environment(\.scenePhase) private var scenePhase
-	@AppStorage("isAuthEnabled") private var isAuthEnabled = true
-	@AppStorage("timeout") private var authTimeout = 10
+	@EnvironmentObject private var authenticationSession: AuthenticationSession
 	@Environment(\.analytics) private var analytics
 	#if os(macOS)
 	@State private var copiedField: String?
@@ -28,6 +26,11 @@ struct CardView: View {
 
 	init(model: CardViewModel) {
 		_model = StateObject(wrappedValue: model)
+	}
+
+	private var isCVVLocked: Bool {
+		!model.isAddNewFlow
+			&& !authenticationSession.isSensitiveAccessFresh
 	}
 
 	/// Formats expiration date input (auto-inserts "/" after 2 digits, limits to 5 chars)
@@ -49,41 +52,6 @@ struct CardView: View {
 			getCardListView()
 			#endif
 		}
-		.onAppear {
-			model.authenticateUser()
-		}
-		.onChange(of: scenePhase) {
-			#if os(macOS)
-			let shouldScheduleLock = scenePhase == .inactive || scenePhase == .background
-			#else
-			let shouldScheduleLock = scenePhase == .background
-			#endif
-
-			if scenePhase == .active {
-				model.resolveScheduledLockOnActive()
-				// onChange does not fire for the initial phase, so onAppear owns the first prompt.
-				if isAuthEnabled
-					&& !model.isAuthenticated
-					&& !model.isAuthenticating {
-					model.authenticateUser()
-				}
-			} else if shouldScheduleLock && isAuthEnabled && !model.isAuthenticating {
-				model.scheduleLock(after: .seconds(authTimeout))
-			}
-		}
-		.onChange(of: isAuthEnabled) { _, isEnabled in
-			if isEnabled {
-				model.lock()
-				if scenePhase == .active {
-					model.authenticateUser()
-				}
-			} else {
-				model.authenticateUser()
-			}
-		}
-		.onDisappear {
-			model.lock()
-		}
 		.sdkScreen(
 			model.isAddNewFlow
 				? AppAnalyticsScreen.cardEditor
@@ -92,20 +60,31 @@ struct CardView: View {
 	}
 
 	#if os(iOS)
-	fileprivate func itemView(heading: String, value: Binding<String>, _ type: UIKeyboardType) -> some View {
+	fileprivate func itemView(
+		heading: String,
+		value: Binding<String>,
+		keyboardType: UIKeyboardType,
+		requiresAuthentication: Bool
+	) -> some View {
 		return HStack {
 			Text(heading)
 				.bold()
 			Spacer()
-			if !model.isAuthenticated {
-				SecureField("", text: value)
-					.multilineTextAlignment(.trailing)
+			if requiresAuthentication && isCVVLocked {
+				Button {
+					authenticateForCVV()
+				} label: {
+					Label("Authenticate to view", systemImage: "lock.fill")
+						.labelStyle(.titleAndIcon)
+				}
+				.disabled(authenticationSession.isAuthenticating)
+				.accessibilityLabel("Authenticate to view security code")
 			} else {
 				TextField("", text: value)
 					.multilineTextAlignment(.trailing)
 					.disabled(!model.isEditing)
 					.foregroundColor(model.isEditing ? .blue : .accentColor)
-					.keyboardType(type)
+					.keyboardType(keyboardType)
 					.contextMenu(menuItems: {
 						Button(action: {
 							model.copyAction(with: value.wrappedValue)
@@ -117,21 +96,28 @@ struct CardView: View {
 					})
 			}
 		}
-		.if(!model.isEditing, transform: { view in
+		.if(!model.isEditing && (!requiresAuthentication || !isCVVLocked), transform: { view in
 			view.onTapGesture(count: 2, perform: {
 				model.copyAction(with: value.wrappedValue)
 			})
 		})
 	}
 	#else
-	fileprivate func itemView(heading: String, value: Binding<String>) -> some View {
+	fileprivate func itemView(
+		heading: String,
+		value: Binding<String>,
+		requiresAuthentication: Bool
+	) -> some View {
 		return HStack {
 			Text(heading)
 				.bold()
 			Spacer()
-			if !model.isAuthenticated {
-				SecureField("", text: value)
-					.multilineTextAlignment(.trailing)
+			if requiresAuthentication && isCVVLocked {
+				Button("Authenticate to view") {
+					authenticateForCVV()
+				}
+				.disabled(authenticationSession.isAuthenticating)
+				.accessibilityLabel("Authenticate to view security code")
 			} else {
 				TextField("", text: value)
 					.multilineTextAlignment(.trailing)
@@ -148,7 +134,7 @@ struct CardView: View {
 					})
 			}
 		}
-		.if(!model.isEditing, transform: { view in
+		.if(!model.isEditing && (!requiresAuthentication || !isCVVLocked), transform: { view in
 			view.onTapGesture(count: 2, perform: {
 				model.copyAction(with: value.wrappedValue)
 			})
@@ -162,17 +148,22 @@ struct CardView: View {
 		return List {
 			Section {
 				#if os(iOS)
-				let fields: [(String, Binding<String>, UIKeyboardType)] = [
-					("Name", $model.card.name, .alphabet),
-					("Number", $model.card.number, .numbersAndPunctuation),
-					("Expiration", $model.card.expiration, .numberPad),
-					("Security Code", $model.card.cvv, .numberPad),
-					("Description", $model.card.description, .alphabet)
+				let fields: [(String, Binding<String>, UIKeyboardType, Bool)] = [
+					("Name", $model.card.name, .alphabet, false),
+					("Number", $model.card.number, .numbersAndPunctuation, false),
+					("Expiration", $model.card.expiration, .numberPad, false),
+					("Security Code", $model.card.cvv, .numberPad, true),
+					("Description", $model.card.description, .alphabet, false)
 				]
 
-				ForEach(fields, id: \.0) { heading, value, keyboardType in
+				ForEach(fields, id: \.0) { heading, value, keyboardType, requiresAuthentication in
 					if !value.wrappedValue.isEmpty || model.isEditing {
-						let view = itemView(heading: heading, value: value, keyboardType)
+						let view = itemView(
+							heading: heading,
+							value: value,
+							keyboardType: keyboardType,
+							requiresAuthentication: requiresAuthentication
+						)
 
 						if heading == "Number" && !model.isEditing {
 							view.popoverTip(tip, arrowEdge: .top)
@@ -186,17 +177,21 @@ struct CardView: View {
 					}
 				}
 				#else
-				let fields: [(String, Binding<String>)] = [
-					("Name", $model.card.name),
-					("Number", $model.card.number),
-					("Expiration", $model.card.expiration),
-					("Security Code", $model.card.cvv),
-					("Description", $model.card.description)
+				let fields: [(String, Binding<String>, Bool)] = [
+					("Name", $model.card.name, false),
+					("Number", $model.card.number, false),
+					("Expiration", $model.card.expiration, false),
+					("Security Code", $model.card.cvv, true),
+					("Description", $model.card.description, false)
 				]
 
-				ForEach(fields, id: \.0) { heading, value in
+				ForEach(fields, id: \.0) { heading, value, requiresAuthentication in
 					if !value.wrappedValue.isEmpty || model.isEditing {
-						let view = itemView(heading: heading, value: value)
+						let view = itemView(
+							heading: heading,
+							value: value,
+							requiresAuthentication: requiresAuthentication
+						)
 
 						if heading == "Number" && !model.isEditing {
 							view.popoverTip(tip, arrowEdge: .top)
@@ -238,16 +233,10 @@ struct CardView: View {
 					Image(uiImage: image)
 						.resizable()
 						.scaledToFit()
-						.if(!model.isAuthenticated, transform: { view in
-							view.blur(radius: 10, opaque: true)
-						})
 					#else
 					Image(nsImage: image)
 						.resizable()
 						.scaledToFit()
-						.if(!model.isAuthenticated, transform: { view in
-							view.blur(radius: 10, opaque: true)
-						})
 					#endif
 				}
 			}
@@ -353,9 +342,7 @@ struct CardView: View {
 			}
 		}
 		.toolbar {
-			ShareLink(item: model.card.toShareString()) {
-				Label("Click to share", systemImage: "square.and.arrow.up")
-			}
+			sensitiveShareMenu
 			Button(action: {
 				model.isEditing.toggle()
 				saveCardIfNeeded()
@@ -363,7 +350,6 @@ struct CardView: View {
 				Text(model.isEditing ? "Done" : "Edit")
 			}
 		}
-		.disabled(!$model.isAuthenticated.wrappedValue)
 		#if os(iOS)
 		.toolbar {
 			if model.card.number.isEmpty {
@@ -428,6 +414,39 @@ struct CardView: View {
 		}
 	}
 
+	private func authenticateForCVV() {
+		authenticationSession.authenticateForSensitiveAccess(
+			reason: "Authenticate to view this card’s security code."
+		)
+	}
+
+	@ViewBuilder
+	private var sensitiveShareMenu: some View {
+		if authenticationSession.isSensitiveAccessFresh {
+			Menu {
+				ShareLink(item: model.card.toShareString(includeSecurityCode: false)) {
+					Label("Share without Security Code", systemImage: "square.and.arrow.up")
+				}
+				if !model.card.cvv.isEmpty {
+					ShareLink(item: model.card.toShareString(includeSecurityCode: true)) {
+						Label("Share with Security Code", systemImage: "lock.open.fill")
+					}
+				}
+			} label: {
+				Label("Share", systemImage: "square.and.arrow.up")
+			}
+		} else {
+			Button {
+				authenticationSession.authenticateForSensitiveAccess(
+					reason: "Authenticate to share card details."
+				)
+			} label: {
+				Label("Authenticate to Share", systemImage: "lock.open.fill")
+			}
+			.disabled(authenticationSession.isAuthenticating)
+		}
+	}
+
 	#if os(macOS)
 	private func selectImageFile() {
 		let panel = NSOpenPanel()
@@ -455,7 +474,7 @@ struct CardView: View {
 		ScrollView {
 			VStack(spacing: 24) {
 				// Visual Card Preview (only for credit/debit cards)
-				if model.card.type != .otherCard && model.isAuthenticated && !model.isEditing {
+				if model.card.type != .otherCard && !model.isEditing {
 					macOSCardPreview()
 				}
 
@@ -466,9 +485,6 @@ struct CardView: View {
 						.scaledToFit()
 						.frame(maxHeight: 300)
 						.clipShape(RoundedRectangle(cornerRadius: 12))
-						.if(!model.isAuthenticated, transform: { view in
-							view.blur(radius: 10, opaque: true)
-						})
 				}
 
 				// Card Details Form
@@ -482,9 +498,7 @@ struct CardView: View {
 		.scrollContentBackground(.hidden)
 		.contentMargins(0)
 		.toolbar {
-			ShareLink(item: model.card.toShareString()) {
-				Label("Share", systemImage: "square.and.arrow.up")
-			}
+			sensitiveShareMenu
 			Button(action: {
 				model.isEditing.toggle()
 				saveCardIfNeeded()
@@ -492,7 +506,6 @@ struct CardView: View {
 				Text(model.isEditing ? "Done" : "Edit")
 			}
 		}
-		.disabled(!model.isAuthenticated)
 	}
 
 	@ViewBuilder
@@ -579,12 +592,16 @@ struct CardView: View {
 							Text("CVV")
 								.font(.system(size: 9, weight: .medium))
 								.foregroundStyle(.white.opacity(0.6))
-							Text("•••")
+							Text(isCVVLocked ? "•••" : model.card.cvv)
 								.font(.system(size: 13, weight: .medium, design: .monospaced))
 								.foregroundStyle(.white)
 						}
 						.onTapGesture {
-							copyToClipboard(model.card.cvv, field: "cvv")
+							if isCVVLocked {
+								authenticateForCVV()
+							} else {
+								copyToClipboard(model.card.cvv, field: "cvv")
+							}
 						}
 					}
 				}
@@ -625,7 +642,11 @@ struct CardView: View {
 							formatExpirationIfNeeded(newValue)
 						}
 					Divider()
-					macOSFormRow(label: "CVV", value: $model.card.cvv, isEditing: true)
+					if isCVVLocked {
+						macOSCopyableRow(label: "CVV", value: "•••", field: "cvv", requiresAuthentication: true)
+					} else {
+						macOSFormRow(label: "CVV", value: $model.card.cvv, isEditing: true)
+					}
 					Divider()
 					macOSFormRow(label: "Description", value: $model.card.description, isEditing: true)
 				} else {
@@ -635,15 +656,20 @@ struct CardView: View {
 						Divider()
 					}
 					if !model.card.number.isEmpty {
-						macOSCopyableRow(label: "Number", value: model.isAuthenticated ? model.card.number : "••••••••••••••••", field: "number")
+						macOSCopyableRow(label: "Number", value: model.card.number, field: "number")
 						Divider()
 					}
 					if !model.card.expiration.isEmpty {
-						macOSCopyableRow(label: "Expiration", value: model.isAuthenticated ? model.card.expiration : "••/••", field: "exp")
+						macOSCopyableRow(label: "Expiration", value: model.card.expiration, field: "exp")
 						Divider()
 					}
 					if !model.card.cvv.isEmpty {
-						macOSCopyableRow(label: "CVV", value: model.isAuthenticated ? model.card.cvv : "•••", field: "cvv")
+						macOSCopyableRow(
+							label: "CVV",
+							value: isCVVLocked ? "•••" : model.card.cvv,
+							field: "cvv",
+							requiresAuthentication: true
+						)
 						Divider()
 					}
 					if !model.card.description.isEmpty {
@@ -746,9 +772,16 @@ struct CardView: View {
 	}
 
 	@ViewBuilder
-	private func macOSCopyableRow(label: String, value: String, field: String) -> some View {
+	private func macOSCopyableRow(
+		label: String,
+		value: String,
+		field: String,
+		requiresAuthentication: Bool = false
+	) -> some View {
 		Button {
-			if model.isAuthenticated {
+			if requiresAuthentication && isCVVLocked {
+				authenticateForCVV()
+			} else {
 				copyToClipboard(getActualValue(for: field), field: field)
 			}
 		} label: {

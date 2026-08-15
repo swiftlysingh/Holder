@@ -1,35 +1,21 @@
 #if os(macOS)
-import Combine
 import XCTest
 @testable import Holder
 
-final class MenuBarSessionTests: XCTestCase {
-	func testContentStateLocksBeforeCheckingCardsOrLoadStatus() {
+final class MenuBarContentStateTests: XCTestCase {
+	func testContentStateShowsCardsBeforeLoadFailure() {
 		XCTAssertEqual(
 			MenuBarContentState(
-				isAuthEnabled: true,
-				isUnlocked: false,
-				hasActiveCards: false,
+				hasActiveCards: true,
 				didLoadFail: true
 			),
-			.locked
-		)
-		XCTAssertEqual(
-			MenuBarContentState(
-				isAuthEnabled: true,
-				isUnlocked: false,
-				hasActiveCards: true,
-				didLoadFail: false
-			),
-			.locked
+			.cards
 		)
 	}
 
-	func testContentStateShowsCardsWithoutAuthentication() {
+	func testContentStateShowsCards() {
 		XCTAssertEqual(
 			MenuBarContentState(
-				isAuthEnabled: false,
-				isUnlocked: false,
 				hasActiveCards: true,
 				didLoadFail: false
 			),
@@ -40,8 +26,6 @@ final class MenuBarSessionTests: XCTestCase {
 	func testContentStateDistinguishesEmptyFromUnavailable() {
 		XCTAssertEqual(
 			MenuBarContentState(
-				isAuthEnabled: false,
-				isUnlocked: false,
 				hasActiveCards: false,
 				didLoadFail: false
 			),
@@ -49,8 +33,6 @@ final class MenuBarSessionTests: XCTestCase {
 		)
 		XCTAssertEqual(
 			MenuBarContentState(
-				isAuthEnabled: false,
-				isUnlocked: false,
 				hasActiveCards: false,
 				didLoadFail: true
 			),
@@ -61,8 +43,6 @@ final class MenuBarSessionTests: XCTestCase {
 	func testContentStateKeepsCachedCardsVisibleAfterFailedRefresh() {
 		XCTAssertEqual(
 			MenuBarContentState(
-				isAuthEnabled: false,
-				isUnlocked: false,
 				hasActiveCards: true,
 				didLoadFail: true
 			),
@@ -70,53 +50,5 @@ final class MenuBarSessionTests: XCTestCase {
 		)
 	}
 
-	@MainActor
-	func testSessionLocksAtTimeoutAndCanBeCancelledImmediately() async throws {
-		let sleeper = ControllableAsyncSleeper()
-		let session = MenuBarSession(sleeper: sleeper)
-
-		session.unlock(for: .seconds(60))
-		XCTAssertTrue(session.isUnlocked)
-
-		await sleeper.waitUntilSleeping(count: 1)
-		await sleeper.advance()
-		await waitUntilLocked(session)
-		XCTAssertFalse(session.isUnlocked)
-
-		session.unlock(for: .seconds(60))
-		XCTAssertTrue(session.isUnlocked)
-		session.lock()
-		XCTAssertFalse(session.isUnlocked)
-	}
-
-	@MainActor
-	func testReplacementUnlockCancelsPriorTimeoutDeadline() async throws {
-		let sleeper = ControllableAsyncSleeper()
-		let session = MenuBarSession(sleeper: sleeper)
-
-		// Schedule a timeout, then replace it. Wait for the second cumulative
-		// registration before completing the active waiter so the first cannot lock.
-		session.unlock(for: .seconds(1))
-		await sleeper.waitUntilSleeping(count: 1)
-		session.unlock(for: .seconds(2))
-		await sleeper.waitUntilSleeping(count: 2)
-		let replacementDuration = await sleeper.requestedDuration(at: 1)
-		XCTAssertEqual(replacementDuration, .seconds(2))
-		XCTAssertTrue(session.isUnlocked)
-
-		await sleeper.advance()
-		await waitUntilLocked(session)
-		XCTAssertFalse(session.isUnlocked)
-
-		session.lock()
-		XCTAssertFalse(session.isUnlocked)
-	}
-
-	@MainActor
-	private func waitUntilLocked(_ session: MenuBarSession) async {
-		for await isUnlocked in session.$isUnlocked.values {
-			if !isUnlocked { return }
-		}
-	}
 }
 #endif

@@ -11,8 +11,10 @@ import SinghDevKit
 
 struct HomeView: View {
 	@ObservedObject var model: HomeViewModel
+	@EnvironmentObject private var authenticationSession: AuthenticationSession
 	@Environment(\.analytics) private var analytics
 	@Environment(\.sdk) private var sdk
+	@State private var cardPendingDeletion: CardData?
 
 	init(cardDataStore: CardDataStore = CardDataStore()) {
 		self.model = HomeViewModel(cardDataStore: cardDataStore)
@@ -27,7 +29,7 @@ struct HomeView: View {
 							getRowforCards(with: card)
 								.swipeActions(edge: .trailing, allowsFullSwipe: false) {
 									Button(role: .destructive) {
-										deleteCard(card)
+										cardPendingDeletion = card
 									} label: {
 										Label("Delete", systemImage: "trash")
 									}
@@ -45,7 +47,7 @@ struct HomeView: View {
 										Label("Archive", systemImage: "archivebox")
 									}
 									Button(role: .destructive) {
-										deleteCard(card)
+										cardPendingDeletion = card
 									} label: {
 										Label("Delete", systemImage: "trash")
 									}
@@ -85,14 +87,6 @@ struct HomeView: View {
 				}
 			}
 			#endif
-			.alert("Enable Biometrics",isPresented: model.$isFirstLaunch, actions: {
-				Button("Yes", role: .cancel) { 
-					UserSettings.shared.isAuthEnabled = true
-				}
-				Button("No", role: .destructive) { 
-					UserSettings.shared.isAuthEnabled = false
-				}
-			})
 		} detail: {
 			if let card = model.selectedCard {
 				CardView(model: CardViewModel(
@@ -144,6 +138,20 @@ struct HomeView: View {
 				)
 			}
 		}
+		.confirmationDialog(
+			"Delete this card?",
+			isPresented: Binding(
+				get: { cardPendingDeletion != nil },
+				set: { if !$0 { cardPendingDeletion = nil } }
+			),
+			presenting: cardPendingDeletion
+		) { card in
+			Button("Delete Card", role: .destructive) {
+				authenticateAndDelete(card)
+			}
+		} message: { _ in
+			Text("This cannot be undone.")
+		}
 		.sdkScreen(AppAnalyticsScreen.home)
 	}
 
@@ -152,6 +160,16 @@ struct HomeView: View {
 			? .cardDeleted(location: .active)
 			: .cardDeleteFailed(location: .active)
 		track(event)
+	}
+
+	private func authenticateAndDelete(_ card: CardData) {
+		authenticationSession.authenticateForSensitiveAccess(
+			reason: "Authenticate to delete this card."
+		) { success in
+			guard success else { return }
+			deleteCard(card)
+			cardPendingDeletion = nil
+		}
 	}
 
 	private func archiveCard(_ card: CardData) {
@@ -181,7 +199,7 @@ struct HomeView: View {
 					} else {
 						Text(card.name)
 					}
-					Text(card.number.toSecureCard())
+					Text(card.number.maskedCardNumber())
 				}
 			}
 		}

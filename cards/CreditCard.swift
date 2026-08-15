@@ -139,6 +139,7 @@ struct CreditCard: App {
     /// Shared card data store for menu bar access on macOS
     @State private var cardDataStore = CardDataStore()
     @State private var sdk: SinghDevKit
+    @StateObject private var authenticationSession = AuthenticationSession()
     private let sdkConfiguration: SDKConfiguration
     private let privacyPolicyURL: URL?
 
@@ -176,43 +177,57 @@ struct CreditCard: App {
 
     @ViewBuilder
     private var rootContent: some View {
-        HomeView(cardDataStore: cardDataStore)
-            .task {
-                try? Tips.configure([
-                    .displayFrequency(.immediate),
-                    .datastoreLocation(.applicationDefault)
-                ])
-            }
-            .environment(
-                \.whatsNew,
-                 WhatsNewEnvironment(
-                    versionStore: UserDefaultsWhatsNewVersionStore(),
-                    whatsNewCollection: self
-                 )
-            )
-            .showOnboardingIfNeeded(
-                configuration: sdkConfiguration.onboarding,
-                features: [.init(image: Image(systemName: "lock.shield"),
-                                                     title: "Secure Storage",
-                                                     content: "Keep your card details safe with state-of-the-art encryption."),
-                                               .init(image: Image(systemName: "faceid"),
-                                                     title: "Biometric Authentication",
-                                                     content: "Access your cards securely using Face ID or Touch ID."),
-                                               .init(image: Image(systemName: "square.and.arrow.up"),
-                                                     title: "Easily Shareable",
-                                                     content: "Quickly and securely share card details with trusted contacts."),
-                                               .init(image: Image(systemName: "hand.raised.slash"),
-                                                     title: "Privacy First, Open Source",
-                                                     content: "Your data stays private and secure, and the app's code is open-source for transparency.")],
-                privacyPolicyURL: privacyPolicyURL
-            )
-            .withSDK(sdk)
+        VaultProtectedView(session: authenticationSession) {
+            HomeView(cardDataStore: cardDataStore)
+                .task {
+                    try? Tips.configure([
+                        .displayFrequency(.immediate),
+                        .datastoreLocation(.applicationDefault)
+                    ])
+                }
+                .environment(
+                    \.whatsNew,
+                    WhatsNewEnvironment(
+                        versionStore: UserDefaultsWhatsNewVersionStore(),
+                        whatsNewCollection: self
+                    )
+                )
+                .showOnboardingIfNeeded(
+                    configuration: sdkConfiguration.onboarding,
+                    features: [
+                        .init(
+                            image: Image(systemName: "lock.shield"),
+                            title: "Secure Storage",
+                            content: "Keep your card details encrypted and protected on your device."
+                        ),
+                        .init(
+                            image: Image(systemName: "faceid"),
+                            title: "Contextual Authentication",
+                            content: "Unlock your vault once. Security codes and sharing require a recent authentication."
+                        ),
+                        .init(
+                            image: Image(systemName: "square.and.arrow.up"),
+                            title: "Easily Shareable",
+                            content: "Authenticate before sharing card details with someone you trust."
+                        ),
+                        .init(
+                            image: Image(systemName: "hand.raised.slash"),
+                            title: "Privacy First, Open Source",
+                            content: "Your data stays private and secure, and the app's code is open-source for transparency."
+                        )
+                    ],
+                    privacyPolicyURL: privacyPolicyURL
+                )
+        }
+        .environmentObject(authenticationSession)
+        .withSDK(sdk)
     }
 
     #if os(macOS)
     var menuBarScene: some Scene {
         MenuBarExtra("Holder", systemImage: "creditcard.fill", isInserted: $keepInMenuBar) {
             MenuBarView(cardStore: cardDataStore)
+                .environmentObject(authenticationSession)
                 .withSDK(sdk)
         }
         .menuBarExtraStyle(.window)
@@ -222,6 +237,7 @@ struct CreditCard: App {
         SwiftUI.Settings {
             sdk.settingsView()
                 .sdkScreen(AppAnalyticsScreen.settings)
+                .environmentObject(authenticationSession)
                 .withSDK(sdk)
                 .presentationSizing(.fitted)
                 .frame(minWidth: 620, minHeight: 480)

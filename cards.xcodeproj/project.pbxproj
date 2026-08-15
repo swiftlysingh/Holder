@@ -14,6 +14,7 @@
 		AA0000082F0BC0000000002C /* HapticService.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000032F0BC0000000001C /* HapticService.swift */; };
 		AA0000092F0BC0000000002D /* ReviewService.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000042F0BC0000000001D /* ReviewService.swift */; };
 		AA00000A2F0BC0000000002E /* MenuBarView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000052F0BC0000000001E /* MenuBarView.swift */; platformFilters = (macos, ); };
+		AA2000022F40000100000002 /* AuthenticationSession.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA2000012F40000100000001 /* AuthenticationSession.swift */; };
 		EE1D3E902B66AE66009733A5 /* Tip.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE1D3E8F2B66AE66009733A5 /* Tip.swift */; };
 		EE1D3E922B66AE83009733A5 /* CardViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE1D3E912B66AE83009733A5 /* CardViewModel.swift */; };
 		EE1D3E982B69379E009733A5 /* SettingsViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE1D3E972B69379E009733A5 /* SettingsViewModel.swift */; };
@@ -81,6 +82,7 @@
 		AA0000032F0BC0000000001C /* HapticService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HapticService.swift; sourceTree = "<group>"; };
 		AA0000042F0BC0000000001D /* ReviewService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReviewService.swift; sourceTree = "<group>"; };
 		AA0000052F0BC0000000001E /* MenuBarView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MenuBarView.swift; sourceTree = "<group>"; };
+		AA2000012F40000100000001 /* AuthenticationSession.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthenticationSession.swift; sourceTree = "<group>"; };
 		EE1D3E8F2B66AE66009733A5 /* Tip.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Tip.swift; sourceTree = "<group>"; };
 		EE1D3E912B66AE83009733A5 /* CardViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CardViewModel.swift; sourceTree = "<group>"; };
 		EE1D3E972B69379E009733A5 /* SettingsViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsViewModel.swift; sourceTree = "<group>"; };
@@ -165,6 +167,7 @@
 		AA00000B2F0BC0000000003A /* Platform */ = {
 			isa = PBXGroup;
 			children = (
+				AA2000012F40000100000001 /* AuthenticationSession.swift */,
 				AA0000012F0BC0000000001A /* PlatformTypes.swift */,
 				AA0000022F0BC0000000001B /* PasteboardService.swift */,
 				AA0000032F0BC0000000001C /* HapticService.swift */,
@@ -468,6 +471,7 @@
 				"$(SRCROOT)/cards/Model/CardDataStore.swift",
 				"$(SRCROOT)/cards/Model/ICloudDataManager.swift",
 				"$(SRCROOT)/cards/Platform/HapticService.swift",
+				"$(SRCROOT)/cards/Platform/AuthenticationSession.swift",
 				"$(SRCROOT)/cards/Platform/PasteboardService.swift",
 				"$(SRCROOT)/cards/Platform/PlatformTypes.swift",
 				"$(SRCROOT)/cards/Platform/ReviewService.swift",
@@ -525,6 +529,7 @@
 				AA0000072F0BC0000000002B /* PasteboardService.swift in Sources */,
 				AA0000082F0BC0000000002C /* HapticService.swift in Sources */,
 				AA0000092F0BC0000000002D /* ReviewService.swift in Sources */,
+				AA2000022F40000100000002 /* AuthenticationSession.swift in Sources */,
 				AA00000A2F0BC0000000002E /* MenuBarView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -703,7 +708,7 @@
 				INFOPLIST_KEY_CFBundleDisplayName = "Holder Beta";
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.utilities";
 				INFOPLIST_KEY_NSCameraUsageDescription = "To scan cards";
-				INFOPLIST_KEY_NSFaceIDUsageDescription = "To protect card details";
+				INFOPLIST_KEY_NSFaceIDUsageDescription = "To protect your card vault and security codes";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
@@ -862,7 +867,7 @@
 				INFOPLIST_KEY_CFBundleDisplayName = "Holder-debug";
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.utilities";
 				INFOPLIST_KEY_NSCameraUsageDescription = "To scan cards";
-				INFOPLIST_KEY_NSFaceIDUsageDescription = "To protect card details";
+				INFOPLIST_KEY_NSFaceIDUsageDescription = "To protect your card vault and security codes";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
@@ -902,7 +907,7 @@
 				INFOPLIST_KEY_CFBundleDisplayName = Holder;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.utilities";
 				INFOPLIST_KEY_NSCameraUsageDescription = "To scan cards";
-				INFOPLIST_KEY_NSFaceIDUsageDescription = "To protect card details";
+				INFOPLIST_KEY_NSFaceIDUsageDescription = "To protect your card vault and security codes";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
