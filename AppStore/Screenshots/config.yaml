@@ -20,19 +20,19 @@ screenshots:
     template: "templates/02_masked_at_a_glance.html"
     frame: false
     variables:
-      eyebrow: "PRIVATE BY DEFAULT"
-      headline: "The right card, without the full number."
-      subtitle: "Browse your wallet with sensitive details kept out of sight."
+      eyebrow: "DETAILS ON DEMAND"
+      headline: "All the details. No digging."
+      subtitle: "Open a card and find what you need in seconds."
     assets:
-      app_screenshot: "captures/en-US/home.png"
+      app_screenshot: "captures/en-US/card-details.png"
       app_icon: "../../cards/Assets.xcassets/AppIcon.appiconset/1024.png"
 
   03_wallet_without_bulk:
     template: "templates/03_wallet_without_bulk.html"
     frame: false
     variables:
-      headline: "Your wallet, minus the bulk."
-      subtitle: "Credit, debit, ID, membership, loyalty cards, and more."
+      headline: "Your vault. Your rules."
+      subtitle: "Choose authentication, lock timing, and how much each card reveals."
     assets:
-      app_screenshot: "captures/en-US/home.png"
+      app_screenshot: "captures/en-US/settings.png"
       app_icon: "../../cards/Assets.xcassets/AppIcon.appiconset/1024.png"

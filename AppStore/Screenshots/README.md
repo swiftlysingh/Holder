@@ -27,9 +27,9 @@ Koubou writes the PNGs and layout reports to `output/`.
 downloaded from App Store Connect here because those already include marketing
 artwork and can create a nested, distorted device presentation.
 
-The current `en-US/home.png` is a real iPhone 17 Pro Max Debug capture. Its
-cards come from Holder's compile-time Debug fixture and all visible numbers are
-masked. No production or personal card data is present.
+The current `en-US` assets are real iPhone 17 Pro Max Debug captures of the
+card list, a card detail, and Settings. The cards come from Holder's
+compile-time Debug fixture. No production or personal card data is present.
 
 ## Deliberately deferred
 

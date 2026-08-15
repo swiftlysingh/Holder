@@ -80,24 +80,6 @@
       box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .08);
       pointer-events: none;
     }
-    .signals {
-      position: absolute;
-      z-index: 5;
-      right: 8vw;
-      bottom: 3.5vh;
-      display: flex;
-      gap: 1.5vw;
-    }
-    .signals span {
-      padding: 1.1vh 2.8vw;
-      border: 1px solid rgba(169, 224, 247, .22);
-      border-radius: 999px;
-      color: #e9f8ff;
-      background: rgba(12, 36, 52, .86);
-      font-size: 2.9vw;
-      font-weight: 720;
-      backdrop-filter: blur(18px);
-    }
   </style>
 </head>
 <body>
@@ -108,8 +90,7 @@
     <p data-kou-id="subtitle" data-kou-role="supporting">{{subtitle}}</p>
   </div>
   <div class="focus-card">
-    <img data-kou-id="device" data-kou-role="device" src="{{app_screenshot}}" alt="Masked card numbers in Holder">
+    <img data-kou-id="device" data-kou-role="device" src="{{app_screenshot}}" alt="Card details in Holder">
   </div>
-  <div class="signals" aria-hidden="true"><span>Masked</span><span>Keychain</span><span>Biometrics</span></div>
 </body>
 </html>
