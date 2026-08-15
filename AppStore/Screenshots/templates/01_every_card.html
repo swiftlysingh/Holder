@@ -1,0 +1,104 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <style>
+    * { box-sizing: border-box; }
+    html, body { margin: 0; width: 100%; height: 100%; overflow: hidden; }
+    body {
+      position: relative;
+      color: #f7fbff;
+      font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", sans-serif;
+      background:
+        radial-gradient(circle at 88% 8%, rgba(93, 205, 244, .24), transparent 27%),
+        linear-gradient(155deg, #071d32 0%, #04111f 58%, #020810 100%);
+    }
+    body::before {
+      content: "";
+      position: absolute;
+      width: 72vw;
+      height: 72vw;
+      left: -34vw;
+      bottom: 13vh;
+      border-radius: 50%;
+      border: 1px solid rgba(176, 226, 250, .16);
+      box-shadow: 0 0 0 12vw rgba(93, 205, 244, .035), 0 0 0 24vw rgba(93, 205, 244, .025);
+    }
+    .brand {
+      position: absolute;
+      z-index: 4;
+      top: 5.1%;
+      left: 7%;
+      display: flex;
+      align-items: center;
+      gap: 2.4vw;
+      color: rgba(228, 243, 252, .78);
+      font-size: 3.7vw;
+      font-weight: 720;
+      letter-spacing: .01em;
+    }
+    .brand img {
+      width: 8vw;
+      height: 8vw;
+      border-radius: 2.15vw;
+      box-shadow: 0 1.6vh 4vw rgba(0, 0, 0, .28);
+    }
+    .copy {
+      position: absolute;
+      z-index: 4;
+      top: 12.4%;
+      left: 7%;
+      width: 84%;
+    }
+    h1 {
+      margin: 0;
+      max-width: 96%;
+      font-size: 11.8vw;
+      line-height: .96;
+      letter-spacing: -.052em;
+      font-weight: 790;
+    }
+    p {
+      margin: 2.6vh 0 0;
+      max-width: 74%;
+      color: rgba(224, 241, 252, .69);
+      font-size: 4.45vw;
+      line-height: 1.28;
+      letter-spacing: -.01em;
+    }
+    .phone {
+      position: absolute;
+      z-index: 3;
+      right: -3vw;
+      bottom: -10.2vh;
+      width: 72vw;
+      height: 67vh;
+      padding: 1.15vw;
+      overflow: hidden;
+      border: 1px solid rgba(178, 227, 248, .28);
+      border-radius: 8.6vw 8.6vw 0 0;
+      transform: rotate(-2.8deg);
+      transform-origin: bottom right;
+      background: #030508;
+      box-shadow: -5vw 4vh 14vw rgba(0, 0, 0, .58);
+    }
+    .phone img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      object-position: center top;
+      border-radius: 7.5vw 7.5vw 0 0;
+    }
+  </style>
+</head>
+<body>
+  <div class="brand"><img src="{{app_icon}}" alt="">Holder</div>
+  <div class="copy">
+    <h1 data-kou-id="headline" data-kou-role="headline">{{headline}}</h1>
+    <p data-kou-id="subtitle" data-kou-role="supporting">{{subtitle}}</p>
+  </div>
+  <div class="phone">
+    <img data-kou-id="device" data-kou-role="device" src="{{app_screenshot}}" alt="Holder card list">
+  </div>
+</body>
+</html>
