@@ -3,11 +3,8 @@ import XCTest
 @testable import Holder
 
 final class AppSecretsTests: XCTestCase {
-    func testEmptySecretsEnableRevenueCatFromPublicConfiguration() {
-        let secrets = AppSecrets.load(
-            from: [:],
-            appConfiguration: ["RevenueCatAPIKey": "  appl_test_key  "]
-        )
+    func testEmptyConfigurationDisablesOptionalProviders() {
+        let secrets = AppSecrets.load(from: ["RevenueCatAPIKey": "  appl_test_key  "])
 
         XCTAssertNil(secrets.postHogProjectToken)
         XCTAssertNil(secrets.sentryDSN)
@@ -18,8 +15,10 @@ final class AppSecretsTests: XCTestCase {
 
     func testMissingRevenueCatPublicKeyDisablesOnlyPayments() {
         let secrets = AppSecrets.load(
-            from: ["PostHogProjectToken": "posthog-token"],
-            appConfiguration: ["RevenueCatAPIKey": "   "]
+            from: [
+                "PostHogProjectToken": "posthog-token",
+                "RevenueCatAPIKey": "   "
+            ]
         )
 
         XCTAssertEqual(secrets.postHogProjectToken, "posthog-token")
@@ -31,9 +30,9 @@ final class AppSecretsTests: XCTestCase {
         let secrets = AppSecrets.load(
             from: [
                 "PostHogProjectToken": "  posthog-token  ",
-                "PostHogHost": "https://example.com"
-            ],
-            appConfiguration: ["RevenueCatAPIKey": "appl_test_key"]
+                "PostHogHost": "https://example.com",
+                "RevenueCatAPIKey": "appl_test_key"
+            ]
         )
 
         XCTAssertEqual(secrets.postHogProjectToken, "posthog-token")
@@ -49,17 +48,18 @@ final class AppSecretsTests: XCTestCase {
 
     func testPostHogConfigurationDefaultsHost() {
         let secrets = AppSecrets.load(
-            from: ["PostHogProjectToken": "posthog-token"],
-            appConfiguration: ["RevenueCatAPIKey": "appl_test_key"]
+            from: [
+                "PostHogProjectToken": "posthog-token",
+                "RevenueCatAPIKey": "appl_test_key"
+            ]
         )
 
         XCTAssertEqual(secrets.postHogHost, URL(string: "https://us.i.posthog.com"))
     }
 
-    func testSentryDSNFromSecretsEnablesObservability() {
+    func testSentryDSNEnablesObservability() {
         let secrets = AppSecrets.load(
-            from: ["SentryDSN": "  https://public@example.ingest.sentry.io/1  "],
-            appConfiguration: [:]
+            from: ["SentryDSN": "  https://public@example.ingest.sentry.io/1  "]
         )
 
         XCTAssertEqual(secrets.sentryDSN, "https://public@example.ingest.sentry.io/1")
@@ -69,33 +69,8 @@ final class AppSecretsTests: XCTestCase {
         )
     }
 
-    func testSentryDSNFallsBackToInfoPlist() {
-        let secrets = AppSecrets.load(
-            from: [:],
-            appConfiguration: ["SentryDSN": "https://public@example.ingest.sentry.io/2"]
-        )
-
-        XCTAssertEqual(secrets.sentryDSN, "https://public@example.ingest.sentry.io/2")
-        XCTAssertEqual(
-            secrets.observabilityConfiguration,
-            .sentry(dsn: "https://public@example.ingest.sentry.io/2")
-        )
-    }
-
-    func testSecretsSentryDSNOverridesInfoPlist() {
-        let secrets = AppSecrets.load(
-            from: ["SentryDSN": "https://secrets@example.ingest.sentry.io/3"],
-            appConfiguration: ["SentryDSN": "https://plist@example.ingest.sentry.io/4"]
-        )
-
-        XCTAssertEqual(secrets.sentryDSN, "https://secrets@example.ingest.sentry.io/3")
-    }
-
     func testBlankSentryDSNDisablesObservability() {
-        let secrets = AppSecrets.load(
-            from: ["SentryDSN": "   "],
-            appConfiguration: ["SentryDSN": ""]
-        )
+        let secrets = AppSecrets.load(from: ["SentryDSN": "   "])
 
         XCTAssertNil(secrets.sentryDSN)
         XCTAssertEqual(secrets.observabilityConfiguration, .disabled)

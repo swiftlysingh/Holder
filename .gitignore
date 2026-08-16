@@ -89,7 +89,6 @@ fastlane/test_output
 
 iOSInjectionProject/
 .DS_Store
-Secrets.plist
 
 # Ignore accidental duplicate Info.plist copy
 cards copy-Info.plist

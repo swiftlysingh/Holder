@@ -55,6 +55,6 @@ The process described here has several goals:
 - Xcode Cloud's **Test** workflow runs the iOS tests on every branch when `cards`, `Widgets`, `cardsTests`, or `cards.xcodeproj` changes.
 - To release, manually run the GitHub Actions **Release** workflow. It reads the app target's current `MARKETING_VERSION`, creates `release/<version>`, tag `v<version>`, and a GitHub Release at that commit, then bumps the minor marketing version on `main`.
 - A new `release/*` branch starts Xcode Cloud's **Release** workflow, which produces App Store-eligible iOS and macOS archives.
-- Non-release builds use an empty private `Secrets.plist`, while the checked-in RevenueCat public SDK key keeps purchase flows available for feature and TestFlight testing. Release builds require the Xcode Cloud secret `GITHUB_TOKEN` to have read access to the private `swiftlysingh/AppKeys` repository.
+- Provider keys (RevenueCat, PostHog, Sentry) live in the app target `Info.plist`.
 
 ### An AI whipped up this page, but a real-life human gave it the once-over to make sure it's not just a bunch of robotic mumbo jumbo!

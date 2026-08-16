@@ -251,28 +251,13 @@ struct AppSecrets: Sendable {
     }
 
     static func load() -> Self {
-        let secrets: [String: Any]
-        if let path = Bundle.main.path(forResource: "Secrets", ofType: "plist"),
-           let dictionary = NSDictionary(contentsOfFile: path) as? [String: Any] {
-            secrets = dictionary
-        } else {
-            print("Warning: Missing Secrets.plist - analytics disabled")
-            secrets = [:]
-        }
-
-        return load(
-            from: secrets,
-            appConfiguration: Bundle.main.infoDictionary ?? [:]
-        )
+        load(from: Bundle.main.infoDictionary ?? [:])
     }
 
-    static func load(
-        from secrets: [String: Any],
-        appConfiguration: [String: Any]
-    ) -> Self {
-        let projectToken = nonEmptyString(from: secrets["PostHogProjectToken"])
+    static func load(from appConfiguration: [String: Any]) -> Self {
+        let projectToken = nonEmptyString(from: appConfiguration["PostHogProjectToken"])
         if projectToken == nil {
-            print("Warning: Missing PostHogProjectToken in Secrets.plist - analytics disabled")
+            print("Warning: Missing PostHogProjectToken in Info.plist - analytics disabled")
         }
 
         let revenueCatAPIKey = nonEmptyString(from: appConfiguration["RevenueCatAPIKey"])
@@ -280,13 +265,12 @@ struct AppSecrets: Sendable {
             print("Warning: Missing RevenueCatAPIKey in Info.plist - payments disabled")
         }
 
-        let sentryDSN = nonEmptyString(from: secrets["SentryDSN"])
-            ?? nonEmptyString(from: appConfiguration["SentryDSN"])
+        let sentryDSN = nonEmptyString(from: appConfiguration["SentryDSN"])
         if sentryDSN == nil {
-            print("Warning: Missing SentryDSN in Secrets.plist and Info.plist - observability disabled")
+            print("Warning: Missing SentryDSN in Info.plist - observability disabled")
         }
 
-        let host = nonEmptyString(from: secrets["PostHogHost"])
+        let host = nonEmptyString(from: appConfiguration["PostHogHost"])
             .flatMap(URL.init(string:))
             ?? URL(string: "https://us.i.posthog.com")!
 

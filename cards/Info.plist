@@ -4,6 +4,10 @@
 <dict>
 	<key>RevenueCatAPIKey</key>
 	<string>appl_GaZAJcBsbpuHiAlOEnZCFqatdEG</string>
+	<key>PostHogProjectToken</key>
+	<string>phc_yaMqj3q7pGQ5BPAk3HUCBVpWx5EpgE4JCcfuaUdNHUgc</string>
+	<key>PostHogHost</key>
+	<string>https://us.i.posthog.com</string>
 	<key>SentryDSN</key>
 	<string>https://1ee4117b7b37bdf8d00bba7345801efa@o4511913441296384.ingest.us.sentry.io/4511919232712704</string>
 	<key>ITSAppUsesNonExemptEncryption</key>

@@ -39,7 +39,6 @@
 		EED86E542F0BC2160063097F /* WidgetKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = EED86E532F0BC2160063097F /* WidgetKit.framework */; };
 		EED86E562F0BC2170063097F /* SwiftUI.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = EED86E552F0BC2170063097F /* SwiftUI.framework */; };
 		EED86E612F0BC2190063097F /* WidgetsExtension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = EED86E512F0BC2160063097F /* WidgetsExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
-		FF9452F92BDE314E00731D8B /* Secrets.plist in Resources */ = {isa = PBXBuildFile; fileRef = FF9452F82BDE314E00731D8B /* Secrets.plist */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -107,7 +106,6 @@
 		EED86E512F0BC2160063097F /* WidgetsExtension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = WidgetsExtension.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 		EED86E532F0BC2160063097F /* WidgetKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = WidgetKit.framework; path = System/Library/Frameworks/WidgetKit.framework; sourceTree = SDKROOT; };
 		EED86E552F0BC2170063097F /* SwiftUI.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = SwiftUI.framework; path = System/Library/Frameworks/SwiftUI.framework; sourceTree = SDKROOT; };
-		FF9452F82BDE314E00731D8B /* Secrets.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Secrets.plist; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
@@ -256,7 +254,6 @@
 			children = (
 				EE4CBEAC2CEED4F700635DFC /* cards.entitlements */,
 				EE7AF3E82B4C3A1300F2F7C0 /* Info.plist */,
-				FF9452F82BDE314E00731D8B /* Secrets.plist */,
 				EEBB52E92B238D6600035B92 /* CreditCard.swift */,
 				AA1000032F30000100000003 /* Analytics */,
 				EE1D3E8D2B66AE2A009733A5 /* Home */,
@@ -434,7 +431,6 @@
 			buildActionMask = 2147483647;
 			files = (
 				EEBB52F12B238D6800035B92 /* Preview Assets.xcassets in Resources */,
-				FF9452F92BDE314E00731D8B /* Secrets.plist in Resources */,
 				EEBB52EE2B238D6800035B92 /* Assets.xcassets in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
