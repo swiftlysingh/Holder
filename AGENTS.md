@@ -10,8 +10,9 @@
 - Give every typed event an intentional AnalyticsCrashContext policy; allowlist only safe scalar properties.
 - Do not use raw event strings outside the analytics catalog.
 - Use ErrorReportingClient and stable ErrorReport fields for actionable handled errors; analytics events never create Sentry issues.
-- Never record user-entered financial or personal content.
+- Never record user-entered financial or personal content in analytics, crash breadcrumbs, or error reports.
 - Do not duplicate lifecycle, paywall or purchase events owned by SinghDevKit.
 - Keep provider credentials in the app's existing secrets mechanism.
+- Load `SentryDSN` from Secrets.plist or Info.plist through AppSecrets. Enable `observability` only when a DSN is present. MetricKit diagnostics and Sentry observability are separate settings.
 - Keep PostHog crash autocapture off and complete provider-side, built-app, release-crash, and symbolication proof before claiming sole crash ownership.
 - Run `$integrate-singhdevkit` after adding or renaming significant screens, Settings controls, onboarding steps, entitlements, paywalls, or purchase flows.

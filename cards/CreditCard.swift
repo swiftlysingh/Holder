@@ -140,18 +140,21 @@ struct CreditCard: App {
     @State private var cardDataStore = CardDataStore()
     @State private var sdk: SinghDevKit
     private let sdkConfiguration: SDKConfiguration
+    private let privacyPolicyURL: URL?
 
     init() {
         let appSecrets = AppSecrets.load()
+        let settings = SettingsViewModel()
         let sdkConfiguration = SDKConfiguration(
             analytics: appSecrets.analyticsConfiguration,
             diagnostics: .metricKit(),
-            observability: .disabled,
+            observability: appSecrets.observabilityConfiguration,
             payments: appSecrets.paymentsConfiguration,
-            settings: SettingsViewModel(),
+            settings: settings,
             onboarding: .default()
         )
         self.sdkConfiguration = sdkConfiguration
+        self.privacyPolicyURL = settings.privacyPolicyURL
         _sdk = State(initialValue: SinghDevKit(configuration: sdkConfiguration))
     }
 
@@ -201,7 +204,7 @@ struct CreditCard: App {
                                                .init(image: Image(systemName: "hand.raised.slash"),
                                                      title: "Privacy First, Open Source",
                                                      content: "Your data stays private and secure, and the app's code is open-source for transparency.")],
-                privacyPolicyURL: SettingsViewModel().privacyPolicyURL
+                privacyPolicyURL: privacyPolicyURL
             )
             .withSDK(sdk)
     }
@@ -231,6 +234,7 @@ struct AppSecrets: Sendable {
     let postHogProjectToken: String?
     let postHogHost: URL
     let revenueCatAPIKey: String?
+    let sentryDSN: String?
 
     var analyticsConfiguration: AnalyticsConfiguration {
         postHogProjectToken.map {
@@ -240,6 +244,10 @@ struct AppSecrets: Sendable {
 
     var paymentsConfiguration: PaymentsConfiguration {
         revenueCatAPIKey.map { .revenueCat(apiKey: $0) } ?? .disabled
+    }
+
+    var observabilityConfiguration: ObservabilityConfiguration {
+        sentryDSN.map { .sentry(dsn: $0) } ?? .disabled
     }
 
     static func load() -> Self {
@@ -272,6 +280,12 @@ struct AppSecrets: Sendable {
             print("Warning: Missing RevenueCatAPIKey in Info.plist - payments disabled")
         }
 
+        let sentryDSN = nonEmptyString(from: secrets["SentryDSN"])
+            ?? nonEmptyString(from: appConfiguration["SentryDSN"])
+        if sentryDSN == nil {
+            print("Warning: Missing SentryDSN in Secrets.plist and Info.plist - observability disabled")
+        }
+
         let host = nonEmptyString(from: secrets["PostHogHost"])
             .flatMap(URL.init(string:))
             ?? URL(string: "https://us.i.posthog.com")!
@@ -279,7 +293,8 @@ struct AppSecrets: Sendable {
         return Self(
             postHogProjectToken: projectToken,
             postHogHost: host,
-            revenueCatAPIKey: revenueCatAPIKey
+            revenueCatAPIKey: revenueCatAPIKey,
+            sentryDSN: sentryDSN
         )
     }
 
