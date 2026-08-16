@@ -38,12 +38,21 @@
       }
     },
     {
+      "identity" : "sentry-cocoa",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/getsentry/sentry-cocoa.git",
+      "state" : {
+        "revision" : "cd213f98af160e6497eeff0707bc3f6a205b159c",
+        "version" : "9.26.0"
+      }
+    },
+    {
       "identity" : "singhdevkit",
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/swiftlysingh/SinghDevKit.git",
       "state" : {
-        "revision" : "a2c2aff9d8a6621d780deadfec52fb2c3c76d3a6",
-        "version" : "2.3.0"
+        "revision" : "b1619a17ce1081da0c6f34602d3c1afd0b6b5253",
+        "version" : "2.4.0"
       }
     },
     {

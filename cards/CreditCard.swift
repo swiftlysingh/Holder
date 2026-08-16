@@ -138,15 +138,21 @@ struct CreditCard: App {
 
     /// Shared card data store for menu bar access on macOS
     @State private var cardDataStore = CardDataStore()
-    private let sdkBootstrapper: SDKBootstrapper
+    @State private var sdk: SinghDevKit
+    private let sdkConfiguration: SDKConfiguration
 
     init() {
-        let sdkBootstrapper = SDKBootstrapper()
-        self.sdkBootstrapper = sdkBootstrapper
-
-        Task {
-            await sdkBootstrapper.configure(with: AppSecrets.load())
-        }
+        let appSecrets = AppSecrets.load()
+        let sdkConfiguration = SDKConfiguration(
+            analytics: appSecrets.analyticsConfiguration,
+            diagnostics: .metricKit(),
+            observability: .disabled,
+            payments: appSecrets.paymentsConfiguration,
+            settings: SettingsViewModel(),
+            onboarding: .default()
+        )
+        self.sdkConfiguration = sdkConfiguration
+        _sdk = State(initialValue: SinghDevKit(configuration: sdkConfiguration))
     }
 
     var body: some Scene {
@@ -181,8 +187,9 @@ struct CreditCard: App {
                     whatsNewCollection: self
                  )
             )
-            .withSDK(.shared)
-            .showOnboardingIfNeeded(features: [.init(image: Image(systemName: "lock.shield"),
+            .showOnboardingIfNeeded(
+                configuration: sdkConfiguration.onboarding,
+                features: [.init(image: Image(systemName: "lock.shield"),
                                                      title: "Secure Storage",
                                                      content: "Keep your card details safe with state-of-the-art encryption."),
                                                .init(image: Image(systemName: "faceid"),
@@ -193,62 +200,31 @@ struct CreditCard: App {
                                                      content: "Quickly and securely share card details with trusted contacts."),
                                                .init(image: Image(systemName: "hand.raised.slash"),
                                                      title: "Privacy First, Open Source",
-                                                     content: "Your data stays private and secure, and the app's code is open-source for transparency.")]
+                                                     content: "Your data stays private and secure, and the app's code is open-source for transparency.")],
+                privacyPolicyURL: SettingsViewModel().privacyPolicyURL
             )
+            .withSDK(sdk)
     }
 
     #if os(macOS)
     var menuBarScene: some Scene {
         MenuBarExtra("Holder", systemImage: "creditcard.fill", isInserted: $keepInMenuBar) {
             MenuBarView(cardStore: cardDataStore)
-                .withSDK(.shared)
+                .withSDK(sdk)
         }
         .menuBarExtraStyle(.window)
     }
 
     var settingsScene: some Scene {
         SwiftUI.Settings {
-            SettingsView(configuration: SettingsViewModel())
+            sdk.settingsView()
                 .sdkScreen(AppAnalyticsScreen.settings)
-                .withSDK(.shared)
+                .withSDK(sdk)
                 .presentationSizing(.fitted)
                 .frame(minWidth: 620, minHeight: 480)
         }
     }
     #endif
-}
-
-private actor SDKBootstrapper {
-    private enum State {
-        case idle
-        case configuring
-        case configured
-        case failed
-    }
-
-    private var state: State = .idle
-
-    func configure(with appSecrets: AppSecrets) async {
-        switch state {
-        case .idle, .failed:
-            state = .configuring
-        case .configuring, .configured:
-            return
-        }
-
-        do {
-            try await SinghDevKit.shared.configure(
-                SDKConfiguration(
-                    analytics: appSecrets.analyticsConfiguration,
-                    payments: appSecrets.paymentsConfiguration
-                )
-            )
-            state = .configured
-        } catch {
-            state = .failed
-            print("Warning: Failed to configure SinghDevKit: \(error.localizedDescription)")
-        }
-    }
 }
 
 struct AppSecrets: Sendable {

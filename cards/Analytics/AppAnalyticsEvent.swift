@@ -90,4 +90,23 @@ enum AppAnalyticsEvent: AnalyticsEvent {
             [:]
         }
     }
+
+    var crashContext: AnalyticsCrashContext {
+        switch self {
+        case .cardSaveCompleted, .cardSaveFailed:
+            .breadcrumb(including: ["operation", "input_method"])
+        case .cardDeleted, .cardDeleteFailed:
+            .breadcrumb(including: ["location"])
+        case .cardAddStarted,
+             .cardArchived,
+             .cardArchiveFailed,
+             .cardUnarchived,
+             .cardUnarchiveFailed,
+             .cardScanStarted,
+             .cardScanCompleted,
+             .cardScanPermissionDenied,
+             .cardOpenedFromWidget:
+            .breadcrumb()
+        }
+    }
 }

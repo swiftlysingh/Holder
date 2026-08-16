@@ -12,6 +12,7 @@ import SinghDevKit
 struct HomeView: View {
 	@ObservedObject var model: HomeViewModel
 	@Environment(\.analytics) private var analytics
+	@Environment(\.sdk) private var sdk
 
 	init(cardDataStore: CardDataStore = CardDataStore()) {
 		self.model = HomeViewModel(cardDataStore: cardDataStore)
@@ -77,7 +78,7 @@ struct HomeView: View {
 			#if !os(macOS)
 			.toolbar {
 				NavigationLink(
-					destination: SettingsView(configuration: SettingsViewModel())
+					destination: sdk.settingsView()
 						.sdkScreen(AppAnalyticsScreen.settings)
 				) {
 					Image(systemName: "gear")
