@@ -65,7 +65,11 @@ final class AppSecretsTests: XCTestCase {
         XCTAssertEqual(secrets.sentryDSN, "https://public@example.ingest.sentry.io/1")
         XCTAssertEqual(
             secrets.observabilityConfiguration,
-            .sentry(dsn: "https://public@example.ingest.sentry.io/1")
+            .sentry(
+                dsn: "https://public@example.ingest.sentry.io/1",
+                environment: AppSecrets.sentryEnvironment,
+                release: AppSecrets.sentryRelease
+            )
         )
     }
 

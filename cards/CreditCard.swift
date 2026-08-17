@@ -247,7 +247,27 @@ struct AppSecrets: Sendable {
     }
 
     var observabilityConfiguration: ObservabilityConfiguration {
-        sentryDSN.map { .sentry(dsn: $0) } ?? .disabled
+        sentryDSN.map {
+            .sentry(
+                dsn: $0,
+                environment: Self.sentryEnvironment,
+                release: Self.sentryRelease
+            )
+        } ?? .disabled
+    }
+
+    static var sentryEnvironment: String {
+        #if DEBUG
+        "debug"
+        #elseif BETA
+        "beta"
+        #else
+        "production"
+        #endif
+    }
+
+    static var sentryRelease: String {
+        "\(Bundle.main.bundleIdentifier ?? "com.swiftlysingh.cards")@\(Bundle.main.versionNumber)+\(Bundle.main.buildNumber)"
     }
 
     static func load() -> Self {
