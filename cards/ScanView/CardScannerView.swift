@@ -1,0 +1,173 @@
+#if os(iOS)
+import SinghDevKit
+import SwiftUI
+
+struct CardScannerView: View {
+	var isRescan: Bool
+	var onCancel: () -> Void
+	var onPermissionDenied: () -> Void
+	var onResult: (CardScanResult, CardScanMetrics) -> Void
+
+	@StateObject private var model: CardScannerViewModel
+	@Environment(\.analytics) private var analytics
+
+	init(
+		isRescan: Bool,
+		onCancel: @escaping () -> Void,
+		onPermissionDenied: @escaping () -> Void,
+		onResult: @escaping (CardScanResult, CardScanMetrics) -> Void
+	) {
+		self.isRescan = isRescan
+		self.onCancel = onCancel
+		self.onPermissionDenied = onPermissionDenied
+		self.onResult = onResult
+		_model = StateObject(wrappedValue: CardScannerViewModel(isRescan: isRescan))
+	}
+
+	var body: some View {
+		ZStack {
+			model.engine.makeCameraView()
+				.ignoresSafeArea()
+
+			if model.engine.showsCustomOverlay {
+				CardScanFinderOverlay()
+					.allowsHitTesting(false)
+			}
+
+			VStack(spacing: 16) {
+				HStack {
+					Button("Cancel") {
+						model.stop()
+						onCancel()
+					}
+					.foregroundStyle(.white)
+					.padding(.horizontal, 16)
+					.padding(.vertical, 8)
+					.background(.black.opacity(0.45), in: Capsule())
+					Spacer()
+				}
+				.padding()
+
+				Spacer()
+
+				VStack(spacing: 8) {
+					if let lastFour = model.candidateLastFour, let network = model.candidateNetwork {
+						Text("\(network.rawValue) •••• \(lastFour)")
+							.font(.headline)
+							.foregroundStyle(.white)
+					}
+					Text(model.guidance)
+						.font(.subheadline)
+						.multilineTextAlignment(.center)
+						.foregroundStyle(.white)
+						.padding(.horizontal, 24)
+				}
+				.padding(.bottom, 48)
+			}
+		}
+		.background(Color.black)
+		.sdkScreen(AppAnalyticsScreen.cardScanner)
+		.alert("Scanner", isPresented: $model.showsMessage) {
+			Button("OK") {
+				model.stop()
+				onCancel()
+			}
+		} message: {
+			Text(model.message)
+		}
+		.task {
+			await model.consumeUpdates(
+				onPermissionDenied: onPermissionDenied,
+				onResult: onResult
+			)
+		}
+		.onDisappear {
+			model.stop()
+		}
+	}
+}
+
+private struct CardScanFinderOverlay: View {
+	private let cardAspect: CGFloat = 1.586
+
+	var body: some View {
+		GeometryReader { proxy in
+			let width = min(proxy.size.width * 0.86, proxy.size.height * 0.42 * cardAspect)
+			let height = width / cardAspect
+			RoundedRectangle(cornerRadius: 16)
+				.stroke(.white.opacity(0.9), lineWidth: 2)
+				.frame(width: width, height: height)
+				.position(x: proxy.size.width / 2, y: proxy.size.height / 2)
+		}
+		.ignoresSafeArea()
+	}
+}
+
+@MainActor
+final class CardScannerViewModel: ObservableObject {
+	@Published var guidance = "Fit the whole card in the frame"
+	@Published var candidateLastFour: String?
+	@Published var candidateNetwork: CardNetwork?
+	@Published var showsMessage = false
+	@Published var message = ""
+
+	let engine: any CardScanningEngine
+	private let isRescan: Bool
+	private let startedAt = Date()
+	private var panDetectedAt: Date?
+	private var stopped = false
+
+	init(isRescan: Bool, engine: (any CardScanningEngine)? = nil) {
+		self.isRescan = isRescan
+		self.engine = engine ?? CardScanningEngineFactory.make()
+	}
+
+	func consumeUpdates(
+		onPermissionDenied: @escaping () -> Void,
+		onResult: @escaping (CardScanResult, CardScanMetrics) -> Void
+	) async {
+		for await update in engine.scanUpdates() {
+			switch update {
+			case .permissionDenied:
+				onPermissionDenied()
+				return
+			case .unsupported(let text), .failed(let text):
+				message = text
+				showsMessage = true
+			case .scanning(let text):
+				guidance = text
+			case .candidate(let lastFour, let network):
+				if panDetectedAt == nil {
+					panDetectedAt = Date()
+				}
+				candidateLastFour = lastFour
+				candidateNetwork = network
+				guidance = "Hold steady…"
+			case .verified(let result):
+				onResult(result, metrics(for: result))
+				return
+			}
+		}
+	}
+
+	func stop() {
+		guard !stopped else { return }
+		stopped = true
+		engine.stop()
+	}
+
+	private func metrics(for result: CardScanResult) -> CardScanMetrics {
+		let completed = Int(Date().timeIntervalSince(startedAt) * 1000)
+		let panMs = panDetectedAt.map { Int($0.timeIntervalSince(startedAt) * 1000) }
+		return CardScanMetrics(
+			engine: engine.engineID,
+			timeToPANMs: panMs,
+			timeToCompleteMs: completed,
+			panSuccess: !result.pan.isEmpty,
+			expirySuccess: result.expiry?.isEmpty == false,
+			holderSuccess: result.cardholderName?.isEmpty == false,
+			wasRescan: isRescan
+		)
+	}
+}
+#endif

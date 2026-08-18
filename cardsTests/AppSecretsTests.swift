@@ -52,5 +52,15 @@ final class AppSecretsTests: XCTestCase {
         )
 
         XCTAssertEqual(secrets.postHogHost, URL(string: "https://us.i.posthog.com"))
+        XCTAssertNil(secrets.blinkCardLicenseKey)
+    }
+
+    func testBlinkCardLicenseKeyLoadsFromSecrets() {
+        let secrets = AppSecrets.load(
+            from: ["BlinkCardLicenseKey": "  trial-key  "],
+            appConfiguration: [:]
+        )
+
+        XCTAssertEqual(secrets.blinkCardLicenseKey, "trial-key")
     }
 }
