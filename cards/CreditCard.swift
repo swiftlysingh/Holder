@@ -255,6 +255,7 @@ struct AppSecrets: Sendable {
     let postHogProjectToken: String?
     let postHogHost: URL
     let revenueCatAPIKey: String?
+    let scanbotLicenseKey: String?
 
     var analyticsConfiguration: AnalyticsConfiguration {
         postHogProjectToken.map {
@@ -303,7 +304,8 @@ struct AppSecrets: Sendable {
         return Self(
             postHogProjectToken: projectToken,
             postHogHost: host,
-            revenueCatAPIKey: revenueCatAPIKey
+            revenueCatAPIKey: revenueCatAPIKey,
+            scanbotLicenseKey: nonEmptyString(from: secrets["ScanbotLicenseKey"])
         )
     }
 

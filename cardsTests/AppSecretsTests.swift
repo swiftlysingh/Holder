@@ -52,5 +52,15 @@ final class AppSecretsTests: XCTestCase {
         )
 
         XCTAssertEqual(secrets.postHogHost, URL(string: "https://us.i.posthog.com"))
+        XCTAssertNil(secrets.scanbotLicenseKey)
+    }
+
+    func testScanbotLicenseKeyLoadsFromSecrets() {
+        let secrets = AppSecrets.load(
+            from: ["ScanbotLicenseKey": "  trial-key  "],
+            appConfiguration: [:]
+        )
+
+        XCTAssertEqual(secrets.scanbotLicenseKey, "trial-key")
     }
 }
