@@ -12,4 +12,6 @@ enum AppAnalyticsScreen: String, AnalyticsScreen {
     var name: String { rawValue }
 
     var properties: AnalyticsProperties { [:] }
+
+    var crashContext: AnalyticsCrashContext { .breadcrumb() }
 }

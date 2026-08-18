@@ -138,15 +138,24 @@ struct CreditCard: App {
 
     /// Shared card data store for menu bar access on macOS
     @State private var cardDataStore = CardDataStore()
-    private let sdkBootstrapper: SDKBootstrapper
+    @State private var sdk: SinghDevKit
+    private let sdkConfiguration: SDKConfiguration
+    private let privacyPolicyURL: URL?
 
     init() {
-        let sdkBootstrapper = SDKBootstrapper()
-        self.sdkBootstrapper = sdkBootstrapper
-
-        Task {
-            await sdkBootstrapper.configure(with: AppSecrets.load())
-        }
+        let appSecrets = AppSecrets.load()
+        let settings = SettingsViewModel()
+        let sdkConfiguration = SDKConfiguration(
+            analytics: appSecrets.analyticsConfiguration,
+            diagnostics: .metricKit(),
+            observability: appSecrets.observabilityConfiguration,
+            payments: appSecrets.paymentsConfiguration,
+            settings: settings,
+            onboarding: .default()
+        )
+        self.sdkConfiguration = sdkConfiguration
+        self.privacyPolicyURL = settings.privacyPolicyURL
+        _sdk = State(initialValue: SinghDevKit(configuration: sdkConfiguration))
     }
 
     var body: some Scene {
@@ -181,8 +190,9 @@ struct CreditCard: App {
                     whatsNewCollection: self
                  )
             )
-            .withSDK(.shared)
-            .showOnboardingIfNeeded(features: [.init(image: Image(systemName: "lock.shield"),
+            .showOnboardingIfNeeded(
+                configuration: sdkConfiguration.onboarding,
+                features: [.init(image: Image(systemName: "lock.shield"),
                                                      title: "Secure Storage",
                                                      content: "Keep your card details safe with state-of-the-art encryption."),
                                                .init(image: Image(systemName: "faceid"),
@@ -193,24 +203,26 @@ struct CreditCard: App {
                                                      content: "Quickly and securely share card details with trusted contacts."),
                                                .init(image: Image(systemName: "hand.raised.slash"),
                                                      title: "Privacy First, Open Source",
-                                                     content: "Your data stays private and secure, and the app's code is open-source for transparency.")]
+                                                     content: "Your data stays private and secure, and the app's code is open-source for transparency.")],
+                privacyPolicyURL: privacyPolicyURL
             )
+            .withSDK(sdk)
     }
 
     #if os(macOS)
     var menuBarScene: some Scene {
         MenuBarExtra("Holder", systemImage: "creditcard.fill", isInserted: $keepInMenuBar) {
             MenuBarView(cardStore: cardDataStore)
-                .withSDK(.shared)
+                .withSDK(sdk)
         }
         .menuBarExtraStyle(.window)
     }
 
     var settingsScene: some Scene {
         SwiftUI.Settings {
-            SettingsView(configuration: SettingsViewModel())
+            sdk.settingsView()
                 .sdkScreen(AppAnalyticsScreen.settings)
-                .withSDK(.shared)
+                .withSDK(sdk)
                 .presentationSizing(.fitted)
                 .frame(minWidth: 620, minHeight: 480)
         }
@@ -218,43 +230,11 @@ struct CreditCard: App {
     #endif
 }
 
-private actor SDKBootstrapper {
-    private enum State {
-        case idle
-        case configuring
-        case configured
-        case failed
-    }
-
-    private var state: State = .idle
-
-    func configure(with appSecrets: AppSecrets) async {
-        switch state {
-        case .idle, .failed:
-            state = .configuring
-        case .configuring, .configured:
-            return
-        }
-
-        do {
-            try await SinghDevKit.shared.configure(
-                SDKConfiguration(
-                    analytics: appSecrets.analyticsConfiguration,
-                    payments: appSecrets.paymentsConfiguration
-                )
-            )
-            state = .configured
-        } catch {
-            state = .failed
-            print("Warning: Failed to configure SinghDevKit: \(error.localizedDescription)")
-        }
-    }
-}
-
 struct AppSecrets: Sendable {
     let postHogProjectToken: String?
     let postHogHost: URL
     let revenueCatAPIKey: String?
+    let sentryDSN: String?
 
     var analyticsConfiguration: AnalyticsConfiguration {
         postHogProjectToken.map {
@@ -266,29 +246,38 @@ struct AppSecrets: Sendable {
         revenueCatAPIKey.map { .revenueCat(apiKey: $0) } ?? .disabled
     }
 
-    static func load() -> Self {
-        let secrets: [String: Any]
-        if let path = Bundle.main.path(forResource: "Secrets", ofType: "plist"),
-           let dictionary = NSDictionary(contentsOfFile: path) as? [String: Any] {
-            secrets = dictionary
-        } else {
-            print("Warning: Missing Secrets.plist - analytics disabled")
-            secrets = [:]
-        }
-
-        return load(
-            from: secrets,
-            appConfiguration: Bundle.main.infoDictionary ?? [:]
-        )
+    var observabilityConfiguration: ObservabilityConfiguration {
+        sentryDSN.map {
+            .sentry(
+                dsn: $0,
+                environment: Self.sentryEnvironment,
+                release: Self.sentryRelease
+            )
+        } ?? .disabled
     }
 
-    static func load(
-        from secrets: [String: Any],
-        appConfiguration: [String: Any]
-    ) -> Self {
-        let projectToken = nonEmptyString(from: secrets["PostHogProjectToken"])
+    static var sentryEnvironment: String {
+        #if DEBUG
+        "debug"
+        #elseif BETA
+        "beta"
+        #else
+        "production"
+        #endif
+    }
+
+    static var sentryRelease: String {
+        "\(Bundle.main.bundleIdentifier ?? "com.swiftlysingh.cards")@\(Bundle.main.versionNumber)+\(Bundle.main.buildNumber)"
+    }
+
+    static func load() -> Self {
+        load(from: Bundle.main.infoDictionary ?? [:])
+    }
+
+    static func load(from appConfiguration: [String: Any]) -> Self {
+        let projectToken = nonEmptyString(from: appConfiguration["PostHogProjectToken"])
         if projectToken == nil {
-            print("Warning: Missing PostHogProjectToken in Secrets.plist - analytics disabled")
+            print("Warning: Missing PostHogProjectToken in Info.plist - analytics disabled")
         }
 
         let revenueCatAPIKey = nonEmptyString(from: appConfiguration["RevenueCatAPIKey"])
@@ -296,14 +285,20 @@ struct AppSecrets: Sendable {
             print("Warning: Missing RevenueCatAPIKey in Info.plist - payments disabled")
         }
 
-        let host = nonEmptyString(from: secrets["PostHogHost"])
+        let sentryDSN = nonEmptyString(from: appConfiguration["SentryDSN"])
+        if sentryDSN == nil {
+            print("Warning: Missing SentryDSN in Info.plist - observability disabled")
+        }
+
+        let host = nonEmptyString(from: appConfiguration["PostHogHost"])
             .flatMap(URL.init(string:))
             ?? URL(string: "https://us.i.posthog.com")!
 
         return Self(
             postHogProjectToken: projectToken,
             postHogHost: host,
-            revenueCatAPIKey: revenueCatAPIKey
+            revenueCatAPIKey: revenueCatAPIKey,
+            sentryDSN: sentryDSN
         )
     }
 

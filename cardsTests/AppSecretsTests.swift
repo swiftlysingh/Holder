@@ -3,21 +3,22 @@ import XCTest
 @testable import Holder
 
 final class AppSecretsTests: XCTestCase {
-    func testEmptySecretsEnableRevenueCatFromPublicConfiguration() {
-        let secrets = AppSecrets.load(
-            from: [:],
-            appConfiguration: ["RevenueCatAPIKey": "  appl_test_key  "]
-        )
+    func testEmptyConfigurationDisablesOptionalProviders() {
+        let secrets = AppSecrets.load(from: ["RevenueCatAPIKey": "  appl_test_key  "])
 
         XCTAssertNil(secrets.postHogProjectToken)
+        XCTAssertNil(secrets.sentryDSN)
         XCTAssertEqual(secrets.analyticsConfiguration, .disabled)
+        XCTAssertEqual(secrets.observabilityConfiguration, .disabled)
         XCTAssertEqual(secrets.paymentsConfiguration, .revenueCat(apiKey: "appl_test_key"))
     }
 
     func testMissingRevenueCatPublicKeyDisablesOnlyPayments() {
         let secrets = AppSecrets.load(
-            from: ["PostHogProjectToken": "posthog-token"],
-            appConfiguration: ["RevenueCatAPIKey": "   "]
+            from: [
+                "PostHogProjectToken": "posthog-token",
+                "RevenueCatAPIKey": "   "
+            ]
         )
 
         XCTAssertEqual(secrets.postHogProjectToken, "posthog-token")
@@ -29,9 +30,9 @@ final class AppSecretsTests: XCTestCase {
         let secrets = AppSecrets.load(
             from: [
                 "PostHogProjectToken": "  posthog-token  ",
-                "PostHogHost": "https://example.com"
-            ],
-            appConfiguration: ["RevenueCatAPIKey": "appl_test_key"]
+                "PostHogHost": "https://example.com",
+                "RevenueCatAPIKey": "appl_test_key"
+            ]
         )
 
         XCTAssertEqual(secrets.postHogProjectToken, "posthog-token")
@@ -47,10 +48,35 @@ final class AppSecretsTests: XCTestCase {
 
     func testPostHogConfigurationDefaultsHost() {
         let secrets = AppSecrets.load(
-            from: ["PostHogProjectToken": "posthog-token"],
-            appConfiguration: ["RevenueCatAPIKey": "appl_test_key"]
+            from: [
+                "PostHogProjectToken": "posthog-token",
+                "RevenueCatAPIKey": "appl_test_key"
+            ]
         )
 
         XCTAssertEqual(secrets.postHogHost, URL(string: "https://us.i.posthog.com"))
+    }
+
+    func testSentryDSNEnablesObservability() {
+        let secrets = AppSecrets.load(
+            from: ["SentryDSN": "  https://public@example.ingest.sentry.io/1  "]
+        )
+
+        XCTAssertEqual(secrets.sentryDSN, "https://public@example.ingest.sentry.io/1")
+        XCTAssertEqual(
+            secrets.observabilityConfiguration,
+            .sentry(
+                dsn: "https://public@example.ingest.sentry.io/1",
+                environment: AppSecrets.sentryEnvironment,
+                release: AppSecrets.sentryRelease
+            )
+        )
+    }
+
+    func testBlankSentryDSNDisablesObservability() {
+        let secrets = AppSecrets.load(from: ["SentryDSN": "   "])
+
+        XCTAssertNil(secrets.sentryDSN)
+        XCTAssertEqual(secrets.observabilityConfiguration, .disabled)
     }
 }
