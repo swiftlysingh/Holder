@@ -65,6 +65,8 @@ class CardViewModel: ObservableObject {
 	@Published var cardImage: PlatformImage?
 	@Published var isAuthenticated = false
 	@Published var isShowingScanner = false
+	@Published var entryMode: CardEditorEntryMode
+	@Published var lastScanPreview: CardScanResult?
 	@Published var errorMessage: String?
 	@Published var showErrorAlert = false
 	private var scheduledLockTask: Task<Void, Never>?
@@ -74,6 +76,7 @@ class CardViewModel: ObservableObject {
 	private let authenticatorFactory: CardAuthenticatorFactory
 	private let sleeper: AsyncSleeper
 	private(set) var didUseScanner = false
+	private(set) var lastScanWasRescan = false
 
 	#if os(iOS)
 	@Published var selectedItem: PhotosPickerItem?
@@ -99,6 +102,7 @@ class CardViewModel: ObservableObject {
 		self.isAddNewFlow = addNewFlow
 		self.authenticatorFactory = authenticatorFactory
 		self.sleeper = sleeper
+		self.entryMode = (addNewFlow && card.type != .otherCard) ? .chooser : .form
 		cardImage = ICloudDataManager.shared.loadImage(for: card.id)
 	}
 
@@ -203,4 +207,23 @@ class CardViewModel: ObservableObject {
 	func markScannerCompleted() {
 		didUseScanner = true
 	}
+
+	func beginManualEntry() {
+		entryMode = .form
+	}
+
+	func applyScan(_ result: CardScanResult, wasRescan: Bool) {
+		CardScanSession.apply(result, to: &card)
+		lastScanPreview = result
+		didUseScanner = true
+		lastScanWasRescan = wasRescan
+		entryMode = .form
+		isShowingScanner = false
+		isEditing = true
+	}
+}
+
+enum CardEditorEntryMode {
+	case chooser
+	case form
 }
