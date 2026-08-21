@@ -360,8 +360,13 @@ struct CardView: View {
 				model.isEditing.toggle()
 				saveCardIfNeeded()
 			}) {
-				Text(model.isEditing ? "Done" : "Edit")
+				if model.isEditing {
+					Text("Done")
+				} else {
+					Image(systemName: "pencil")
+				}
 			}
+			.accessibilityLabel(model.isEditing ? "Done" : "Edit")
 		}
 		.disabled(!$model.isAuthenticated.wrappedValue)
 		#if os(iOS)
@@ -489,8 +494,13 @@ struct CardView: View {
 				model.isEditing.toggle()
 				saveCardIfNeeded()
 			}) {
-				Text(model.isEditing ? "Done" : "Edit")
+				if model.isEditing {
+					Text("Done")
+				} else {
+					Image(systemName: "pencil")
+				}
 			}
+			.accessibilityLabel(model.isEditing ? "Done" : "Edit")
 		}
 		.disabled(!model.isAuthenticated)
 	}
