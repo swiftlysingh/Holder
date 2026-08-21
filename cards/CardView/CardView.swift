@@ -21,12 +21,18 @@ struct CardView: View {
 	@StateObject private var model: CardViewModel
 	@EnvironmentObject private var authenticationSession: AuthenticationSession
 	@Environment(\.analytics) private var analytics
+	#if os(iOS)
+	@State private var cardSheetDetent: PresentationDetent
+	#endif
 	#if os(macOS)
 	@State private var copiedField: String?
 	#endif
 
 	init(model: CardViewModel) {
 		_model = StateObject(wrappedValue: model)
+		#if os(iOS)
+		_cardSheetDetent = State(initialValue: model.entryMode == .chooser ? .fraction(0.25) : .large)
+		#endif
 	}
 
 	private var isCVVLocked: Bool {
@@ -66,52 +72,59 @@ struct CardView: View {
 	@ViewBuilder
 	private func iOSCardContent() -> some View {
 		Group {
-			if model.entryMode == .chooser {
+			if model.isShowingScanner {
+				CardScannerView(
+					isRescan: model.didUseScanner,
+					onCancel: {
+						model.isShowingScanner = false
+						cardSheetDetent = model.entryMode == .chooser ? .fraction(0.25) : .large
+					},
+					onPermissionDenied: {
+						track(.cardScanPermissionDenied(engine: CardScanningEngineFactory.currentEngineID))
+						model.isShowingScanner = false
+						cardSheetDetent = model.entryMode == .chooser ? .fraction(0.25) : .large
+					},
+					onResult: { result, metrics in
+						model.applyScan(result)
+						cardSheetDetent = .large
+						track(
+							.cardScanCompleted(
+								engine: metrics.engine,
+								panSuccess: metrics.panSuccess,
+								expirySuccess: metrics.expirySuccess,
+								holderSuccess: metrics.holderSuccess,
+								timeToPanMs: metrics.timeToPANMs,
+								timeToCompleteMs: metrics.timeToCompleteMs,
+								rescan: metrics.wasRescan
+							)
+						)
+					}
+				)
+			} else if model.entryMode == .chooser {
 				scanChooserView()
 			} else {
 				getCardListView()
 			}
 		}
-		.fullScreenCover(isPresented: $model.isShowingScanner) {
-			CardScannerView(
-				isRescan: model.didUseScanner,
-				onCancel: {
-					model.isShowingScanner = false
-				},
-				onPermissionDenied: {
-					track(.cardScanPermissionDenied(engine: CardScanningEngineFactory.currentEngineID))
-					model.isShowingScanner = false
-				},
-				onResult: { result, metrics in
-					model.applyScan(result)
-					track(
-						.cardScanCompleted(
-							engine: metrics.engine,
-							panSuccess: metrics.panSuccess,
-							expirySuccess: metrics.expirySuccess,
-							holderSuccess: metrics.holderSuccess,
-							timeToPanMs: metrics.timeToPANMs,
-							timeToCompleteMs: metrics.timeToCompleteMs,
-							rescan: metrics.wasRescan
-						)
-					)
-				}
-			)
-		}
+		.presentationDetents([.fraction(0.25), .fraction(0.5), .large], selection: $cardSheetDetent)
+		.toolbar(model.isShowingScanner || model.entryMode == .chooser ? .hidden : .automatic, for: .navigationBar)
 	}
 
 	private func scanChooserView() -> some View {
-		VStack(spacing: 20) {
-			Spacer()
-			Image(systemName: "camera.viewfinder")
-				.font(.system(size: 56))
-				.foregroundStyle(Color.accentColor)
-			Text("Add a card")
-				.font(.title2.bold())
-			Text("Scan the front of your card. You can review every field before it is saved.")
-				.multilineTextAlignment(.center)
-				.foregroundStyle(.secondary)
-				.padding(.horizontal, 32)
+		VStack(spacing: 12) {
+			HStack(spacing: 12) {
+				Image(systemName: "camera.viewfinder")
+					.font(.title2)
+					.foregroundStyle(Color.accentColor)
+				VStack(alignment: .leading, spacing: 2) {
+					Text("Add a card")
+						.font(.headline)
+					Text("Scan the front, then review every field.")
+						.font(.subheadline)
+						.foregroundStyle(.secondary)
+				}
+				Spacer()
+			}
 			Button {
 				startScan(isRescan: false)
 			} label: {
@@ -120,14 +133,14 @@ struct CardView: View {
 			}
 			.buttonStyle(.borderedProminent)
 			.controlSize(.large)
-			.padding(.horizontal, 32)
 			Button("Enter Manually") {
 				model.beginManualEntry()
+				cardSheetDetent = .large
 			}
-			Spacer()
 		}
-		.navigationTitle("New Card")
-		.navigationBarTitleDisplayMode(.inline)
+		.padding(.horizontal, 20)
+		.padding(.vertical, 16)
+		.frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottom)
 	}
 
 	private func startScan(isRescan: Bool) {
@@ -135,6 +148,7 @@ struct CardView: View {
 			track(.cardScanRescanRequested(engine: CardScanningEngineFactory.currentEngineID))
 		}
 		track(.cardScanStarted(engine: CardScanningEngineFactory.currentEngineID))
+		cardSheetDetent = .fraction(0.5)
 		model.isShowingScanner = true
 	}
 
