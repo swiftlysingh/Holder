@@ -20,6 +20,7 @@ final class VisionCardScanningEngine: NSObject, CardScanningEngine {
 	private var isStopping = false
 	private var isVerifying = false
 	private var didStart = false
+	private var verificationTask: Task<Void, Never>?
 
 	override init() {
 		super.init()
@@ -56,6 +57,8 @@ final class VisionCardScanningEngine: NSObject, CardScanningEngine {
 
 	func stop() {
 		isStopping = true
+		verificationTask?.cancel()
+		verificationTask = nil
 		host.stopScanning()
 		continuation?.finish()
 		continuation = nil
@@ -71,7 +74,7 @@ final class VisionCardScanningEngine: NSObject, CardScanningEngine {
 		case .notDetermined:
 			AVCaptureDevice.requestAccess(for: .video) { [weak self] granted in
 				Task { @MainActor in
-					guard let self else { return }
+					guard let self, !self.isStopping else { return }
 					if granted {
 						self.host.startScanning()
 					} else {
@@ -87,13 +90,13 @@ final class VisionCardScanningEngine: NSObject, CardScanningEngine {
 	}
 
 	private func merge(still: CardFrameObservation, livePAN: String) -> CardScanResult? {
-		let pan = still.pan ?? livePAN
-		guard CardPAN.validatedDigits(pan) != nil else { return nil }
+		guard still.pan == nil || still.pan == livePAN else { return nil }
+		guard CardPAN.validatedDigits(livePAN) != nil else { return nil }
 		return CardScanResult(
-			pan: pan,
+			pan: livePAN,
 			expiry: still.expiry ?? latestObservation.expiry,
 			cardholderName: still.cardholderName ?? latestObservation.cardholderName,
-			network: CardPAN.network(for: pan)
+			network: CardPAN.network(for: livePAN)
 		)
 	}
 }
@@ -130,9 +133,12 @@ extension VisionCardScanningEngine: VisionScannerHostDelegate {
 		isVerifying = true
 		continuation?.yield(.scanning(guidance: "Card number found. Checking the photo…"))
 
-		Task { [weak self] in
-			guard let self, !self.isStopping else { return }
-			if let result = await self.verifyCurrentCandidate() {
+		verificationTask = Task { [weak self] in
+			guard let self, !Task.isCancelled, !self.isStopping else { return }
+			let result = await self.verifyCurrentCandidate()
+			guard !Task.isCancelled, !self.isStopping else { return }
+			self.verificationTask = nil
+			if let result {
 				self.continuation?.yield(.verified(result))
 			} else {
 				self.continuation?.yield(.failed("Could not confirm the card number. Try again."))
@@ -159,6 +165,11 @@ private final class VisionScannerHostViewController: UIViewController {
 	override func viewDidLoad() {
 		super.viewDidLoad()
 		view.backgroundColor = .black
+	}
+
+	override func viewDidLayoutSubviews() {
+		super.viewDidLayoutSubviews()
+		scanner?.regionOfInterest = ScannerOverlayView.guideFrame(in: view.bounds)
 	}
 
 	func startScanning() {
@@ -258,7 +269,18 @@ private struct VisionScannerRepresentable: UIViewControllerRepresentable {
 }
 
 private final class ScannerOverlayView: UIView {
-	private let cardAspect: CGFloat = 1.586
+	static func guideFrame(in bounds: CGRect) -> CGRect {
+		let cardAspect: CGFloat = 1.586
+		let maxWidth = bounds.width * 0.86
+		let width = min(maxWidth, bounds.height * 0.42 * cardAspect)
+		let height = width / cardAspect
+		return CGRect(
+			x: (bounds.width - width) / 2,
+			y: (bounds.height - height) / 2,
+			width: width,
+			height: height
+		)
+	}
 
 	override init(frame: CGRect) {
 		super.init(frame: frame)
@@ -282,15 +304,7 @@ private final class ScannerOverlayView: UIView {
 		UIColor.black.withAlphaComponent(0.45).setFill()
 		context.fill(bounds)
 
-		let maxWidth = bounds.width * 0.86
-		let width = min(maxWidth, bounds.height * 0.42 * cardAspect)
-		let height = width / cardAspect
-		let guide = CGRect(
-			x: (bounds.width - width) / 2,
-			y: (bounds.height - height) / 2,
-			width: width,
-			height: height
-		)
+		let guide = Self.guideFrame(in: bounds)
 		let path = UIBezierPath(roundedRect: guide, cornerRadius: 16)
 		context.setBlendMode(.clear)
 		path.fill()

@@ -287,9 +287,7 @@ enum CardCandidateEngine {
 		}
 
 		let ordered = orderedItems(items)
-		let digitGroups = ordered.flatMap { item in
-			item.candidates.flatMap { tokenizeDigitGroups(in: $0) }
-		}
+		let digitGroups = ordered.flatMap { tokenizeDigitGroups(in: $0.text) }
 
 		for pan in pans(fromConsecutiveGroups: digitGroups) {
 			append(pan)

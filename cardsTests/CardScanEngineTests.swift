@@ -29,6 +29,15 @@ final class CardCandidateEngineTests: XCTestCase {
 		XCTAssertEqual(CardCandidateEngine.reconstructPANs(from: items), ["4111111111111111"])
 	}
 
+	func testDoesNotCombineAlternativeCandidatesAcrossItems() {
+		let items = [
+			OCRTextItem(text: "4111", candidates: ["4111", "0000"]),
+			OCRTextItem(text: "1111", candidates: ["1111", "2222"])
+		]
+
+		XCTAssertEqual(CardCandidateEngine.reconstructPANs(from: items), [])
+	}
+
 	func testRejectsInvalidLuhnEvenWhenLengthMatches() {
 		let items = [OCRTextItem(text: "4111111111111112")]
 		XCTAssertEqual(CardCandidateEngine.reconstructPANs(from: items), [])
