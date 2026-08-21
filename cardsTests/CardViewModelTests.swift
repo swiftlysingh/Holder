@@ -238,9 +238,24 @@ final class CardViewModelTests: XCTestCase {
 		XCTAssertFalse(model.isAuthenticating)
 	}
 
+	func testInitDoesNotWaitForCardImageLoad() async {
+		let imageStore = GatedCardImageStore()
+		let model = makeModel(imageStore: imageStore)
+
+		XCTAssertNil(model.cardImage)
+
+		await imageStore.waitUntilLoadStarts()
+		XCTAssertNil(model.cardImage)
+
+		await imageStore.completeLoad(with: nil)
+		await Task.yield()
+		XCTAssertNil(model.cardImage)
+	}
+
 	private func makeModel(
 		authenticator: MockCardAuthenticator? = nil,
-		sleeper: AsyncSleeper = TaskAsyncSleeper()
+		sleeper: AsyncSleeper = TaskAsyncSleeper(),
+		imageStore: CardImageStore = ImmediateCardImageStore()
 	) -> CardViewModel {
 		CardViewModel(
 			card: CardData(
@@ -254,7 +269,8 @@ final class CardViewModelTests: XCTestCase {
 			),
 			addUpdateCard: { _ in true },
 			authenticatorFactory: MockCardAuthenticatorFactory(authenticator ?? MockCardAuthenticator()),
-			sleeper: sleeper
+			sleeper: sleeper,
+			imageStore: imageStore
 		)
 	}
 
@@ -304,6 +320,71 @@ struct MockCardAuthenticatorFactory: CardAuthenticatorFactory {
 	func makeAuthenticator() -> CardAuthenticating {
 		authenticator
 	}
+}
+
+final class ImmediateCardImageStore: CardImageStore {
+	var image: PlatformImage?
+
+	func loadImage(for uuid: UUID) async -> PlatformImage? { image }
+
+	func saveImage(_ image: PlatformImage, for uuid: UUID) async -> Bool {
+		self.image = image
+		return true
+	}
+
+	func deleteImage(for uuid: UUID) async {
+		image = nil
+	}
+}
+
+final class GatedCardImageStore: CardImageStore, @unchecked Sendable {
+	private let lock = NSLock()
+	private var loadContinuation: CheckedContinuation<PlatformImage?, Never>?
+	private var startedContinuation: CheckedContinuation<Void, Never>?
+	private var loadStarted = false
+
+	func waitUntilLoadStarts() async {
+		lock.lock()
+		if loadStarted {
+			lock.unlock()
+			return
+		}
+		lock.unlock()
+		await withCheckedContinuation { continuation in
+			lock.lock()
+			if loadStarted {
+				lock.unlock()
+				continuation.resume()
+				return
+			}
+			startedContinuation = continuation
+			lock.unlock()
+		}
+	}
+
+	func completeLoad(with image: PlatformImage?) async {
+		lock.lock()
+		let continuation = loadContinuation
+		loadContinuation = nil
+		lock.unlock()
+		continuation?.resume(returning: image)
+	}
+
+	func loadImage(for uuid: UUID) async -> PlatformImage? {
+		await withCheckedContinuation { continuation in
+			lock.lock()
+			loadContinuation = continuation
+			loadStarted = true
+			let started = startedContinuation
+			startedContinuation = nil
+			lock.unlock()
+			started?.resume()
+		}
+	}
+
+	func saveImage(_ image: PlatformImage, for uuid: UUID) async -> Bool { false }
+
+	func deleteImage(for uuid: UUID) async {}
 }
 
 /// Advances waiters explicitly so lock-scheduling tests avoid real sleeps.

@@ -68,11 +68,13 @@ class CardViewModel: ObservableObject {
 	@Published var errorMessage: String?
 	@Published var showErrorAlert = false
 	private var scheduledLockTask: Task<Void, Never>?
+	private var imageLoadTask: Task<Void, Never>?
 	private var scheduledLockDeadline: ContinuousClock.Instant?
 	private var activeAuthenticator: CardAuthenticating?
 	private var authAttemptID: UInt64 = 0
 	private let authenticatorFactory: CardAuthenticatorFactory
 	private let sleeper: AsyncSleeper
+	private let imageStore: CardImageStore
 	private(set) var didUseScanner = false
 
 	#if os(iOS)
@@ -91,7 +93,8 @@ class CardViewModel: ObservableObject {
 		addNewFlow: Bool = false,
 		addUpdateCard: @escaping ((CardData) -> Bool),
 		authenticatorFactory: CardAuthenticatorFactory = DefaultCardAuthenticatorFactory(),
-		sleeper: AsyncSleeper = TaskAsyncSleeper()
+		sleeper: AsyncSleeper = TaskAsyncSleeper(),
+		imageStore: CardImageStore = ICloudDataManager.shared
 	) {
 		self.card = card
 		self.isEditing = isEditing
@@ -99,13 +102,46 @@ class CardViewModel: ObservableObject {
 		self.isAddNewFlow = addNewFlow
 		self.authenticatorFactory = authenticatorFactory
 		self.sleeper = sleeper
-		cardImage = ICloudDataManager.shared.loadImage(for: card.id)
+		self.imageStore = imageStore
+		loadStoredImage()
 	}
 
 	deinit {
 		scheduledLockTask?.cancel()
+		imageLoadTask?.cancel()
 		activeAuthenticator?.invalidate()
 		activeAuthenticator = nil
+	}
+
+	func loadStoredImage() {
+		imageLoadTask?.cancel()
+		let store = imageStore
+		let id = card.id
+		imageLoadTask = Task { [weak self] in
+			let image = await store.loadImage(for: id)
+			guard !Task.isCancelled else { return }
+			await MainActor.run {
+				self?.cardImage = image
+			}
+		}
+	}
+
+	func saveStoredImage(_ image: PlatformImage) async -> Bool {
+		let saved = await imageStore.saveImage(image, for: card.id)
+		guard saved else { return false }
+		await MainActor.run {
+			cardImage = image
+		}
+		return true
+	}
+
+	func removeStoredImage() {
+		cardImage = nil
+		let store = imageStore
+		let id = card.id
+		Task {
+			await store.deleteImage(for: id)
+		}
 	}
 
 	func authenticateUser() {

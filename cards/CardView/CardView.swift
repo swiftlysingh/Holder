@@ -279,11 +279,10 @@ struct CardView: View {
 								throw URLError(.cannotDecodeContentData)
 							}
 
-							guard ICloudDataManager.shared.saveImage(uiImage, for: model.card.id) else {
+							guard await model.saveStoredImage(uiImage) else {
 								throw URLError(.cannotCreateFile)
 							}
 
-							model.cardImage = uiImage
 							model.errorMessage = nil
 						} catch {
 							model.errorMessage = "Unable to save image: \(error.localizedDescription)"
@@ -295,8 +294,7 @@ struct CardView: View {
 
 					if model.cardImage != nil {
 						Button(role: .destructive) {
-							model.cardImage = nil
-							ICloudDataManager.shared.deleteImage(for: model.card.id)
+							model.removeStoredImage()
 						} label: {
 							HStack {
 								Image(systemName: "trash")
@@ -328,8 +326,7 @@ struct CardView: View {
 
 					if model.cardImage != nil {
 						Button(role: .destructive) {
-							model.cardImage = nil
-							ICloudDataManager.shared.deleteImage(for: model.card.id)
+							model.removeStoredImage()
 						} label: {
 							HStack {
 								Image(systemName: "trash")
@@ -438,13 +435,13 @@ struct CardView: View {
 		panel.title = "Select Card Image"
 
 		if panel.runModal() == .OK, let url = panel.url {
-			if let image = NSImage(contentsOf: url) {
-				if ICloudDataManager.shared.saveImage(image, for: model.card.id) {
-					model.cardImage = image
-				} else {
-					model.errorMessage = "Failed to save image to iCloud"
-					model.showErrorAlert = true
+			Task {
+				guard let image = NSImage(contentsOf: url) else { return }
+				if await model.saveStoredImage(image) {
+					return
 				}
+				model.errorMessage = "Failed to save image to iCloud"
+				model.showErrorAlert = true
 			}
 		}
 	}
@@ -707,8 +704,7 @@ struct CardView: View {
 
 					if model.cardImage != nil {
 						Button(role: .destructive) {
-							model.cardImage = nil
-							ICloudDataManager.shared.deleteImage(for: model.card.id)
+							model.removeStoredImage()
 						} label: {
 							HStack {
 								Image(systemName: "trash")
