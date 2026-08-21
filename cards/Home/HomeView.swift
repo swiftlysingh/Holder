@@ -77,7 +77,7 @@ struct HomeView: View {
 			.navigationTitle("Cards")
 			.toolbarTitleDisplayMode(.inlineLarge)
 			.task {
-				model.cardDataStore.loadCards()
+				await model.cardDataStore.loadCardsAsync()
 			}
 			#if !os(macOS)
 			.toolbar {
