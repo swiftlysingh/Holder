@@ -2,6 +2,10 @@ import Combine
 import XCTest
 @testable import Holder
 
+#if os(macOS)
+import AppKit
+#endif
+
 @MainActor
 final class AuthenticationSessionTests: XCTestCase {
     func testInitialStateIsFailClosed() {
@@ -66,6 +70,26 @@ final class AuthenticationSessionTests: XCTestCase {
         XCTAssertFalse(session.isSensitiveAccessFresh)
         XCTAssertTrue(session.isPrivacyCurtainVisible)
     }
+
+    #if os(macOS)
+    func testClosingMainWindowStartsVaultGraceAndRevokesSensitiveAccess() async {
+        let authenticator = MockDeviceAuthenticator()
+        let session = makeSession(authenticator: authenticator)
+        await unlock(session, with: authenticator)
+        let window = NSWindow()
+        MainWindowCoordinator.register(authenticationSession: session)
+        MainWindowCoordinator.register(window: window)
+
+        NotificationCenter.default.post(
+            name: NSWindow.willCloseNotification,
+            object: window
+        )
+
+        XCTAssertTrue(session.isVaultUnlocked)
+        XCTAssertFalse(session.isSensitiveAccessFresh)
+        XCTAssertTrue(session.isPrivacyCurtainVisible)
+    }
+    #endif
 
     func testReturnAtGraceBoundaryKeepsVaultOpenWithoutPrompt() async {
         let authenticator = MockDeviceAuthenticator()

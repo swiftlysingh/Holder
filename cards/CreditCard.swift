@@ -27,17 +27,42 @@ enum MainWindowScene {
 @MainActor
 enum MainWindowCoordinator {
     private static weak var mainWindow: NSWindow?
+    private static weak var authenticationSession: AuthenticationSession?
     private static var openWindow: OpenWindowAction?
+    private static var closeObserver: NSObjectProtocol?
+
+    static func register(authenticationSession: AuthenticationSession) {
+        self.authenticationSession = authenticationSession
+    }
 
     static func register(window: NSWindow) {
+        guard mainWindow !== window else { return }
+        stopObservingMainWindowClose()
         mainWindow = window
+        closeObserver = NotificationCenter.default.addObserver(
+            forName: NSWindow.willCloseNotification,
+            object: window,
+            queue: .main
+        ) { notification in
+            guard let window = notification.object as? NSWindow else { return }
+            MainActor.assumeIsolated {
+                MainWindowCoordinator.mainWindowDidClose(window: window)
+            }
+        }
     }
 
     /// Clears the registered window only when `window` is the currently tracked host,
     /// so an obsolete accessor cannot unregister a newer main window.
     static func unregister(window: NSWindow) {
         guard mainWindow === window else { return }
+        stopObservingMainWindowClose()
         mainWindow = nil
+    }
+
+    private static func mainWindowDidClose(window: NSWindow) {
+        guard mainWindow === window else { return }
+        authenticationSession?.didEnterBackground()
+        unregister(window: window)
     }
 
     static func register(openWindow: OpenWindowAction) {
@@ -63,11 +88,19 @@ enum MainWindowCoordinator {
         openWindow(id: MainWindowScene.id)
         return true
     }
+
+    private static func stopObservingMainWindowClose() {
+        if let closeObserver {
+            NotificationCenter.default.removeObserver(closeObserver)
+            self.closeObserver = nil
+        }
+    }
 }
 
 /// Bridge: SwiftUI `openWindow` is only in the environment; AppDelegate needs a stored action for Dock reopen.
 /// Also captures the exact main `NSWindow` hosting this content (not Settings).
 private struct MainWindowRegistrar: View {
+    let authenticationSession: AuthenticationSession
     @Environment(\.openWindow) private var openWindow
 
     var body: some View {
@@ -76,6 +109,7 @@ private struct MainWindowRegistrar: View {
             .accessibilityHidden(true)
             .background(MainWindowAccessor())
             .onAppear {
+                MainWindowCoordinator.register(authenticationSession: authenticationSession)
                 MainWindowCoordinator.register(openWindow: openWindow)
             }
     }
@@ -170,7 +204,7 @@ struct CreditCard: App {
         // Single-instance main scene: openWindow focuses/recreates this window rather than spawning duplicates.
         Window("Holder", id: MainWindowScene.id) {
             rootContent
-                .background(MainWindowRegistrar())
+                .background(MainWindowRegistrar(authenticationSession: authenticationSession))
         }
         menuBarScene
         settingsScene
