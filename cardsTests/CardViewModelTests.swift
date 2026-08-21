@@ -1,11 +1,52 @@
 import XCTest
 @testable import Holder
 
+#if os(macOS)
+import AppKit
+#else
+import UIKit
+#endif
+
 @MainActor
 final class CardViewModelTests: XCTestCase {
 	func testInitDoesNotWaitForCardImageLoad() async {
 		let imageStore = GatedCardImageStore()
-		let model = CardViewModel(
+		let model = makeModel(imageStore: imageStore)
+
+		XCTAssertNil(model.cardImage)
+
+		await imageStore.waitUntilLoadStarts()
+		XCTAssertNil(model.cardImage)
+
+		await imageStore.completeLoad(with: nil)
+		await Task.yield()
+		XCTAssertNil(model.cardImage)
+	}
+
+	func testICloudDirectoryRetriesAfterTransientUnavailability() async throws {
+		let directory = FileManager.default.temporaryDirectory
+			.appendingPathComponent("holder-icloud-test-\(UUID().uuidString)", isDirectory: true)
+		defer { try? FileManager.default.removeItem(at: directory) }
+
+		let resolver = SequentialDirectoryResolver(results: [nil, directory])
+		let manager = ICloudDataManager(directoryResolver: { resolver.resolve() })
+		let identifier = UUID()
+
+		let initialData = await manager.loadImageData(for: identifier)
+		XCTAssertNil(initialData)
+
+		let imageData = try XCTUnwrap(makeTestImage().jpegData(compressionQuality: 0.8))
+		let didSave = await manager.saveImageData(imageData, for: identifier)
+		XCTAssertTrue(didSave)
+
+		let recoveredData = await manager.loadImageData(for: identifier)
+		XCTAssertEqual(recoveredData, imageData)
+		XCTAssertEqual(resolver.callCount, 2)
+		XCTAssertFalse(resolver.didResolveOnMainThread)
+	}
+
+	private func makeModel(imageStore: CardImageStore) -> CardViewModel {
+		CardViewModel(
 			card: CardData(
 				id: UUID(),
 				number: "4111111111111111",
@@ -18,21 +59,28 @@ final class CardViewModelTests: XCTestCase {
 			addUpdateCard: { _ in true },
 			imageStore: imageStore
 		)
+	}
 
-		XCTAssertNil(model.cardImage)
-
-		await imageStore.waitUntilLoadStarts()
-		XCTAssertNil(model.cardImage)
-
-		await imageStore.completeLoad(with: nil)
-		await Task.yield()
-		XCTAssertNil(model.cardImage)
+	private func makeTestImage() -> PlatformImage {
+		#if os(macOS)
+		let image = NSImage(size: NSSize(width: 1, height: 1))
+		image.lockFocus()
+		NSColor.red.setFill()
+		NSBezierPath(rect: NSRect(x: 0, y: 0, width: 1, height: 1)).fill()
+		image.unlockFocus()
+		return image
+		#else
+		return UIGraphicsImageRenderer(size: CGSize(width: 1, height: 1)).image { context in
+			UIColor.red.setFill()
+			context.fill(CGRect(x: 0, y: 0, width: 1, height: 1))
+		}
+		#endif
 	}
 }
 
 private final class GatedCardImageStore: CardImageStore, @unchecked Sendable {
 	private let lock = NSLock()
-	private var loadContinuation: CheckedContinuation<PlatformImage?, Never>?
+	private var loadContinuation: CheckedContinuation<Data?, Never>?
 	private var startedContinuation: CheckedContinuation<Void, Never>?
 	private var loadStarted = false
 
@@ -55,15 +103,15 @@ private final class GatedCardImageStore: CardImageStore, @unchecked Sendable {
 		}
 	}
 
-	func completeLoad(with image: PlatformImage?) async {
+	func completeLoad(with data: Data?) async {
 		lock.lock()
 		let continuation = loadContinuation
 		loadContinuation = nil
 		lock.unlock()
-		continuation?.resume(returning: image)
+		continuation?.resume(returning: data)
 	}
 
-	func loadImage(for uuid: UUID) async -> PlatformImage? {
+	func loadImageData(for uuid: UUID) async -> Data? {
 		await withCheckedContinuation { continuation in
 			lock.lock()
 			loadContinuation = continuation
@@ -75,7 +123,38 @@ private final class GatedCardImageStore: CardImageStore, @unchecked Sendable {
 		}
 	}
 
-	func saveImage(_ image: PlatformImage, for uuid: UUID) async -> Bool { false }
+	func saveImageData(_ data: Data, for uuid: UUID) async -> Bool { false }
 
 	func deleteImage(for uuid: UUID) async {}
+}
+
+private final class SequentialDirectoryResolver: @unchecked Sendable {
+	private let lock = NSLock()
+	private var results: [URL?]
+	private var callCountStorage = 0
+	private var didResolveOnMainThreadStorage = false
+
+	init(results: [URL?]) {
+		self.results = results
+	}
+
+	func resolve() -> URL? {
+		lock.lock()
+		defer { lock.unlock() }
+		callCountStorage += 1
+		didResolveOnMainThreadStorage = didResolveOnMainThreadStorage || Thread.isMainThread
+		return results.isEmpty ? nil : results.removeFirst()
+	}
+
+	var callCount: Int {
+		lock.lock()
+		defer { lock.unlock() }
+		return callCountStorage
+	}
+
+	var didResolveOnMainThread: Bool {
+		lock.lock()
+		defer { lock.unlock() }
+		return didResolveOnMainThreadStorage
+	}
 }

@@ -11,7 +11,8 @@ import SwiftUI
 import PhotosUI
 #endif
 
-class CardViewModel: ObservableObject {
+@MainActor
+final class CardViewModel: ObservableObject {
 
 	@Published var card : CardData
 	@Published var isEditing = false
@@ -27,14 +28,16 @@ class CardViewModel: ObservableObject {
 	@Published var selectedItem: PhotosPickerItem?
 	#endif
 
+	typealias CardUpdateAction = @MainActor (CardData) async -> Bool
+
 	var isAddNewFlow : Bool
-	var addUpdateCard: (CardData) -> Bool
+	var addUpdateCard: CardUpdateAction
 
 	init(
 		card: CardData,
 		isEditing: Bool = false,
 		addNewFlow: Bool = false,
-		addUpdateCard: @escaping ((CardData) -> Bool),
+		addUpdateCard: @escaping CardUpdateAction,
 		imageStore: CardImageStore = ICloudDataManager.shared
 	) {
 		self.card = card
@@ -53,21 +56,18 @@ class CardViewModel: ObservableObject {
 		imageLoadTask?.cancel()
 		let store = imageStore
 		let id = card.id
-		imageLoadTask = Task { [weak self] in
-			let image = await store.loadImage(for: id)
+		imageLoadTask = Task { [weak self, store, id] in
+			let data = await store.loadImageData(for: id)
 			guard !Task.isCancelled else { return }
-			await MainActor.run {
-				self?.cardImage = image
-			}
+			self?.cardImage = data.flatMap { PlatformImage(data: $0) }
 		}
 	}
 
 	func saveStoredImage(_ image: PlatformImage) async -> Bool {
-		let saved = await imageStore.saveImage(image, for: card.id)
+		guard let data = image.jpegData(compressionQuality: 0.8) else { return false }
+		let saved = await imageStore.saveImageData(data, for: card.id)
 		guard saved else { return false }
-		await MainActor.run {
-			cardImage = image
-		}
+		cardImage = image
 		return true
 	}
 
@@ -75,10 +75,11 @@ class CardViewModel: ObservableObject {
 		cardImage = nil
 		let store = imageStore
 		let id = card.id
-		Task {
+		Task { [store, id] in
 			await store.deleteImage(for: id)
 		}
 	}
+
 	func copyAction(with value: String) {
 		guard !value.isEmpty else {
 			HapticService.trigger(.error)
