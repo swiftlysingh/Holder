@@ -19,6 +19,8 @@ class CardViewModel: ObservableObject {
 	@Published var isShowingScanner = false
 	@Published var errorMessage: String?
 	@Published var showErrorAlert = false
+	private var imageLoadTask: Task<Void, Never>?
+	private let imageStore: CardImageStore
 	private(set) var didUseScanner = false
 
 	#if os(iOS)
@@ -32,15 +34,51 @@ class CardViewModel: ObservableObject {
 		card: CardData,
 		isEditing: Bool = false,
 		addNewFlow: Bool = false,
-		addUpdateCard: @escaping ((CardData) -> Bool)
+		addUpdateCard: @escaping ((CardData) -> Bool),
+		imageStore: CardImageStore = ICloudDataManager.shared
 	) {
 		self.card = card
 		self.isEditing = isEditing
 		self.addUpdateCard = addUpdateCard
 		self.isAddNewFlow = addNewFlow
-		cardImage = ICloudDataManager.shared.loadImage(for: card.id)
+		self.imageStore = imageStore
+		loadStoredImage()
 	}
 
+	deinit {
+		imageLoadTask?.cancel()
+	}
+
+	func loadStoredImage() {
+		imageLoadTask?.cancel()
+		let store = imageStore
+		let id = card.id
+		imageLoadTask = Task { [weak self] in
+			let image = await store.loadImage(for: id)
+			guard !Task.isCancelled else { return }
+			await MainActor.run {
+				self?.cardImage = image
+			}
+		}
+	}
+
+	func saveStoredImage(_ image: PlatformImage) async -> Bool {
+		let saved = await imageStore.saveImage(image, for: card.id)
+		guard saved else { return false }
+		await MainActor.run {
+			cardImage = image
+		}
+		return true
+	}
+
+	func removeStoredImage() {
+		cardImage = nil
+		let store = imageStore
+		let id = card.id
+		Task {
+			await store.deleteImage(for: id)
+		}
+	}
 	func copyAction(with value: String) {
 		guard !value.isEmpty else {
 			HapticService.trigger(.error)

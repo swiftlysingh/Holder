@@ -64,7 +64,7 @@ class HomeViewModel: ObservableObject {
 
 			// Ensure cards are loaded before trying to find the card
 			if cardDataStore.cardsByType.values.allSatisfy({ $0.isEmpty }) {
-				cardDataStore.loadCards()
+				await cardDataStore.loadCardsAsync()
 			}
 
 			// Retry finding the card with exponential backoff instead of fixed delay
