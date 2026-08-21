@@ -8,17 +8,12 @@
 import SwiftUI
 
 extension String {
-	func toSecureCard() -> String {
-		guard let components = self.components(separatedBy: " ").last else {return self}
-
-		let baseString = String(repeating: "•", count: 4) + " "
-		if components.count > 4 {
-			let lastFour = components.suffix(Int(UserSettings.shared.showNumber)) 
-			return  baseString + lastFour
-		} else {
-			return baseString + (components)
-		}
+	func maskedCardNumber() -> String {
+		let digits = filter(\.isNumber)
+		guard !digits.isEmpty else { return "No number" }
+		return "•••• \(digits.suffix(4))"
 	}
+
 	func getCardNetwork() -> CardNetwork {
 		guard let number = UInt(self.replacingOccurrences(of: " ", with: "")) else {return .other}
 		

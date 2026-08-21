@@ -12,7 +12,6 @@ class HomeViewModel: ObservableObject {
 	@Published var addingType: CardType?
 	@Published var selectedCard: CardData?
 	@Bindable var cardDataStore: CardDataStore
-	@AppStorage("isFirstLaunch") var isFirstLaunch = true
 	private var deepLinkTask: Task<Void, Never>?
 
 	init(cardDataStore: CardDataStore = CardDataStore()) {
