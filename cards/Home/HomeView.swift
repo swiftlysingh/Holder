@@ -73,7 +73,7 @@ struct HomeView: View {
 			}
 			.navigationTitle("Cards")
 			.task {
-				model.cardDataStore.loadCards()
+				await model.cardDataStore.loadCardsAsync()
 			}
 			#if !os(macOS)
 			.toolbar {
