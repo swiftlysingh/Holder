@@ -137,13 +137,15 @@ struct CreditCard: App {
     #endif
 
     /// Shared card data store for menu bar access on macOS
-    @State private var cardDataStore = CardDataStore()
+    @State private var cardDataStore: CardDataStore
     @State private var sdk: SinghDevKit
+    @StateObject private var homeViewModel: HomeViewModel
     @StateObject private var authenticationSession = AuthenticationSession()
     private let sdkConfiguration: SDKConfiguration
     private let privacyPolicyURL: URL?
 
     init() {
+        let cardDataStore = CardDataStore()
         let appSecrets = AppSecrets.load()
         let settings = SettingsViewModel()
         let sdkConfiguration = SDKConfiguration(
@@ -153,6 +155,10 @@ struct CreditCard: App {
             payments: appSecrets.paymentsConfiguration,
             settings: settings,
             onboarding: .default()
+        )
+        _cardDataStore = State(initialValue: cardDataStore)
+        _homeViewModel = StateObject(
+            wrappedValue: HomeViewModel(cardDataStore: cardDataStore)
         )
         self.sdkConfiguration = sdkConfiguration
         self.privacyPolicyURL = settings.privacyPolicyURL
@@ -178,7 +184,7 @@ struct CreditCard: App {
     @ViewBuilder
     private var rootContent: some View {
         VaultProtectedView(session: authenticationSession) {
-            HomeView(cardDataStore: cardDataStore)
+            HomeView(model: homeViewModel)
                 .task {
                     try? Tips.configure([
                         .displayFrequency(.immediate),

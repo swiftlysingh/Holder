@@ -10,14 +10,14 @@ import WhatsNewKit
 import SinghDevKit
 
 struct HomeView: View {
-	@ObservedObject var model: HomeViewModel
+	@ObservedObject private var model: HomeViewModel
 	@EnvironmentObject private var authenticationSession: AuthenticationSession
 	@Environment(\.analytics) private var analytics
 	@Environment(\.sdk) private var sdk
 	@State private var cardPendingDeletion: CardData?
 
-	init(cardDataStore: CardDataStore = CardDataStore()) {
-		self.model = HomeViewModel(cardDataStore: cardDataStore)
+	init(model: HomeViewModel) {
+		self.model = model
 	}
 
 	var body: some View {

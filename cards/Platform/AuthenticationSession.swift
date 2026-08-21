@@ -249,12 +249,11 @@ struct VaultProtectedView<Content: View>: View {
 
     var body: some View {
         ZStack {
-            content
-                .opacity(isContentVisible ? 1 : 0)
-                .allowsHitTesting(isContentVisible && !session.isPrivacyCurtainVisible)
-                .accessibilityHidden(!isContentVisible || session.isPrivacyCurtainVisible)
-
-            if !isContentVisible {
+            if isContentVisible {
+                content
+                    .allowsHitTesting(!session.isPrivacyCurtainVisible)
+                    .accessibilityHidden(session.isPrivacyCurtainVisible)
+            } else {
                 lockView
             }
 
@@ -295,38 +294,91 @@ struct VaultProtectedView<Content: View>: View {
     }
 
     private var lockView: some View {
-        VStack(spacing: 16) {
-            Image(systemName: "lock.shield.fill")
-                .font(.system(size: 44))
-                .foregroundStyle(.tint)
-            Text("Holder is Locked")
-                .font(.title2.bold())
-            Text("Authenticate to open your cards.")
-                .foregroundStyle(.secondary)
+        ZStack {
+            platformBackground
+                .ignoresSafeArea()
+
+            blurredHomeBackdrop
+
+            platformBackground
+                .opacity(0.3)
+                .ignoresSafeArea()
 
             Button {
                 session.authenticateToUnlockVault()
             } label: {
-                if session.isAuthenticating {
-                    ProgressView()
-                        .frame(minWidth: 120)
-                } else {
-                    Label("Unlock Holder", systemImage: "lock.open.fill")
+                VStack(spacing: 12) {
+                    Image(systemName: "lock.shield.fill")
+                        .font(.system(size: 46, weight: .semibold))
+                        .foregroundStyle(.primary)
+
+                    Text("Holder is locked")
+                        .font(.title2.weight(.semibold))
+                        .foregroundStyle(.primary)
+                }
+                .padding(44)
+            }
+            .buttonStyle(.plain)
+            .disabled(session.isAuthenticating)
+            .accessibilityLabel(lockAccessibilityLabel)
+            .accessibilityHint("Tap to authenticate and open Holder")
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+    }
+
+    private var lockAccessibilityLabel: String {
+        if session.isAuthenticating {
+            return "Authenticating"
+        }
+        if session.authenticationMessage != nil {
+            return "Authentication failed. Holder is locked"
+        }
+        return "Holder is locked"
+    }
+
+    private var blurredHomeBackdrop: some View {
+        VStack(alignment: .leading, spacing: 20) {
+            HStack {
+                Text("Cards")
+                    .font(.largeTitle.bold())
+                Spacer()
+                Image(systemName: "gearshape.fill")
+                    .font(.title3)
+            }
+
+            VStack(spacing: 12) {
+                ForEach(0..<4, id: \.self) { index in
+                    HStack(spacing: 14) {
+                        RoundedRectangle(cornerRadius: 10, style: .continuous)
+                            .fill(Color.primary.opacity(0.2))
+                            .frame(width: 44, height: 34)
+
+                        VStack(alignment: .leading, spacing: 8) {
+                            Capsule()
+                                .fill(Color.primary.opacity(0.22))
+                                .frame(width: index.isMultiple(of: 2) ? 132 : 164, height: 12)
+                            Capsule()
+                                .fill(Color.primary.opacity(0.14))
+                                .frame(width: 92, height: 10)
+                        }
+
+                        Spacer(minLength: 0)
+                    }
+                    .padding(16)
+                    .background(
+                        Color.primary.opacity(0.06),
+                        in: RoundedRectangle(cornerRadius: 18, style: .continuous)
+                    )
                 }
             }
-            .buttonStyle(.borderedProminent)
-            .disabled(session.isAuthenticating)
-
-            if let message = session.authenticationMessage {
-                Text(message)
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-                    .multilineTextAlignment(.center)
-            }
         }
-        .padding(32)
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .background(platformBackground)
+        .padding(24)
+        .frame(maxWidth: 620, maxHeight: .infinity, alignment: .top)
+        .blur(radius: 9)
+        .opacity(0.72)
+        .scaleEffect(1.04)
+        .allowsHitTesting(false)
+        .accessibilityHidden(true)
     }
 
     private var privacyCurtain: some View {
