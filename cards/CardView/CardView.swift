@@ -275,15 +275,15 @@ struct CardView: View {
 								throw URLError(.cannotDecodeContentData)
 							}
 
-							guard let uiImage = UIImage(data: data) else {
+							guard let image = ICloudDataManager.downsampledImage(from: data) else {
 								throw URLError(.cannotDecodeContentData)
 							}
 
-							guard ICloudDataManager.shared.saveImage(uiImage, for: model.card.id) else {
+							guard ICloudDataManager.shared.saveImage(image, for: model.card.id) else {
 								throw URLError(.cannotCreateFile)
 							}
 
-							model.cardImage = uiImage
+							model.cardImage = image
 							model.errorMessage = nil
 						} catch {
 							model.errorMessage = "Unable to save image: \(error.localizedDescription)"
@@ -438,13 +438,16 @@ struct CardView: View {
 		panel.title = "Select Card Image"
 
 		if panel.runModal() == .OK, let url = panel.url {
-			if let image = NSImage(contentsOf: url) {
+			if let image = ICloudDataManager.downsampledImage(fromFile: url) {
 				if ICloudDataManager.shared.saveImage(image, for: model.card.id) {
 					model.cardImage = image
 				} else {
 					model.errorMessage = "Failed to save image to iCloud"
 					model.showErrorAlert = true
 				}
+			} else {
+				model.errorMessage = "Unable to read the selected image"
+				model.showErrorAlert = true
 			}
 		}
 	}
