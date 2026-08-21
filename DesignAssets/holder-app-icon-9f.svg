@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Holder app icon — Redesign direction 9f, "Masked".
+
+  The icon is deliberately rendered as a full-bleed square. iOS and macOS own
+  the final icon mask, while this source owns the privacy mark: four masked
+  digits, with the final digit in Holder's Emerald Mint.
+-->
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024">
+  <rect width="1024" height="1024" fill="#102B25"/>
+
+  <!-- Faint number rows make the mark read as a securely held card. -->
+  <rect x="192" y="288" width="640" height="64" rx="32" fill="#FFFFFF" fill-opacity="0.24"/>
+  <rect x="192" y="640" width="448" height="64" rx="32" fill="#FFFFFF" fill-opacity="0.24"/>
+
+  <!-- Masked digits. The final dot is the action/reveal accent. -->
+  <circle cx="240" cy="512" r="48" fill="#FFFFFF"/>
+  <circle cx="400" cy="512" r="48" fill="#FFFFFF"/>
+  <circle cx="560" cy="512" r="48" fill="#FFFFFF"/>
+  <circle cx="720" cy="512" r="48" fill="#39D98A"/>
+</svg>

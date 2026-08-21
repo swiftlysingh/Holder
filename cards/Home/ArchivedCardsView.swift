@@ -54,6 +54,7 @@ struct ArchivedCardsView: View {
 			}
 		}
 		.navigationTitle("Archived Cards")
+		.toolbarTitleDisplayMode(.inlineLarge)
 		.confirmationDialog(
 			"Delete this card?",
 			isPresented: Binding(
