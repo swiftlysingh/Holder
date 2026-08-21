@@ -306,7 +306,7 @@ struct VaultProtectedView<Content: View>: View {
                 VStack(spacing: 12) {
                     Image(systemName: "lock.shield.fill")
                         .font(.system(size: 46, weight: .semibold))
-                        .foregroundStyle(.primary)
+                        .foregroundStyle(.tint)
 
                     Text("Holder is locked")
                         .font(.title2.weight(.semibold))
