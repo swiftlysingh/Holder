@@ -76,7 +76,6 @@ class CardViewModel: ObservableObject {
 	private let authenticatorFactory: CardAuthenticatorFactory
 	private let sleeper: AsyncSleeper
 	private(set) var didUseScanner = false
-	private(set) var lastScanWasRescan = false
 
 	#if os(iOS)
 	@Published var selectedItem: PhotosPickerItem?
@@ -204,19 +203,14 @@ class CardViewModel: ObservableObject {
 		activeAuthenticator = nil
 	}
 
-	func markScannerCompleted() {
-		didUseScanner = true
-	}
-
 	func beginManualEntry() {
 		entryMode = .form
 	}
 
-	func applyScan(_ result: CardScanResult, wasRescan: Bool) {
+	func applyScan(_ result: CardScanResult) {
 		CardScanSession.apply(result, to: &card)
 		lastScanPreview = result
 		didUseScanner = true
-		lastScanWasRescan = wasRescan
 		entryMode = .form
 		isShowingScanner = false
 		isEditing = true

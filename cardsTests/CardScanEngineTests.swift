@@ -98,7 +98,7 @@ final class CardCandidateEngineTests: XCTestCase {
 		var voter = TemporalPANVoter(windowSize: 8, requiredVotes: 2)
 		XCTAssertNil(voter.record("4111111111111111"))
 		XCTAssertNil(voter.record("5555555555554444"))
-		XCTAssertNil(voter.record("4111111111111111"))
+		XCTAssertEqual(voter.record("4111111111111111"), "4111111111111111")
 		XCTAssertNil(voter.record("5555555555554444"))
 	}
 
@@ -163,8 +163,7 @@ final class CardScanSessionTests: XCTestCase {
 		)
 
 		model.applyScan(
-			CardScanResult(pan: "378282246310005", expiry: nil, cardholderName: nil, network: .amex),
-			wasRescan: true
+			CardScanResult(pan: "378282246310005", expiry: nil, cardholderName: nil, network: .amex)
 		)
 
 		XCTAssertEqual(model.card.number, "3782 822463 10005")
@@ -174,7 +173,6 @@ final class CardScanSessionTests: XCTestCase {
 		XCTAssertEqual(model.card.cvv, "999")
 		XCTAssertEqual(model.card.description, "Wallet")
 		XCTAssertTrue(model.didUseScanner)
-		XCTAssertTrue(model.lastScanWasRescan)
 		XCTAssertEqual(model.entryMode, .form)
 		XCTAssertFalse(model.isShowingScanner)
 	}
@@ -252,8 +250,8 @@ final class CardScanAnalyticsTests: XCTestCase {
 			rescan: true
 		)
 		XCTAssertEqual(completed.properties["engine"], .string("vision"))
-		XCTAssertEqual(completed.properties["pan_success"], .string("true"))
-		XCTAssertEqual(completed.properties["time_to_pan_ms"], .string("420"))
-		XCTAssertEqual(completed.properties["rescan"], .string("true"))
+		XCTAssertEqual(completed.properties["pan_success"], .bool(true))
+		XCTAssertEqual(completed.properties["time_to_pan_ms"], .int(420))
+		XCTAssertEqual(completed.properties["rescan"], .bool(true))
 	}
 }

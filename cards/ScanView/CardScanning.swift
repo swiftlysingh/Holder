@@ -2,8 +2,8 @@
 //  CardScanning.swift
 //  cards
 //
-//  Engine boundary for on-device card scanning. UI talks to this protocol
-//  so Vision, BlinkCard, and Scanbot can be swapped without rewriting the flow.
+//  Engine boundary for Holder's on-device card scanning. Keeping the camera
+//  lifecycle behind a protocol makes the app-owned flow testable.
 //
 
 import SwiftUI
@@ -43,7 +43,6 @@ enum CardScanUpdate: Sendable {
 @MainActor
 protocol CardScanningEngine: AnyObject {
 	var engineID: String { get }
-	var showsCustomOverlay: Bool { get }
 	func makeCameraView() -> AnyView
 	func scanUpdates() -> AsyncStream<CardScanUpdate>
 	func verifyCurrentCandidate() async -> CardScanResult?
@@ -52,8 +51,6 @@ protocol CardScanningEngine: AnyObject {
 
 enum CardScanningEngineID {
 	static let vision = "vision"
-	static let blinkCard = "blinkcard"
-	static let scanbot = "scanbot"
 }
 
 enum CardScanningEngineFactory {
@@ -72,7 +69,6 @@ enum CardScanningEngineFactory {
 @MainActor
 final class UnavailableCardScanningEngine: CardScanningEngine {
 	let engineID: String
-	let showsCustomOverlay = false
 
 	init(engineID: String) {
 		self.engineID = engineID
