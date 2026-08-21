@@ -138,6 +138,7 @@ enum AppAnalyticsEvent: AnalyticsEvent {
              .cardScanStarted,
              .cardScanCompleted,
              .cardScanPermissionDenied,
+             .cardScanRescanRequested,
              .cardOpenedFromWidget:
             .breadcrumb()
         }
