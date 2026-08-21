@@ -47,14 +47,47 @@ class CardDataStore {
 	@ObservationIgnored
 	private let retrieveCards: (String) -> CardRetrievalResult
 
-	init(retrieveCards: ((String) -> CardRetrievalResult)? = nil) {
+	private static let keychainQueue = DispatchQueue(
+		label: "com.swiftlysingh.holder.keychain",
+		qos: .userInitiated
+	)
+
+	init(
+		retrieveCards: ((String) -> CardRetrievalResult)? = nil,
+		loadImmediately: Bool? = nil
+	) {
 		self.retrieveCards = retrieveCards ?? Self.retrieveAllCardData
-		loadCards()
+		// Default production init stays empty: iCloud Keychain SecItemCopyMatching
+		// with kSecAttrSynchronizable can stall the main thread for seconds.
+		let shouldLoadImmediately = loadImmediately ?? (retrieveCards != nil)
+		if shouldLoadImmediately {
+			loadCards()
+		}
 	}
 
 	@discardableResult
 	func loadCards() -> Bool {
-		switch retrieveCards(Bundle.main.bundleIdentifier ?? "com.myApp.defaultService") {
+		applyRetrieval(retrieveCards(Bundle.main.bundleIdentifier ?? "com.myApp.defaultService"))
+	}
+
+	/// iCloud Keychain `SecItemCopyMatching` can stall the caller for seconds.
+	/// Keep launch, deep-link, and menu-bar refresh off the main thread.
+	func loadCardsAsync() async -> Bool {
+		let retrieve = retrieveCards
+		let service = Bundle.main.bundleIdentifier ?? "com.myApp.defaultService"
+		return await withCheckedContinuation { continuation in
+			Self.keychainQueue.async { [weak self] in
+				let result = retrieve(service)
+				DispatchQueue.main.async {
+					continuation.resume(returning: self?.applyRetrieval(result) ?? false)
+				}
+			}
+		}
+	}
+
+	@discardableResult
+	private func applyRetrieval(_ result: CardRetrievalResult) -> Bool {
+		switch result {
 		case .failure:
 			// Preserve in-memory cards and widget snapshot on real Keychain/decode errors.
 			return false
