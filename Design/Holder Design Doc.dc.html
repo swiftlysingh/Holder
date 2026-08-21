@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <meta name="design_doc_mode" content="canvas">
+  <link rel="stylesheet" href="_ds/apple-ios-design-system-d4c657ac-e5e5-4564-aa10-f3eabfc2ed04/tokens/fonts.css">
+  <link rel="stylesheet" href="_ds/apple-ios-design-system-d4c657ac-e5e5-4564-aa10-f3eabfc2ed04/tokens/colors.css">
+  <link rel="stylesheet" href="_ds/apple-ios-design-system-d4c657ac-e5e5-4564-aa10-f3eabfc2ed04/tokens/typography.css">
+  <script src="_ds/apple-ios-design-system-d4c657ac-e5e5-4564-aa10-f3eabfc2ed04/_ds_bundle.js"></script>
+  <style>
+    body{margin:0;background:oklch(0.97 0.015 160);font-family:"SF Pro Text","Inter",system-ui,-apple-system,sans-serif;color:oklch(0.25 0.05 165)}
+    a{color:oklch(0.5 0.14 160);text-decoration:none} a:hover{text-decoration:underline}
+  </style>
+</helmet>
+<div style="max-width:1240px;margin:0 auto;padding:56px 44px 80px;box-sizing:border-box">
+  <div style="margin-bottom:40px">
+    <div style="font-family:ui-monospace,Menlo,monospace;font-size:11px;letter-spacing:3px;color:oklch(0.52 0.05 165);margin-bottom:10px">HOLDER · DESIGN DOC · v1</div>
+    <div style="font-family:'SF Pro Display','Inter',sans-serif;font-size:44px;font-weight:700;letter-spacing:-.5px;line-height:1.1">The offline card vault,<br>redesigned.</div>
+    <div style="font-size:17px;line-height:1.47;color:oklch(0.42 0.04 165);max-width:640px;margin-top:14px">Holder keeps payment cards, loyalty cards and identity documents encrypted in the iOS Keychain — nothing ever leaves the device. This document defines the redesign: the Emerald Mint theme world, the Pass Deck layout grammar, and the interaction model. Working mocks live in <a href="Holder Directions.dc.html">Holder Directions</a>.</div>
+  </div>
+
+  <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:24px">
+
+    <div style="background:#fff;border:1px solid oklch(0.9 0.02 160);border-radius:18px;padding:28px;grid-column:1/-1">
+      <div style="font-size:12px;font-weight:600;letter-spacing:.5px;text-transform:uppercase;color:oklch(0.52 0.05 165);margin-bottom:14px">01 · Principles</div>
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:28px">
+        <div><div style="font-size:17px;font-weight:600;margin-bottom:6px">The card is the interface</div><div style="font-size:14px;line-height:1.55;color:oklch(0.42 0.04 165)">No list rows describing cards — the card art itself is the row, the detail view, and the copy surface. Fields on the card are the tap targets.</div></div>
+        <div><div style="font-size:17px;font-weight:600;margin-bottom:6px">One action per screen</div><div style="font-size:14px;line-height:1.55;color:oklch(0.42 0.04 165)">Exactly one saturated element at a time: the floating +, or the active reveal. Everything else is ink, sage, and card art. Secondary actions are quiet text.</div></div>
+        <div><div style="font-size:17px;font-weight:600;margin-bottom:6px">Trust is ambient</div><div style="font-size:14px;line-height:1.55;color:oklch(0.42 0.04 165)">Keychain + offline messaging lives in footers, the lock screen, and masked-by-default fields — never a marketing splash. Widgets show state, not data.</div></div>
+      </div>
+    </div>
+
+    <div style="background:#fff;border:1px solid oklch(0.9 0.02 160);border-radius:18px;padding:28px">
+      <div style="font-size:12px;font-weight:600;letter-spacing:.5px;text-transform:uppercase;color:oklch(0.52 0.05 165);margin-bottom:14px">02 · Color — five UI greens, nothing else</div>
+      <div style="display:flex;flex-direction:column;gap:10px">
+        <div style="display:flex;align-items:center;gap:12px"><span style="width:64px;height:36px;border-radius:9px;background:oklch(0.28 0.05 165);flex:none"></span><span style="flex:1"><b style="font-size:13px">Brand — deep emerald</b><span style="display:block;font-size:12px;color:oklch(0.5 0.04 165)">oklch(0.28 0.05 165) · chrome ink, active chip, featured card</span></span></div>
+        <div style="display:flex;align-items:center;gap:12px"><span style="width:64px;height:36px;border-radius:9px;background:oklch(0.60 0.16 160);flex:none"></span><span style="flex:1"><b style="font-size:13px">Action — bright emerald</b><span style="display:block;font-size:12px;color:oklch(0.5 0.04 165)">oklch(0.60 0.16 160) light · oklch(0.75 0.15 160) dark · the only saturated interactive color</span></span></div>
+        <div style="display:flex;align-items:center;gap:12px"><span style="width:64px;height:36px;border-radius:9px;background:oklch(0.97 0.015 160);border:1px solid oklch(0.88 0.02 160);flex:none"></span><span style="flex:1"><b style="font-size:13px">Ground · light — warm mint off-white</b><span style="display:block;font-size:12px;color:oklch(0.5 0.04 165)">oklch(0.97 0.015 160)</span></span></div>
+        <div style="display:flex;align-items:center;gap:12px"><span style="width:64px;height:36px;border-radius:9px;background:oklch(0.17 0.02 165);flex:none"></span><span style="flex:1"><b style="font-size:13px">Ground · dark — almost-black green</b><span style="display:block;font-size:12px;color:oklch(0.5 0.04 165)">oklch(0.17 0.02 165) · the identity carrier, not an inverted light mode</span></span></div>
+        <div style="display:flex;align-items:center;gap:12px"><span style="width:64px;height:36px;border-radius:9px;background:oklch(0.92 0.02 160);flex:none"></span><span style="flex:1"><b style="font-size:13px">Surface — one muted sage</b><span style="display:block;font-size:12px;color:oklch(0.5 0.04 165)">oklch(0.92 0.02 160) light · oklch(0.24 0.03 165) dark · chips, slots, handles</span></span></div>
+      </div>
+      <div style="border-top:1px solid oklch(0.94 0.015 160);margin-top:16px;padding-top:14px">
+        <div style="font-size:12px;font-weight:600;letter-spacing:.5px;text-transform:uppercase;color:oklch(0.52 0.05 165);margin-bottom:8px">Content palette — card art only</div>
+        <div style="display:flex;gap:8px;align-items:center">
+          <i style="width:30px;height:30px;border-radius:8px;background:oklch(0.45 0.09 25);display:inline-block"></i>
+          <i style="width:30px;height:30px;border-radius:8px;background:oklch(0.45 0.09 70);display:inline-block"></i>
+          <i style="width:30px;height:30px;border-radius:8px;background:oklch(0.45 0.09 140);display:inline-block"></i>
+          <i style="width:30px;height:30px;border-radius:8px;background:oklch(0.45 0.09 275);display:inline-block"></i>
+          <i style="width:30px;height:30px;border-radius:8px;background:oklch(0.45 0.09 330);display:inline-block"></i>
+          <span style="font-size:12px;color:oklch(0.5 0.04 165);line-height:1.5;margin-left:8px">5 slots at oklch(0.45 0.09 H), H = 25/70/140/275/330. User-picked brand colors snap to the nearest slot; 20 cards can never become noise. Card colors are content, never UI.</span>
+        </div>
+      </div>
+    </div>
+
+    <div style="background:#fff;border:1px solid oklch(0.9 0.02 160);border-radius:18px;padding:28px">
+      <div style="font-size:12px;font-weight:600;letter-spacing:.5px;text-transform:uppercase;color:oklch(0.52 0.05 165);margin-bottom:14px">03 · Type &amp; iconography</div>
+      <div style="display:flex;flex-direction:column;gap:12px">
+        <div style="font-family:'SF Pro Display','Inter',sans-serif;font-size:32px;font-weight:700;letter-spacing:-.4px">Screen title 32/700</div>
+        <div style="font-size:15px;font-weight:600">Card name 15/600</div>
+        <div style="font-family:ui-monospace,Menlo,monospace;font-size:17px;letter-spacing:2px">3742 156024 51006</div>
+        <div style="font-size:13px;color:oklch(0.42 0.04 165)">Body / actions 13/400–600</div>
+        <div style="font-size:11px;color:oklch(0.52 0.05 165);letter-spacing:.5px">LABELS 11–12/600 UPPERCASE</div>
+      </div>
+      <div style="font-size:13px;line-height:1.6;color:oklch(0.42 0.04 165);border-top:1px solid oklch(0.94 0.015 160);margin-top:16px;padding-top:14px">SF Pro Display for titles, SF Pro Text elsewhere (Inter fallback off-Apple). Numbers always monospace with wide tracking — they are data, not prose. Icons: SF Symbols in production; unicode placeholders (⌕ ⚙ ⧉) in mocks. Weight ladder 400/600/700 only.</div>
+    </div>
+
+    <div style="background:#fff;border:1px solid oklch(0.9 0.02 160);border-radius:18px;padding:28px">
+      <div style="font-size:12px;font-weight:600;letter-spacing:.5px;text-transform:uppercase;color:oklch(0.52 0.05 165);margin-bottom:14px">04 · Layout grammar — deck + sheet</div>
+      <div style="display:flex;gap:20px">
+        <div style="flex:none;width:150px;height:260px;border-radius:18px;background:oklch(0.97 0.015 160);border:1px solid oklch(0.9 0.02 160);position:relative;overflow:hidden">
+          <div style="position:absolute;top:12px;left:14px;right:14px;height:44px;border-radius:8px;background:oklch(0.45 0.09 25)"></div>
+          <div style="position:absolute;top:32px;left:11px;right:11px;height:44px;border-radius:8px;background:oklch(0.45 0.09 70);box-shadow:0 -2px 8px rgba(0,0,0,.12)"></div>
+          <div style="position:absolute;top:52px;left:8px;right:8px;height:44px;border-radius:8px;background:oklch(0.45 0.09 140);box-shadow:0 -2px 8px rgba(0,0,0,.12)"></div>
+          <div style="position:absolute;top:72px;left:5px;right:5px;height:44px;border-radius:8px;background:oklch(0.45 0.09 275);box-shadow:0 -2px 8px rgba(0,0,0,.12)"></div>
+          <div style="position:absolute;top:96px;left:0;right:0;bottom:0;border-radius:14px 14px 0 0;background:#fff;box-shadow:0 -4px 14px rgba(0,0,0,.14)">
+            <div style="width:22px;height:3px;border-radius:99px;background:oklch(0.9 0.02 160);margin:7px auto"></div>
+            <div style="margin:4px 10px;height:74px;border-radius:8px;background:oklch(0.28 0.05 165)"></div>
+            <div style="margin:8px 10px;height:9px;border-radius:99px;background:oklch(0.92 0.02 160);width:60%"></div>
+          </div>
+          <div style="position:absolute;right:8px;bottom:10px;width:26px;height:26px;border-radius:50%;background:rgba(255,255,255,.7);backdrop-filter:blur(8px);border:1px solid rgba(255,255,255,.9);box-shadow:0 4px 10px rgba(0,0,0,.18);display:flex;align-items:center;justify-content:center;font-size:14px;color:oklch(0.28 0.05 165)">+</div>
+        </div>
+        <div style="font-size:13px;line-height:1.65;color:oklch(0.42 0.04 165)">
+          <b style="color:oklch(0.25 0.05 165)">Deck:</b> cards peek at 48px each, widening toward the front — 5–7 stay scannable; tap brings a card to the sheet.<br><br>
+          <b style="color:oklch(0.25 0.05 165)">Sheet:</b> the focused card rides an elevated sheet; its fields are the actions. Pull down to shuffle back.<br><br>
+          <b style="color:oklch(0.25 0.05 165)">Floating +:</b> liquid-glass button, bottom right — the only add entry point. Header carries only a quiet ⚙ settings glyph; search lives as a chip in the filter row.
+        </div>
+      </div>
+    </div>
+
+    <div style="background:#fff;border:1px solid oklch(0.9 0.02 160);border-radius:18px;padding:28px">
+      <div style="font-size:12px;font-weight:600;letter-spacing:.5px;text-transform:uppercase;color:oklch(0.52 0.05 165);margin-bottom:14px">05 · Interaction model</div>
+      <div style="font-size:13px;line-height:1.5;color:oklch(0.42 0.04 165);display:flex;flex-direction:column;gap:10px">
+        <div><b style="color:oklch(0.25 0.05 165)">Tap a field to copy.</b> Number, expiry, holder — each field on the card is its own copy target; a toast confirms ("Number copied"). No separate button row.</div>
+        <div><b style="color:oklch(0.25 0.05 165)">Flip for CVV.</b> Tap the card face to flip; CVV lives on the back, masked until flipped, re-masks on flip-back.</div>
+        <div><b style="color:oklch(0.25 0.05 165)">Reveal timer.</b> Sensitive reveals auto-expire after 12s; the countdown is visible.</div>
+        <div><b style="color:oklch(0.25 0.05 165)">Swipe to archive</b> on deck cards; long-press to reorder; drag to favorites.</div>
+        <div><b style="color:oklch(0.25 0.05 165)">Face ID gate</b> on launch and after 60s idle; documents re-gate individually.</div>
+        <div><b style="color:oklch(0.25 0.05 165)">Haptics</b> (light impact) on copy, flip, and reveal-expiry.</div>
+      </div>
+    </div>
+
+    <div style="background:#fff;border:1px solid oklch(0.9 0.02 160);border-radius:18px;padding:28px">
+      <div style="font-size:12px;font-weight:600;letter-spacing:.5px;text-transform:uppercase;color:oklch(0.52 0.05 165);margin-bottom:14px">06 · Cards vs documents</div>
+      <div style="font-size:13px;line-height:1.65;color:oklch(0.42 0.04 165)">
+        Two item classes with different anatomies:<br><br>
+        <b style="color:oklch(0.25 0.05 165)">Cards</b> (payment, loyalty, travel) — rendered card art, copyable fields, flip for back. No photo attachments: the render <i>is</i> the card.<br><br>
+        <b style="color:oklch(0.25 0.05 165)">Documents</b> (licence, passport, insurance) — photo-first: front/back capture slots for verification uploads, plus typed fields (number, expiry). Masked behind an extra Face ID gate.<br><br>
+        This split is why the payment-card sheet has no attachments strip — photos belong to documents only.
+      </div>
+    </div>
+
+    <div style="background:#fff;border:1px solid oklch(0.9 0.02 160);border-radius:18px;padding:28px">
+      <div style="font-size:12px;font-weight:600;letter-spacing:.5px;text-transform:uppercase;color:oklch(0.52 0.05 165);margin-bottom:14px">07 · Widgets — state, never data</div>
+      <div style="font-size:13px;line-height:1.65;color:oklch(0.42 0.04 165)">
+        <b style="color:oklch(0.25 0.05 165)">Small:</b> default card, masked (•• 51006), brand emerald. Tap → Face ID → card.<br>
+        <b style="color:oklch(0.25 0.05 165)">Medium:</b> 2×2 quick grid, content-palette tiles, masked tails. Tap a tile → Face ID → copy.<br>
+        <b style="color:oklch(0.25 0.05 165)">Lock screen:</b> circular glyph + inline default card on green-black.<br>
+        <b style="color:oklch(0.25 0.05 165)">Rule:</b> a widget never shows a full number, CVV, or document photo — it deep-links, the app reveals.
+      </div>
+    </div>
+
+    <div style="background:#fff;border:1px solid oklch(0.9 0.02 160);border-radius:18px;padding:28px;grid-column:1/-1">
+      <div style="font-size:12px;font-weight:600;letter-spacing:.5px;text-transform:uppercase;color:oklch(0.52 0.05 165);margin-bottom:14px">08 · Screen inventory</div>
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:16px;font-size:13px;line-height:1.5">
+        <div style="border:1px solid oklch(0.92 0.02 160);border-radius:12px;padding:14px"><b>Home / deck</b><span style="display:block;color:oklch(0.5 0.04 165);margin-top:4px">Designed — turn 8 in Directions</span></div>
+        <div style="border:1px solid oklch(0.92 0.02 160);border-radius:12px;padding:14px"><b>Card sheet</b><span style="display:block;color:oklch(0.5 0.04 165);margin-top:4px">Designed — tap-to-copy fields</span></div>
+        <div style="border:1px solid oklch(0.92 0.02 160);border-radius:12px;padding:14px"><b>Document sheet</b><span style="display:block;color:oklch(0.5 0.04 165);margin-top:4px">Designed — photo slots</span></div>
+        <div style="border:1px solid oklch(0.92 0.02 160);border-radius:12px;padding:14px"><b>Widgets</b><span style="display:block;color:oklch(0.5 0.04 165);margin-top:4px">Designed — final palette</span></div>
+        <div style="border:1px solid oklch(0.92 0.02 160);border-radius:12px;padding:14px"><b>Add / scan flow</b><span style="display:block;color:oklch(0.5 0.04 165);margin-top:4px">Next — live card preview while typing</span></div>
+        <div style="border:1px solid oklch(0.92 0.02 160);border-radius:12px;padding:14px"><b>Lock / Face ID</b><span style="display:block;color:oklch(0.5 0.04 165);margin-top:4px">Next — green-black, pulse glyph</span></div>
+        <div style="border:1px solid oklch(0.92 0.02 160);border-radius:12px;padding:14px"><b>Settings</b><span style="display:block;color:oklch(0.5 0.04 165);margin-top:4px">Next — auto-lock, iCloud off-switch copy</span></div>
+        <div style="border:1px solid oklch(0.92 0.02 160);border-radius:12px;padding:14px"><b>Archive + empty states</b><span style="display:block;color:oklch(0.5 0.04 165);margin-top:4px">Next — delight moment on first card</span></div>
+      </div>
+    </div>
+
+  </div>
+</div>
+</x-dc>
+</body>
+</html>

@@ -1,0 +1,55 @@
+:root {
+  /* ---- Base palette ---- */
+  --blue-primary: #0066cc;
+  --blue-focus: #0071e3;
+  --blue-on-dark: #2997ff;
+
+  --ink-1: #1d1d1f;
+  --ink-2: #333333;
+  --ink-3: #7a7a7a;
+
+  --white: #ffffff;
+  --parchment: #f5f5f7;
+  --pearl: #fafafc;
+
+  --tile-1: #272729;
+  --tile-2: #2a2a2c;
+  --tile-3: #252527;
+  --black: #000000;
+
+  --chip-translucent: #d2d2d7;
+  --divider-soft: #f0f0f0;
+  --hairline: #e0e0e0;
+
+  --green-success: #34c759; /* iOS system green, used sparingly for confirmations */
+  --red-error: #ff3b30;     /* iOS system red, used sparingly for destructive/error */
+
+  /* ---- Semantic aliases ---- */
+  --color-primary: var(--blue-primary);
+  --color-primary-focus: var(--blue-focus);
+  --color-primary-on-dark: var(--blue-on-dark);
+
+  --color-text: var(--ink-1);
+  --color-text-on-dark: var(--white);
+  --color-text-muted-on-dark: #cccccc;
+  --color-text-muted-80: var(--ink-2);
+  --color-text-muted-48: var(--ink-3);
+
+  --color-surface-canvas: var(--white);
+  --color-surface-parchment: var(--parchment);
+  --color-surface-pearl: var(--pearl);
+  --color-surface-tile-1: var(--tile-1);
+  --color-surface-tile-2: var(--tile-2);
+  --color-surface-tile-3: var(--tile-3);
+  --color-surface-black: var(--black);
+
+  --color-chip-translucent: rgba(210, 210, 215, 0.64);
+  --color-border-soft: rgba(0, 0, 0, 0.08);
+  --color-border-hairline: var(--hairline);
+
+  --color-on-primary: var(--white);
+  --color-success: var(--green-success);
+  --color-error: var(--red-error);
+
+  --shadow-product: 3px 5px 30px 0 rgba(0, 0, 0, 0.22);
+}

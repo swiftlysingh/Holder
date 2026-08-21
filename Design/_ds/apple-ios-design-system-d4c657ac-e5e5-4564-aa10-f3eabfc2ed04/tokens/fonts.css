@@ -1,0 +1,25 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+
+/*
+  SF Pro is now self-hosted from the user-provided variable font file below,
+  registered under both the Display and Text family names the type tokens
+  reference (SF Pro ships as one variable family covering both optical
+  sizes). Inter remains loaded as a fallback for any environment where the
+  local font fails to load; it is not used as the primary family.
+*/
+
+@font-face {
+  font-family: "SF Pro Display";
+  src: url('../fonts/SF-Pro.ttf') format('truetype');
+  font-weight: 100 900;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "SF Pro Text";
+  src: url('../fonts/SF-Pro.ttf') format('truetype');
+  font-weight: 100 900;
+  font-style: normal;
+  font-display: swap;
+}

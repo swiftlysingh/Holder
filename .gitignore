@@ -91,6 +91,9 @@ iOSInjectionProject/
 .DS_Store
 Secrets.plist
 
+# Apple licenses SF Pro for design use, not redistribution.
+Design/**/SF-Pro.ttf
+
 # Ignore accidental duplicate Info.plist copy
 cards copy-Info.plist
 

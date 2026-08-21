@@ -1,0 +1,9 @@
+:root {
+  --radius-none: 0px;
+  --radius-xs: 5px;
+  --radius-sm: 8px;
+  --radius-md: 11px;
+  --radius-lg: 18px;
+  --radius-pill: 9999px;
+  --radius-full: 9999px;
+}
