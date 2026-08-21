@@ -19,6 +19,9 @@ struct HomeView: View {
 	#if !os(macOS)
 	@State private var isShowingSettings = false
 	#endif
+	#if os(iOS)
+	@State private var addCardSheetDetent: PresentationDetent = .fraction(0.25)
+	#endif
 
 	init(model: HomeViewModel) {
 		self.model = model
@@ -59,6 +62,9 @@ struct HomeView: View {
 						}
 						Button("Add a new card") {
 							track(.cardAddStarted)
+							#if os(iOS)
+							addCardSheetDetent = .fraction(0.25)
+							#endif
 							model.addingType = type
 						}
 					}
@@ -121,28 +127,43 @@ struct HomeView: View {
 			.id(card.id)
 		}
 		.sheet(item: $model.addingType) { type in
+			let cardViewModel = CardViewModel(
+				card: .init(id: UUID(),
+						number: "",
+						cvv: "",
+						expiration: "",
+						name: "",
+						description: "",
+						type: type
+				   ),
+				isEditing: true,
+				addNewFlow: true,
+				addUpdateCard: { card in
+					// Keep the sheet open on failure so the entered form is preserved for retry.
+					let succeeded = await model.cardDataStore.addCard(card)
+					if succeeded {
+						model.addingType = nil
+					}
+					return succeeded
+				}
+			)
 			NavigationView {
-				CardView(model: CardViewModel(
-					card: .init(id: UUID(),
-							number: "",
-							cvv: "",
-							expiration: "",
-							name: "",
-							description: "",
-							type: type
-					   ),
-					isEditing: true,
-					addNewFlow: true,
-					addUpdateCard: { card in
-						// Keep the sheet open on failure so the entered form is preserved for retry.
-						let succeeded = await model.cardDataStore.addCard(card)
-						if succeeded {
-							model.addingType = nil
-						}
-						return succeeded
-					})
+				#if os(iOS)
+				CardView(
+					model: cardViewModel,
+					cardSheetDetent: $addCardSheetDetent
 				)
+				#else
+				CardView(model: cardViewModel)
+				#endif
 			}
+			#if os(iOS)
+			.presentationDetents(
+				[.fraction(0.25), .fraction(0.5), .large],
+				selection: $addCardSheetDetent
+			)
+			.presentationDragIndicator(.visible)
+			#endif
 		}
 		.confirmationDialog(
 			"Delete this card?",

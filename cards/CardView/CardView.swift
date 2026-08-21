@@ -22,18 +22,25 @@ struct CardView: View {
 	@EnvironmentObject private var authenticationSession: AuthenticationSession
 	@Environment(\.analytics) private var analytics
 	#if os(iOS)
-	@State private var cardSheetDetent: PresentationDetent
+	@Binding private var cardSheetDetent: PresentationDetent
 	#endif
 	#if os(macOS)
 	@State private var copiedField: String?
 	#endif
 
+	#if os(iOS)
+	init(
+		model: CardViewModel,
+		cardSheetDetent: Binding<PresentationDetent> = .constant(.large)
+	) {
+		_model = StateObject(wrappedValue: model)
+		_cardSheetDetent = cardSheetDetent
+	}
+	#else
 	init(model: CardViewModel) {
 		_model = StateObject(wrappedValue: model)
-		#if os(iOS)
-		_cardSheetDetent = State(initialValue: model.entryMode == .chooser ? .fraction(0.25) : .large)
-		#endif
 	}
+	#endif
 
 	private var isCVVLocked: Bool {
 		!model.isAddNewFlow
@@ -106,7 +113,6 @@ struct CardView: View {
 				getCardListView()
 			}
 		}
-		.presentationDetents([.fraction(0.25), .fraction(0.5), .large], selection: $cardSheetDetent)
 		.toolbar(model.isShowingScanner || model.entryMode == .chooser ? .hidden : .automatic, for: .navigationBar)
 	}
 
