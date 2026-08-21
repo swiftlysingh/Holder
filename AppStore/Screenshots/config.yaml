@@ -6,33 +6,31 @@ project:
   parallel_workers: 3
 
 screenshots:
-  01_every_card:
-    template: "templates/01_every_card.html"
+  01_cards_together:
+    template: "templates/01_cards_together.html"
     frame: false
     variables:
-      headline: "Every card. One private place."
-      subtitle: "Keep the details you need close without carrying the whole wallet."
+      headline: "Your cards. One private place."
+      subtitle: "Credit, debit, IDs, and more."
     assets:
       app_screenshot: "captures/en-US/home.png"
       app_icon: "../../cards/Assets.xcassets/AppIcon.appiconset/1024.png"
 
-  02_masked_at_a_glance:
-    template: "templates/02_masked_at_a_glance.html"
+  02_scan_card:
+    template: "templates/02_scan_card.html"
     frame: false
     variables:
-      eyebrow: "DETAILS ON DEMAND"
-      headline: "All the details. No digging."
-      subtitle: "Open a card and find what you need in seconds."
+      headline: "Scan it. Skip the typing."
+      subtitle: "Prefill the number, name, and expiry."
     assets:
-      app_screenshot: "captures/en-US/card-details.png"
       app_icon: "../../cards/Assets.xcassets/AppIcon.appiconset/1024.png"
 
-  03_wallet_without_bulk:
-    template: "templates/03_wallet_without_bulk.html"
+  03_private_details:
+    template: "templates/03_private_details.html"
     frame: false
     variables:
-      headline: "Your vault. Your rules."
-      subtitle: "Choose authentication, lock timing, and how much each card reveals."
+      headline: "Private by design."
+      subtitle: "Saved to Keychain. Opened with Face ID."
     assets:
-      app_screenshot: "captures/en-US/settings.png"
+      app_screenshot: "captures/en-US/card-details.png"
       app_icon: "../../cards/Assets.xcassets/AppIcon.appiconset/1024.png"
