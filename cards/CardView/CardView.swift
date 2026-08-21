@@ -15,6 +15,7 @@ import PhotosUI
 import AppKit
 #endif
 
+@MainActor
 struct CardView: View {
 
 	@StateObject private var model: CardViewModel
@@ -158,6 +159,7 @@ struct CardView: View {
 
 	fileprivate func getCardListView() -> some View {
 		let tip = DoubleTapTip()
+		let hasCardImage = model.cardImage != nil
 
 		return List {
 			Section {
@@ -259,7 +261,7 @@ struct CardView: View {
 						VStack(alignment: .leading) {
 							HStack {
 								Image(systemName: "photo")
-								Text(model.cardImage == nil ? "Add Card Image" : "Change Card Image")
+								Text(hasCardImage ? "Change Card Image" : "Add Card Image")
 							}
 							.padding(.bottom)
 
@@ -268,41 +270,27 @@ struct CardView: View {
 								.foregroundStyle(.gray)
 						}
 					}
-				.onChange(of: model.selectedItem) {
-					Task {
-						do {
-							guard let data = try await model.selectedItem?.loadTransferable(type: Data.self) else {
+					.disabled(model.isImageMutationInProgress)
+					.onChange(of: model.selectedItem) {
+						guard let item = model.selectedItem else { return }
+						model.saveStoredImage {
+							guard let data = try await item.loadTransferable(type: Data.self) else {
 								throw URLError(.cannotDecodeContentData)
 							}
-
-							guard let uiImage = UIImage(data: data) else {
-								throw URLError(.cannotDecodeContentData)
-							}
-
-							guard ICloudDataManager.shared.saveImage(uiImage, for: model.card.id) else {
-								throw URLError(.cannotCreateFile)
-							}
-
-							model.cardImage = uiImage
-							model.errorMessage = nil
-						} catch {
-							model.errorMessage = "Unable to save image: \(error.localizedDescription)"
-							model.showErrorAlert = true
+							return data
 						}
 					}
-				}
-
 
 					if model.cardImage != nil {
 						Button(role: .destructive) {
-							model.cardImage = nil
-							ICloudDataManager.shared.deleteImage(for: model.card.id)
+							model.removeStoredImage()
 						} label: {
 							HStack {
 								Image(systemName: "trash")
 								Text("Remove Image")
 							}
 						}
+						.disabled(model.isImageMutationInProgress)
 					}
 				}
 			}
@@ -315,7 +303,7 @@ struct CardView: View {
 						VStack(alignment: .leading) {
 							HStack {
 								Image(systemName: "photo")
-								Text(model.cardImage == nil ? "Add Card Image" : "Change Card Image")
+								Text(hasCardImage ? "Change Card Image" : "Add Card Image")
 							}
 							.padding(.bottom)
 
@@ -325,17 +313,18 @@ struct CardView: View {
 						}
 					}
 					.buttonStyle(.plain)
+					.disabled(model.isImageMutationInProgress)
 
 					if model.cardImage != nil {
 						Button(role: .destructive) {
-							model.cardImage = nil
-							ICloudDataManager.shared.deleteImage(for: model.card.id)
+							model.removeStoredImage()
 						} label: {
 							HStack {
 								Image(systemName: "trash")
 								Text("Remove Image")
 							}
 						}
+						.disabled(model.isImageMutationInProgress)
 					}
 				}
 			}
@@ -397,10 +386,7 @@ struct CardView: View {
 	}
 
 	private var editToolbarButton: some View {
-		Button {
-			model.isEditing.toggle()
-			saveCardIfNeeded()
-		} label: {
+		Button(action: toggleEditing) {
 			if model.isEditing {
 				Text("Done")
 			} else {
@@ -410,7 +396,7 @@ struct CardView: View {
 		.accessibilityLabel(model.isEditing ? "Done" : "Edit")
 	}
 
-	private func saveCardIfNeeded() {
+	private func saveCardIfNeeded() async {
 		guard !model.isEditing,
 			  model.card.type == .otherCard || !model.card.number.isEmpty else {
 			return
@@ -418,7 +404,7 @@ struct CardView: View {
 
 		let operation: AppAnalyticsEvent.SaveOperation = model.isAddNewFlow ? .create : .update
 		let inputMethod: AppAnalyticsEvent.InputMethod = model.didUseScanner ? .scanner : .manual
-		let succeeded = model.addUpdateCard(model.card)
+		let succeeded = await model.addUpdateCard(model.card)
 		let event: AppAnalyticsEvent = succeeded
 			? .cardSaveCompleted(
 				operation: operation,
@@ -429,6 +415,16 @@ struct CardView: View {
 				inputMethod: inputMethod
 			)
 		track(event)
+	}
+
+	private func toggleEditing() {
+		let isFinishingEdit = model.isEditing
+		model.isEditing.toggle()
+		if isFinishingEdit {
+			Task { @MainActor in
+				await saveCardIfNeeded()
+			}
+		}
 	}
 
 	private func track(_ event: AppAnalyticsEvent) {
@@ -447,13 +443,10 @@ struct CardView: View {
 		panel.title = "Select Card Image"
 
 		if panel.runModal() == .OK, let url = panel.url {
-			if let image = NSImage(contentsOf: url) {
-				if ICloudDataManager.shared.saveImage(image, for: model.card.id) {
-					model.cardImage = image
-				} else {
-					model.errorMessage = "Failed to save image to iCloud"
-					model.showErrorAlert = true
-				}
+			model.saveStoredImage {
+				try await Task.detached(priority: .userInitiated) {
+					try Data(contentsOf: url)
+				}.value
 			}
 		}
 	}
@@ -708,17 +701,18 @@ struct CardView: View {
 							Text(model.cardImage == nil ? "Add Card Image" : "Change Card Image")
 						}
 					}
+					.disabled(model.isImageMutationInProgress)
 
 					if model.cardImage != nil {
 						Button(role: .destructive) {
-							model.cardImage = nil
-							ICloudDataManager.shared.deleteImage(for: model.card.id)
+							model.removeStoredImage()
 						} label: {
 							HStack {
 								Image(systemName: "trash")
 								Text("Remove Image")
 							}
 						}
+						.disabled(model.isImageMutationInProgress)
 					}
 
 					Text("Images are stored in iCloud storage")
