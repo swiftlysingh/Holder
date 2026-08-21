@@ -300,10 +300,6 @@ struct VaultProtectedView<Content: View>: View {
 
             blurredHomeBackdrop
 
-            platformBackground
-                .opacity(0.3)
-                .ignoresSafeArea()
-
             Button {
                 session.authenticateToUnlockVault()
             } label: {
@@ -350,15 +346,15 @@ struct VaultProtectedView<Content: View>: View {
                 ForEach(0..<4, id: \.self) { index in
                     HStack(spacing: 14) {
                         RoundedRectangle(cornerRadius: 10, style: .continuous)
-                            .fill(Color.primary.opacity(0.2))
+                            .fill(Color.primary.opacity(0.26))
                             .frame(width: 44, height: 34)
 
                         VStack(alignment: .leading, spacing: 8) {
                             Capsule()
-                                .fill(Color.primary.opacity(0.22))
+                                .fill(Color.primary.opacity(0.3))
                                 .frame(width: index.isMultiple(of: 2) ? 132 : 164, height: 12)
                             Capsule()
-                                .fill(Color.primary.opacity(0.14))
+                                .fill(Color.primary.opacity(0.2))
                                 .frame(width: 92, height: 10)
                         }
 
@@ -366,7 +362,7 @@ struct VaultProtectedView<Content: View>: View {
                     }
                     .padding(16)
                     .background(
-                        Color.primary.opacity(0.06),
+                        Color.primary.opacity(0.1),
                         in: RoundedRectangle(cornerRadius: 18, style: .continuous)
                     )
                 }
@@ -374,8 +370,8 @@ struct VaultProtectedView<Content: View>: View {
         }
         .padding(24)
         .frame(maxWidth: 620, maxHeight: .infinity, alignment: .top)
-        .blur(radius: 9)
-        .opacity(0.72)
+        .blur(radius: 6)
+        .opacity(0.9)
         .scaleEffect(1.04)
         .allowsHitTesting(false)
         .accessibilityHidden(true)
