@@ -1,0 +1,215 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <style>
+    * { box-sizing: border-box; }
+    html, body { margin: 0; width: 100%; height: 100%; overflow: hidden; }
+    body {
+      position: relative;
+      color: #103b32;
+      font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", sans-serif;
+      background:
+        radial-gradient(circle at 88% 8%, rgba(255, 255, 255, .48), transparent 25%),
+        #b7f3cf;
+    }
+    .brand {
+      position: absolute;
+      z-index: 5;
+      top: 4.7%;
+      left: 7%;
+      display: flex;
+      align-items: center;
+      gap: 2.3vw;
+      color: #3f6b5d;
+      font-size: 3.6vw;
+      font-weight: 700;
+    }
+    .brand img {
+      width: 8.2vw;
+      height: 8.2vw;
+      border-radius: 2vw;
+      box-shadow: 0 1.4vh 4vw rgba(16, 59, 50, .17);
+    }
+    .copy {
+      position: absolute;
+      z-index: 4;
+      top: 12.4%;
+      left: 7%;
+      width: 86%;
+    }
+    h1 {
+      margin: 0;
+      max-width: 94%;
+      font-size: 11.7vw;
+      line-height: .96;
+      letter-spacing: -.055em;
+      font-weight: 790;
+    }
+    p {
+      margin: 2.2vh 0 0;
+      color: #3f6b5d;
+      font-size: 4.35vw;
+      line-height: 1.22;
+    }
+    .scanner {
+      position: absolute;
+      z-index: 3;
+      left: 7vw;
+      right: 7vw;
+      bottom: 4.6vh;
+      height: 57vh;
+      overflow: hidden;
+      color: #edf8f1;
+      border: 1px solid rgba(255, 255, 255, .16);
+      border-radius: 7.2vw;
+      background:
+        radial-gradient(circle at 80% 25%, rgba(183, 243, 207, .1), transparent 30%),
+        #121c19;
+      box-shadow: 0 4vh 12vw rgba(16, 59, 50, .26);
+    }
+    .scanner-top {
+      position: absolute;
+      z-index: 3;
+      top: 2.7vh;
+      left: 4.8vw;
+      right: 4.8vw;
+      display: grid;
+      grid-template-columns: 8vw 1fr 8vw;
+      align-items: center;
+      text-align: center;
+      font-size: 3.5vw;
+      font-weight: 730;
+    }
+    .back {
+      width: 8vw;
+      height: 8vw;
+      display: grid;
+      place-items: center;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, .12);
+      font-size: 6vw;
+      font-weight: 400;
+      line-height: 1;
+    }
+    .guide {
+      position: absolute;
+      z-index: 2;
+      top: 12.5vh;
+      left: 6vw;
+      right: 6vw;
+      height: 21.5vh;
+    }
+    .test-card {
+      position: absolute;
+      inset: 1.5vw;
+      overflow: hidden;
+      padding: 4.2vw;
+      color: #edf8f1;
+      border-radius: 4.4vw;
+      background:
+        radial-gradient(circle at 95% 0%, rgba(183, 243, 207, .24), transparent 34%),
+        #12493e;
+      box-shadow: 0 2vh 7vw rgba(0, 0, 0, .3);
+    }
+    .test-card::after {
+      content: "";
+      position: absolute;
+      width: 35vw;
+      height: 35vw;
+      right: -17vw;
+      bottom: -18vw;
+      border: 1px solid rgba(183, 243, 207, .2);
+      border-radius: 50%;
+      box-shadow: 0 0 0 8vw rgba(183, 243, 207, .035);
+    }
+    .card-label { color: #a7c0b8; font-size: 2.35vw; font-weight: 650; letter-spacing: .13em; }
+    .card-number { margin-top: 5vh; font-size: 4vw; font-weight: 690; letter-spacing: .1em; }
+    .card-meta { margin-top: 2.3vh; display: flex; justify-content: space-between; color: #a7c0b8; font-size: 2.55vw; font-weight: 630; }
+    .corner { position: absolute; width: 9vw; height: 9vw; border-color: #b7f3cf; border-style: solid; }
+    .corner.tl { left: 0; top: 0; border-width: .9vw 0 0 .9vw; border-radius: 2.2vw 0 0; }
+    .corner.tr { right: 0; top: 0; border-width: .9vw .9vw 0 0; border-radius: 0 2.2vw 0 0; }
+    .corner.bl { left: 0; bottom: 0; border-width: 0 0 .9vw .9vw; border-radius: 0 0 0 2.2vw; }
+    .corner.br { right: 0; bottom: 0; border-width: 0 .9vw .9vw 0; border-radius: 0 0 2.2vw; }
+    .scan-line {
+      position: absolute;
+      z-index: 4;
+      left: 3vw;
+      right: 3vw;
+      top: 50%;
+      height: .35vw;
+      background: #b7f3cf;
+      box-shadow: 0 0 4vw rgba(183, 243, 207, .8);
+    }
+    .prompt {
+      position: absolute;
+      top: 36.5vh;
+      left: 0;
+      width: 100%;
+      color: #a7c0b8;
+      text-align: center;
+      font-size: 2.8vw;
+      font-weight: 600;
+    }
+    .review-sheet {
+      position: absolute;
+      z-index: 5;
+      left: 3.8vw;
+      right: 3.8vw;
+      bottom: -1px;
+      min-height: 15.5vh;
+      padding: 3.7vw 4vw 4.2vw;
+      color: #103b32;
+      border-radius: 4.8vw 4.8vw 0 0;
+      background: #f3faf6;
+    }
+    .detected { display: flex; align-items: center; justify-content: space-between; }
+    .detected strong { font-size: 3.9vw; letter-spacing: -.025em; }
+    .check {
+      width: 6.2vw;
+      height: 6.2vw;
+      display: grid;
+      place-items: center;
+      border-radius: 50%;
+      background: #b7f3cf;
+      font-size: 3.8vw;
+      font-weight: 850;
+    }
+    .steps { display: flex; align-items: center; gap: 1.5vw; margin-top: 1.7vh; color: #3f6b5d; font-size: 2.4vw; font-weight: 660; }
+    .steps b { color: #103b32; }
+    .steps i { width: 5vw; height: 1px; background: #dfe6d9; }
+    .review-action {
+      height: 5.2vh;
+      display: grid;
+      place-items: center;
+      margin-top: 2vh;
+      border-radius: 2.2vw;
+      background: #12493e;
+      color: #edf8f1;
+      font-size: 3vw;
+      font-weight: 730;
+    }
+  </style>
+</head>
+<body>
+  <div class="brand"><img src="{{app_icon}}" alt="">Holder</div>
+  <div class="copy">
+    <h1 data-kou-id="headline" data-kou-role="headline">{{headline}}</h1>
+    <p data-kou-id="subtitle" data-kou-role="supporting">{{subtitle}}</p>
+  </div>
+  <section class="scanner" data-kou-id="device" data-kou-role="device" aria-label="Scan card flow concept">
+    <div class="scanner-top"><span class="back">‹</span><span>Scan Card</span><span></span></div>
+    <div class="guide">
+      <div class="test-card"><div class="card-label">HOLDER TEST CARD</div><div class="card-number">••••  ••••  ••••  4242</div><div class="card-meta"><span>M. C. LOVIN</span><span>09 / 29</span></div></div>
+      <span class="corner tl"></span><span class="corner tr"></span><span class="corner bl"></span><span class="corner br"></span>
+      <span class="scan-line"></span>
+    </div>
+    <div class="prompt">Hold your card inside the frame</div>
+    <div class="review-sheet">
+      <div class="detected"><strong>Card detected</strong><span class="check">✓</span></div>
+      <div class="steps"><span>Scan</span><i></i><b>Review</b><i></i><span>Save</span></div>
+      <div class="review-action">Review details</div>
+    </div>
+  </section>
+</body>
+</html>
