@@ -1,0 +1,11 @@
+---
+description: Prevent duplicate fixes for Sentry-created GitHub issues
+alwaysApply: true
+---
+
+When a task comes from a GitHub issue created by Sentry:
+
+1. Before changing code, search open issues and pull requests for the same root cause and affected code path. Similar titles or issue categories alone are not enough to call something a duplicate.
+2. If an open pull request already fixes the root cause, do not change code or open another pull request. Comment on the new issue with the canonical issue and pull request, then close it as a duplicate. If closing is unavailable, comment and stop.
+3. If another agent is already working on the same root cause, stop without opening a competing pull request.
+4. Continue with a fix only when no existing issue, pull request, or active agent covers the root cause.
