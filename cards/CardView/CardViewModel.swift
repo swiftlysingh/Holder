@@ -66,6 +66,13 @@ class CardViewModel: ObservableObject {
 	@Published var isAuthenticated = false
 	@Published var isShowingScanner = false
 	@Published var entryMode: CardEditorEntryMode
+	@Published var selectedCardType: CardType? {
+		didSet {
+			if let selectedCardType {
+				card.type = selectedCardType
+			}
+		}
+	}
 	@Published var lastScanPreview: CardScanResult?
 	@Published var errorMessage: String?
 	@Published var showErrorAlert = false
@@ -86,6 +93,10 @@ class CardViewModel: ObservableObject {
 
 	/// True while a device-owner evaluation is in flight for the current attempt.
 	var isAuthenticating: Bool { activeAuthenticator != nil }
+	var canFinishEditing: Bool {
+		guard let selectedCardType else { return false }
+		return selectedCardType == .otherCard || !card.number.isEmpty
+	}
 
 	init(
 		card: CardData,
@@ -101,7 +112,8 @@ class CardViewModel: ObservableObject {
 		self.isAddNewFlow = addNewFlow
 		self.authenticatorFactory = authenticatorFactory
 		self.sleeper = sleeper
-		self.entryMode = (addNewFlow && card.type != .otherCard) ? .chooser : .form
+		self.entryMode = addNewFlow ? .chooser : .form
+		self.selectedCardType = addNewFlow ? nil : card.type
 		cardImage = ICloudDataManager.shared.loadImage(for: card.id)
 	}
 
