@@ -110,7 +110,7 @@ struct CardView: View {
 	@ViewBuilder
 	private func iOSCardContent() -> some View {
 		Group {
-			if model.isShowingScanner {
+			if model.isAuthenticated && model.isShowingScanner {
 				CardScannerView(
 					isRescan: model.didUseScanner,
 					onCancel: {
@@ -192,7 +192,7 @@ struct CardView: View {
 
 	private func scanReviewSection() -> some View {
 		Group {
-			if let preview = model.lastScanPreview {
+			if model.isAuthenticated, let preview = model.lastScanPreview {
 				Section {
 					HStack(spacing: 12) {
 						Image(preview.network.rawValue)
