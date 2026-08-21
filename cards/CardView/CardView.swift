@@ -354,7 +354,7 @@ struct CardView: View {
 				#endif
 
 				Group {
-				  if model.card.type != .otherCard {
+				  if model.selectedCardType != .otherCard {
 					Picker("Card Network", selection: $model.card.network) {
 					  ForEach(CardNetwork.allCases) { pref in
 						Text(pref.rawValue)
@@ -364,9 +364,12 @@ struct CardView: View {
 					.disabled(!model.isEditing)
 					.bold()
 				  }
-					Picker("Card Type", selection: $model.card.type) {
+					Picker("Card Type", selection: $model.selectedCardType) {
+						if model.isAddNewFlow {
+							Text("Select Card Type").tag(nil as CardType?)
+						}
 						ForEach(CardType.allCases) { pref in
-							Text(pref.rawValue)
+							Text(pref.rawValue).tag(pref as CardType?)
 						}
 					}
 					.disabled(!model.isEditing)
@@ -374,7 +377,7 @@ struct CardView: View {
 				}
 			}
 
-			if let image = model.cardImage, model.card.type == .otherCard {
+			if let image = model.cardImage, model.selectedCardType == .otherCard {
 				Section {
 					#if os(iOS)
 					Image(uiImage: image)
@@ -395,7 +398,7 @@ struct CardView: View {
 			}
 
 			#if os(iOS)
-			if model.isEditing && model.card.type == .otherCard {
+			if model.isEditing && model.selectedCardType == .otherCard {
 				Section {
 					PhotosPicker(selection: $model.selectedItem, matching: .images) {
 						VStack(alignment: .leading) {
@@ -449,7 +452,7 @@ struct CardView: View {
 				}
 			}
 			#else
-			if model.isEditing && model.card.type == .otherCard {
+			if model.isEditing && model.selectedCardType == .otherCard {
 				Section {
 					Button {
 						selectImageFile()
@@ -499,16 +502,20 @@ struct CardView: View {
 				Label("Click to share", systemImage: "square.and.arrow.up")
 			}
 			Button(action: {
-				model.isEditing.toggle()
-				saveCardIfNeeded()
+				if model.isEditing {
+					saveCardIfNeeded()
+				} else {
+					model.isEditing = true
+				}
 			}) {
 				Text(model.isEditing ? "Done" : "Edit")
 			}
+			.disabled(model.isEditing && !model.canFinishEditing)
 		}
 		.disabled(!$model.isAuthenticated.wrappedValue)
 		#if os(iOS)
 		.toolbar {
-			if model.isAddNewFlow && model.card.type != .otherCard && model.entryMode == .form {
+			if model.isAddNewFlow && model.selectedCardType != .otherCard && model.entryMode == .form {
 				ToolbarItem(placement: .topBarLeading) {
 					Button {
 						startScan(isRescan: model.didUseScanner)
@@ -525,14 +532,14 @@ struct CardView: View {
 	}
 
 	private func saveCardIfNeeded() {
-		guard !model.isEditing,
-			  model.card.type == .otherCard || !model.card.number.isEmpty else {
-			return
-		}
+		guard model.isEditing, model.canFinishEditing else { return }
 
 		let operation: AppAnalyticsEvent.SaveOperation = model.isAddNewFlow ? .create : .update
 		let inputMethod: AppAnalyticsEvent.InputMethod = model.didUseScanner ? .scanner : .manual
 		let succeeded = model.addUpdateCard(model.card)
+		if succeeded {
+			model.isEditing = false
+		}
 		let event: AppAnalyticsEvent = succeeded
 			? .cardSaveCompleted(
 				operation: operation,
@@ -578,12 +585,12 @@ struct CardView: View {
 		ScrollView {
 			VStack(spacing: 24) {
 				// Visual Card Preview (only for credit/debit cards)
-				if model.card.type != .otherCard && model.isAuthenticated && !model.isEditing {
+				if model.selectedCardType != .otherCard && model.isAuthenticated && !model.isEditing {
 					macOSCardPreview()
 				}
 
 				// Card Image for Other Cards
-				if let image = model.cardImage, model.card.type == .otherCard {
+				if let image = model.cardImage, model.selectedCardType == .otherCard {
 					Image(nsImage: image)
 						.resizable()
 						.scaledToFit()
@@ -609,11 +616,15 @@ struct CardView: View {
 				Label("Share", systemImage: "square.and.arrow.up")
 			}
 			Button(action: {
-				model.isEditing.toggle()
-				saveCardIfNeeded()
+				if model.isEditing {
+					saveCardIfNeeded()
+				} else {
+					model.isEditing = true
+				}
 			}) {
 				Text(model.isEditing ? "Done" : "Edit")
 			}
+			.disabled(model.isEditing && !model.canFinishEditing)
 		}
 		.disabled(!model.isAuthenticated)
 	}
@@ -648,7 +659,7 @@ struct CardView: View {
 							.foregroundStyle(.white.opacity(0.9))
 					}
 					Spacer()
-					Text(model.card.type.rawValue)
+					Text(model.selectedCardType?.rawValue ?? "Card")
 						.font(.caption)
 						.fontWeight(.medium)
 						.foregroundStyle(.white.opacity(0.8))
@@ -775,7 +786,7 @@ struct CardView: View {
 				}
 
 				// Pickers
-				if model.card.type != .otherCard {
+				if model.selectedCardType != .otherCard {
 					Divider()
 					HStack {
 						Text("Network")
@@ -798,9 +809,12 @@ struct CardView: View {
 					Text("Type")
 						.foregroundStyle(.secondary)
 					Spacer()
-					Picker("", selection: $model.card.type) {
+					Picker("", selection: $model.selectedCardType) {
+						if model.isAddNewFlow {
+							Text("Select Card Type").tag(nil as CardType?)
+						}
 						ForEach(CardType.allCases) { type in
-							Text(type.rawValue).tag(type)
+							Text(type.rawValue).tag(type as CardType?)
 						}
 					}
 					.labelsHidden()
@@ -816,7 +830,7 @@ struct CardView: View {
 		.frame(maxWidth: 400)
 
 		// Image section for Other Cards
-		if model.isEditing && model.card.type == .otherCard {
+		if model.isEditing && model.selectedCardType == .otherCard {
 			GroupBox {
 				VStack(spacing: 12) {
 					Button {

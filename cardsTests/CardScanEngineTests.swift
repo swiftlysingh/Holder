@@ -170,6 +170,7 @@ final class CardScanSessionTests: XCTestCase {
 			addNewFlow: true,
 			addUpdateCard: { _ in true }
 		)
+		model.selectedCardType = .debitCard
 
 		model.applyScan(
 			CardScanResult(pan: "378282246310005", expiry: nil, cardholderName: nil, network: .amex)
@@ -181,12 +182,14 @@ final class CardScanSessionTests: XCTestCase {
 		XCTAssertEqual(model.card.name, "KEPT NAME")
 		XCTAssertEqual(model.card.cvv, "999")
 		XCTAssertEqual(model.card.description, "Wallet")
+		XCTAssertEqual(model.selectedCardType, .debitCard)
+		XCTAssertEqual(model.card.type, .debitCard)
 		XCTAssertTrue(model.didUseScanner)
 		XCTAssertEqual(model.entryMode, .form)
 		XCTAssertFalse(model.isShowingScanner)
 	}
 
-	func testAddNewPaymentCardStartsOnChooser() {
+	func testAddNewCardStartsOnChooserWithoutSelectedType() {
 		let model = CardViewModel(
 			card: CardData(
 				id: UUID(),
@@ -202,6 +205,40 @@ final class CardScanSessionTests: XCTestCase {
 			addUpdateCard: { _ in true }
 		)
 		XCTAssertEqual(model.entryMode, .chooser)
+		XCTAssertNil(model.selectedCardType)
+		XCTAssertFalse(model.canFinishEditing)
+
+		model.beginManualEntry()
+
+		XCTAssertEqual(model.entryMode, .form)
+		XCTAssertNil(model.selectedCardType)
+	}
+
+	func testScanDoesNotGuessAnUnselectedCardType() {
+		let model = CardViewModel(
+			card: makeBlankCard(),
+			isEditing: true,
+			addNewFlow: true,
+			addUpdateCard: { _ in true }
+		)
+
+		model.applyScan(
+			CardScanResult(
+				pan: "4111111111111111",
+				expiry: "12/30",
+				cardholderName: "JANE DOE",
+				network: .visa
+			)
+		)
+
+		XCTAssertNil(model.selectedCardType)
+		XCTAssertEqual(model.card.network, .visa)
+		XCTAssertFalse(model.canFinishEditing)
+
+		model.selectedCardType = .creditCard
+
+		XCTAssertTrue(model.canFinishEditing)
+		XCTAssertEqual(model.card.type, .creditCard)
 	}
 
 	private func makeBlankCard() -> CardData {
