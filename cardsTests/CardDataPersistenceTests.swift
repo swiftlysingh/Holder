@@ -73,15 +73,18 @@ final class CardDataPersistenceTests: XCTestCase {
 			deletePayload: { _, _ in false }
 		)
 
-		XCTAssertTrue(await store.loadCards())
+		let initialLoadSucceeded = await store.loadCards()
+		XCTAssertTrue(initialLoadSucceeded)
 		XCTAssertEqual(store.findCard(by: card.id), card)
 
 		stub.result = .failure
-		XCTAssertFalse(await store.loadCards())
+		let failedLoadSucceeded = await store.loadCards()
+		XCTAssertFalse(failedLoadSucceeded)
 		XCTAssertEqual(store.findCard(by: card.id), card)
 
 		stub.result = .empty
-		XCTAssertTrue(await store.loadCards())
+		let emptyLoadSucceeded = await store.loadCards()
+		XCTAssertTrue(emptyLoadSucceeded)
 		// Sample/debug cards use fresh UUIDs, so the previously stubbed id must not resolve.
 		XCTAssertNil(store.findCard(by: card.id))
 	}
@@ -106,9 +109,12 @@ final class CardDataPersistenceTests: XCTestCase {
 			}
 		)
 
-		XCTAssertTrue(await store.loadCards())
-		XCTAssertTrue(await store.addCard(newCard))
-		XCTAssertTrue(await store.deleteCard(with: storedCard.id))
+		let loadSucceeded = await store.loadCards()
+		let saveSucceeded = await store.addCard(newCard)
+		let deleteSucceeded = await store.deleteCard(with: storedCard.id)
+		XCTAssertTrue(loadSucceeded)
+		XCTAssertTrue(saveSucceeded)
+		XCTAssertTrue(deleteSucceeded)
 
 		XCTAssertEqual(recorder.operations, [.retrieve, .save, .delete])
 		XCTAssertTrue(recorder.allOperationsRanOffMainThread)
@@ -131,9 +137,11 @@ final class CardDataPersistenceTests: XCTestCase {
 		}
 		await gate.waitUntilReached()
 
-		XCTAssertTrue(await store.addCard(newerCard))
+		let saveSucceeded = await store.addCard(newerCard)
+		XCTAssertTrue(saveSucceeded)
 		await gate.release()
-		XCTAssertTrue(await load.value)
+		let loadSucceeded = await load.value
+		XCTAssertTrue(loadSucceeded)
 
 		XCTAssertEqual(store.findCard(by: existingCard.id), existingCard)
 		XCTAssertEqual(store.findCard(by: newerCard.id), newerCard)
@@ -150,15 +158,18 @@ final class CardDataPersistenceTests: XCTestCase {
 			beforeApplyingLoad: { await gate.waitBeforeCommit() }
 		)
 
-		XCTAssertTrue(await store.addCard(card))
+		let saveSucceeded = await store.addCard(card)
+		XCTAssertTrue(saveSucceeded)
 		let load = Task { @MainActor in
 			await store.loadCards()
 		}
 		await gate.waitUntilReached()
 
-		XCTAssertTrue(await store.deleteCard(with: card.id))
+		let deleteSucceeded = await store.deleteCard(with: card.id)
+		XCTAssertTrue(deleteSucceeded)
 		await gate.release()
-		XCTAssertTrue(await load.value)
+		let loadSucceeded = await load.value
+		XCTAssertTrue(loadSucceeded)
 
 		XCTAssertNil(store.findCard(by: card.id))
 	}
@@ -182,9 +193,11 @@ final class CardDataPersistenceTests: XCTestCase {
 		}
 		await gate.waitUntilBlocked()
 
-		XCTAssertTrue(await store.addCard(newerCard))
+		let newerMutationSucceeded = await store.addCard(newerCard)
+		XCTAssertTrue(newerMutationSucceeded)
 		await gate.release()
-		XCTAssertTrue(await olderMutation.value)
+		let olderMutationSucceeded = await olderMutation.value
+		XCTAssertTrue(olderMutationSucceeded)
 
 		XCTAssertEqual(store.findCard(by: id), newerCard)
 	}

@@ -388,40 +388,36 @@ final class GatedCardImageStore: CardImageStore, @unchecked Sendable {
 	private var loadStarted = false
 
 	func waitUntilLoadStarts() async {
-		lock.lock()
-		if loadStarted {
-			lock.unlock()
-			return
-		}
-		lock.unlock()
 		await withCheckedContinuation { continuation in
-			lock.lock()
-			if loadStarted {
-				lock.unlock()
-				continuation.resume()
-				return
+			let loadAlreadyStarted = lock.withLock {
+				guard !loadStarted else { return true }
+				startedContinuation = continuation
+				return false
 			}
-			startedContinuation = continuation
-			lock.unlock()
+			if loadAlreadyStarted {
+				continuation.resume()
+			}
 		}
 	}
 
 	func completeLoad(with data: Data?) async {
-		lock.lock()
-		let continuation = loadContinuation
-		loadContinuation = nil
-		lock.unlock()
+		let continuation = lock.withLock {
+			let continuation = loadContinuation
+			loadContinuation = nil
+			return continuation
+		}
 		continuation?.resume(returning: data)
 	}
 
 	func loadImageData(for uuid: UUID) async -> Data? {
 		await withCheckedContinuation { continuation in
-			lock.lock()
-			loadContinuation = continuation
-			loadStarted = true
-			let started = startedContinuation
-			startedContinuation = nil
-			lock.unlock()
+			let started = lock.withLock {
+				loadContinuation = continuation
+				loadStarted = true
+				let started = startedContinuation
+				startedContinuation = nil
+				return started
+			}
 			started?.resume()
 		}
 	}
