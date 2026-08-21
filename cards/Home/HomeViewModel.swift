@@ -16,8 +16,8 @@ final class HomeViewModel: ObservableObject {
 	@AppStorage("isFirstLaunch") var isFirstLaunch = true
 	private var deepLinkTask: Task<Void, Never>?
 
-	init(cardDataStore: CardDataStore = CardDataStore()) {
-		self.cardDataStore = cardDataStore
+	init(cardDataStore: CardDataStore? = nil) {
+		self.cardDataStore = cardDataStore ?? CardDataStore()
 	}
 
 	deinit {

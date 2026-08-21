@@ -159,6 +159,7 @@ struct CardView: View {
 
 	fileprivate func getCardListView() -> some View {
 		let tip = DoubleTapTip()
+		let hasCardImage = model.cardImage != nil
 
 		return List {
 			Section {
@@ -260,7 +261,7 @@ struct CardView: View {
 						VStack(alignment: .leading) {
 							HStack {
 								Image(systemName: "photo")
-								Text(model.cardImage == nil ? "Add Card Image" : "Change Card Image")
+								Text(hasCardImage ? "Change Card Image" : "Add Card Image")
 							}
 							.padding(.bottom)
 
@@ -314,7 +315,7 @@ struct CardView: View {
 						VStack(alignment: .leading) {
 							HStack {
 								Image(systemName: "photo")
-								Text(model.cardImage == nil ? "Add Card Image" : "Change Card Image")
+								Text(hasCardImage ? "Change Card Image" : "Add Card Image")
 							}
 							.padding(.bottom)
 

@@ -18,8 +18,8 @@ struct HomeView: View {
 	@State private var isShowingSettings = false
 	#endif
 
-	init(cardDataStore: CardDataStore = CardDataStore()) {
-		self.model = HomeViewModel(cardDataStore: cardDataStore)
+	init(cardDataStore: CardDataStore? = nil) {
+		self.model = HomeViewModel(cardDataStore: cardDataStore ?? CardDataStore())
 	}
 
 	var body: some View {
