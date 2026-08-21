@@ -72,16 +72,20 @@ struct HomeView: View {
 				}
 			}
 			.navigationTitle("Cards")
+			.toolbarTitleDisplayMode(.inlineLarge)
 			.task {
 				model.cardDataStore.loadCards()
 			}
 			#if !os(macOS)
 			.toolbar {
-				NavigationLink(
-					destination: sdk.settingsView()
-						.sdkScreen(AppAnalyticsScreen.settings)
-				) {
-					Image(systemName: "gear")
+				ToolbarItem(placement: .topBarTrailing) {
+					NavigationLink(
+						destination: sdk.settingsView()
+							.sdkScreen(AppAnalyticsScreen.settings)
+							.toolbarTitleDisplayMode(.inlineLarge)
+					) {
+						Image(systemName: "gear")
+					}
 				}
 			}
 			#endif
