@@ -105,6 +105,7 @@ final class CardScannerViewModel: ObservableObject {
 		onResult: @escaping (CardScanResult, CardScanMetrics) -> Void
 	) async {
 		for await update in engine.scanUpdates() {
+			guard !stopped else { return }
 			switch update {
 			case .permissionDenied:
 				onPermissionDenied()
