@@ -78,29 +78,44 @@ class CardDataStore {
 			hasInitializedFixtures: hasInitializedDebugFixtures
 		) {
 			let fixtures = [
-				CardData(id: UUID(), number: "4234567890123456", cvv: "123", expiration: "12/25", name: "John Doe", description: "Axis Visa", type: .creditCard, network: "4234567890123456".getCardNetwork()),
-				CardData(id: UUID(), number: "5345678901234567", cvv: "234", expiration: "11/24", name: "Jane Smith", description: "SBI MasterCard", type: .creditCard, network: "5345678901234567".getCardNetwork()),
-				CardData(id: UUID(), number: "34567890123456", cvv: "345", expiration: "10/23", name: "Alex Johnson", description: "American Express Gold", type: .creditCard, network: "34567890123456".getCardNetwork()),
-				CardData(id: UUID(), number: "6067890123456789", cvv: "456", expiration: "08/26", name: "Emily Davis", description: "Kotak PVR", type: .debitCard, network: "6067890123456789".getCardNetwork()),
 				CardData(
 					id: UUID(),
-					number: "3678901234567890",
-					cvv: "567",
-					expiration: "07/25",
-					name: "Michael Brown",
-					description: "HDFC Platinum",
-					type: .debitCard,
-					network: "3678901234567890".getCardNetwork()
+					number: "4242424242424242",
+					cvv: "123",
+					expiration: "09/29",
+					name: "M. C. Lovin",
+					description: "Everyday Card",
+					type: .creditCard,
+					network: "4242424242424242".getCardNetwork()
 				),
 				CardData(
 					id: UUID(),
-					number: "3678901234567890",
-					cvv: "567",
-					expiration: "07/25",
-					name: "Michael Brown",
-					description: "HDFC Platinum",
-					type: .otherCard,
-					network: "3678901234567890".getCardNetwork()
+					number: "5555555555554444",
+					cvv: "444",
+					expiration: "04/30",
+					name: "M. C. Lovin",
+					description: "Rewards Card",
+					type: .creditCard,
+					network: "5555555555554444".getCardNetwork()
+				),
+				CardData(
+					id: UUID(),
+					number: "4000056655665556",
+					cvv: "789",
+					expiration: "11/29",
+					name: "M. C. Lovin",
+					description: "Travel Debit",
+					type: .debitCard,
+					network: "4000056655665556".getCardNetwork()
+				),
+				CardData(
+					id: UUID(),
+					number: "9000000000004821",
+					cvv: "",
+					expiration: "06/31",
+					name: "M. C. Lovin",
+					description: "Health ID",
+					type: .otherCard
 				)
 			]
 			for fixture in fixtures {

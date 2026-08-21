@@ -15,6 +15,9 @@ struct HomeView: View {
 	@Environment(\.analytics) private var analytics
 	@Environment(\.sdk) private var sdk
 	@State private var cardPendingDeletion: CardData?
+	#if !os(macOS)
+	@State private var isShowingSettings = false
+	#endif
 
 	init(model: HomeViewModel) {
 		self.model = model
@@ -81,11 +84,9 @@ struct HomeView: View {
 			#if !os(macOS)
 			.toolbar {
 				ToolbarItem(placement: .topBarTrailing) {
-					NavigationLink(
-						destination: sdk.settingsView()
-							.sdkScreen(AppAnalyticsScreen.settings)
-							.toolbarTitleDisplayMode(.inlineLarge)
-					) {
+					Button {
+						isShowingSettings = true
+					} label: {
 						Image(systemName: "gear")
 					}
 				}
@@ -156,6 +157,21 @@ struct HomeView: View {
 		} message: { _ in
 			Text("This cannot be undone.")
 		}
+		#if !os(macOS)
+		.sheet(isPresented: $isShowingSettings) {
+			NavigationStack {
+				sdk.settingsView()
+					.sdkScreen(AppAnalyticsScreen.settings)
+					.toolbar {
+						ToolbarItem(placement: .confirmationAction) {
+							Button("Done") {
+								isShowingSettings = false
+							}
+						}
+					}
+			}
+		}
+		#endif
 		.sdkScreen(AppAnalyticsScreen.home)
 	}
 

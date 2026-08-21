@@ -343,12 +343,7 @@ struct CardView: View {
 		}
 		.toolbar {
 			sensitiveShareMenu
-			Button(action: {
-				model.isEditing.toggle()
-				saveCardIfNeeded()
-			}) {
-				Text(model.isEditing ? "Done" : "Edit")
-			}
+			editToolbarButton
 		}
 		#if os(iOS)
 		.toolbar {
@@ -385,6 +380,20 @@ struct CardView: View {
 			}
 		}
 		#endif
+	}
+
+	private var editToolbarButton: some View {
+		Button {
+			model.isEditing.toggle()
+			saveCardIfNeeded()
+		} label: {
+			if model.isEditing {
+				Text("Done")
+			} else {
+				Image(systemName: "pencil")
+			}
+		}
+		.accessibilityLabel(model.isEditing ? "Done" : "Edit")
 	}
 
 	private func saveCardIfNeeded() {
@@ -499,12 +508,7 @@ struct CardView: View {
 		.contentMargins(0)
 		.toolbar {
 			sensitiveShareMenu
-			Button(action: {
-				model.isEditing.toggle()
-				saveCardIfNeeded()
-			}) {
-				Text(model.isEditing ? "Done" : "Edit")
-			}
+			editToolbarButton
 		}
 	}
 
