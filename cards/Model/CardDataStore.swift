@@ -155,9 +155,9 @@ final class CardDataStore {
 		beforeApplyingMutation: @escaping (UInt64) async -> Void = { _ in }
 	) {
 		persistence = CardKeychainPersistence(
-			retrievePayloads: retrievePayloads ?? Self.retrieveAllCardPayloads,
-			savePayload: savePayload ?? Self.saveCardPayload,
-			deletePayload: deletePayload ?? Self.deleteCardPayload
+			retrievePayloads: retrievePayloads ?? { Self.retrieveAllCardPayloads(service: $0) },
+			savePayload: savePayload ?? { Self.saveCardPayload($0, service: $1, account: $2) },
+			deletePayload: deletePayload ?? { Self.deleteCardPayload(service: $0, account: $1) }
 		)
 		self.beforeApplyingLoad = beforeApplyingLoad
 		self.beforeApplyingMutation = beforeApplyingMutation

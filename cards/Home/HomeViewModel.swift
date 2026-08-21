@@ -15,8 +15,8 @@ final class HomeViewModel: ObservableObject {
 	@Bindable var cardDataStore: CardDataStore
 	private var deepLinkTask: Task<Void, Never>?
 
-	init(cardDataStore: CardDataStore = CardDataStore()) {
-		self.cardDataStore = cardDataStore
+	init(cardDataStore: CardDataStore? = nil) {
+		self.cardDataStore = cardDataStore ?? CardDataStore()
 	}
 
 	deinit {
