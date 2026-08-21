@@ -21,6 +21,7 @@ final class VisionCardScanningEngine: NSObject, CardScanningEngine {
 	private var isVerifying = false
 	private var didStart = false
 	private var verificationTask: Task<Void, Never>?
+	var isTorchAvailable: Bool { host.isTorchAvailable }
 
 	override init() {
 		super.init()
@@ -51,8 +52,13 @@ final class VisionCardScanningEngine: NSObject, CardScanningEngine {
 		return CardScanSession.result(from: CardFrameObservation(
 			pan: pan,
 			expiry: latestObservation.expiry,
-			cardholderName: latestObservation.cardholderName
+			cardholderName: nil
 		))
+	}
+
+	@discardableResult
+	func setTorchEnabled(_ isEnabled: Bool) -> Bool {
+		host.setTorchEnabled(isEnabled)
 	}
 
 	func stop() {
@@ -95,7 +101,8 @@ final class VisionCardScanningEngine: NSObject, CardScanningEngine {
 		return CardScanResult(
 			pan: livePAN,
 			expiry: still.expiry ?? latestObservation.expiry,
-			cardholderName: still.cardholderName ?? latestObservation.cardholderName,
+			// A missing name is safer than carrying forward a bad live OCR guess.
+			cardholderName: still.cardholderName,
 			network: CardPAN.network(for: livePAN)
 		)
 	}
@@ -222,12 +229,42 @@ private final class VisionScannerHostViewController: UIViewController {
 	}
 
 	func stopScanning() {
+		setTorchEnabled(false)
 		scanner?.stopScanning()
+	}
+
+	var isTorchAvailable: Bool {
+		torchDevice?.hasTorch == true && torchDevice?.isTorchAvailable == true
+	}
+
+	@discardableResult
+	func setTorchEnabled(_ isEnabled: Bool) -> Bool {
+		guard let torchDevice,
+			  torchDevice.hasTorch,
+			  torchDevice.isTorchModeSupported(isEnabled ? .on : .off),
+			  !isEnabled || torchDevice.isTorchAvailable else {
+			return false
+		}
+
+		do {
+			try torchDevice.lockForConfiguration()
+			defer { torchDevice.unlockForConfiguration() }
+			torchDevice.torchMode = isEnabled ? .on : .off
+			return torchDevice.torchMode == (isEnabled ? .on : .off)
+		} catch {
+			return false
+		}
 	}
 
 	func captureStill() async -> UIImage? {
 		return try? await scanner?.capturePhoto()
 	}
+
+	private lazy var torchDevice = AVCaptureDevice.default(
+		.builtInWideAngleCamera,
+		for: .video,
+		position: .back
+	)
 }
 
 extension VisionScannerHostViewController: DataScannerViewControllerDelegate {

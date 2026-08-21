@@ -73,7 +73,6 @@ class CardViewModel: ObservableObject {
 			}
 		}
 	}
-	@Published var lastScanPreview: CardScanResult?
 	@Published var errorMessage: String?
 	@Published var showErrorAlert = false
 	private var scheduledLockTask: Task<Void, Never>?
@@ -221,7 +220,6 @@ class CardViewModel: ObservableObject {
 
 	func applyScan(_ result: CardScanResult) {
 		CardScanSession.apply(result, to: &card)
-		lastScanPreview = result
 		didUseScanner = true
 		entryMode = .form
 		isShowingScanner = false

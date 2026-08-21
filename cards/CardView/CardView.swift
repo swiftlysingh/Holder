@@ -115,16 +115,16 @@ struct CardView: View {
 					isRescan: model.didUseScanner,
 					onCancel: {
 						model.isShowingScanner = false
-						cardSheetDetent = model.entryMode == .chooser ? .fraction(0.25) : .large
+						cardSheetDetent = model.entryMode == .chooser ? .fraction(0.25) : .fraction(0.5)
 					},
 					onPermissionDenied: {
 						track(.cardScanPermissionDenied(engine: CardScanningEngineFactory.currentEngineID))
 						model.isShowingScanner = false
-						cardSheetDetent = model.entryMode == .chooser ? .fraction(0.25) : .large
+						cardSheetDetent = model.entryMode == .chooser ? .fraction(0.25) : .fraction(0.5)
 					},
 					onResult: { result, metrics in
 						model.applyScan(result)
-						cardSheetDetent = .large
+						cardSheetDetent = .fraction(0.5)
 						track(
 							.cardScanCompleted(
 								engine: metrics.engine,
@@ -190,44 +190,6 @@ struct CardView: View {
 		model.isShowingScanner = true
 	}
 
-	private func scanReviewSection() -> some View {
-		Group {
-			if model.isAuthenticated, let preview = model.lastScanPreview {
-				Section {
-					HStack(spacing: 12) {
-						Image(preview.network.rawValue)
-							.resizable()
-							.scaledToFit()
-							.frame(width: 36, height: 36)
-						VStack(alignment: .leading, spacing: 4) {
-							Text(preview.network.rawValue)
-								.font(.headline)
-							Text("•••• \(preview.lastFour)")
-								.font(.body.monospaced())
-							if let expiry = preview.expiry, !expiry.isEmpty {
-								Text("Expires \(expiry)")
-									.foregroundStyle(.secondary)
-							}
-							if let name = preview.cardholderName, !name.isEmpty {
-								Text(name)
-									.foregroundStyle(.secondary)
-							}
-						}
-						Spacer()
-					}
-					Button {
-						startScan(isRescan: true)
-					} label: {
-						Label("Scan Again", systemImage: "camera.on.rectangle")
-					}
-				} header: {
-					Text("Scanned card")
-				} footer: {
-					Text("Every field below stays editable. Missing scan values will not erase what you already entered.")
-				}
-			}
-		}
-	}
 	#endif
 
 	#if os(iOS)
@@ -299,9 +261,6 @@ struct CardView: View {
 		let tip = DoubleTapTip()
 
 		return List {
-			#if os(iOS)
-			scanReviewSection()
-			#endif
 			Section {
 				#if os(iOS)
 				let fields: [(String, Binding<String>, UIKeyboardType)] = [

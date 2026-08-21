@@ -198,10 +198,14 @@ enum CardholderNameParser {
 		"VISA", "MASTERCARD", "MASTER CARD", "AMEX", "AMERICAN EXPRESS",
 		"DISCOVER", "RUPAY", "UNIONPAY", "UNION PAY", "JCB", "DINERS",
 		"DINERS CLUB", "VALID", "THRU", "GOOD", "FROM", "MONTH", "YEAR",
-		"DEBIT", "CREDIT", "BANK", "CARD", "PLATINUM", "SIGNATURE",
+		"DEBIT", "CREDIT", "BANK", "BANKING", "CARD", "CARDS", "PLATINUM", "SIGNATURE",
 		"WORLD", "ELECTRON", "CLASSIC", "GOLD", "TITANIUM", "BUSINESS",
-		"VALID THRU", "GOOD THRU", "MEMBER SINCE", "CVV", "CVC", "CID"
+		"VALID THRU", "GOOD THRU", "MEMBER SINCE", "CVV", "CVC", "CID",
+		"CUSTOMER", "CARE", "SERVICE", "SERVICES", "HELPLINE", "TOLL", "FREE",
+		"ONLINE", "WEBSITE", "WWW", "COM", "NET", "ORG", "LIMITED", "LTD",
+		"INC", "CORP", "CORPORATION", "LLC", "PLC"
 	]
+	private static let websitePattern = #"(?i)(?:https?://|www(?:\.|\s)|@|\b[a-z0-9][a-z0-9-]*(?:\.[a-z0-9-]+)*\.(?:com|net|org|bank|co|in|io|app)\b)"#
 
 	static func parse(from items: [OCRTextItem], panDigits: String?) -> String? {
 		let panDigits = panDigits ?? ""
@@ -224,6 +228,7 @@ enum CardholderNameParser {
 		let compactDigits = CardPAN.digits(in: raw, allowOCRNormalization: false)
 		if compactDigits.count >= 8 { return nil }
 		if CardExpiryParser.parse(raw) != nil { return nil }
+		if raw.range(of: websitePattern, options: .regularExpression) != nil { return nil }
 
 		let letters = raw
 			.replacingOccurrences(of: ",", with: " ")
@@ -239,7 +244,9 @@ enum CardholderNameParser {
 		var cleaned: [String] = []
 		for token in letters {
 			let upper = token.uppercased()
-			if blocked.contains(upper) { continue }
+			if blocked.contains(upper) || upper.hasSuffix("BANK") || upper.hasSuffix("BANKING") {
+				return nil
+			}
 			guard token.count >= 2, token.count <= 20 else { return nil }
 			let allowed = CharacterSet.letters.union(CharacterSet(charactersIn: "'-"))
 			guard token.unicodeScalars.allSatisfy({ allowed.contains($0) }) else {
