@@ -11,7 +11,7 @@ import Foundation
 protocol CardImageStore: AnyObject, Sendable {
 	func loadImageData(for uuid: UUID) async -> Data?
 	func saveImageData(_ data: Data, for uuid: UUID) async -> Bool
-	func deleteImage(for uuid: UUID) async
+	func deleteImage(for uuid: UUID) async -> Bool
 }
 
 /// `ioQueue` serializes all mutable state and every resolver/file operation.
@@ -36,33 +36,36 @@ final class ICloudDataManager: CardImageStore, @unchecked Sendable {
 	}
 
 	func loadImageData(for uuid: UUID) async -> Data? {
-		await withCheckedContinuation { continuation in
-			ioQueue.async {
-				continuation.resume(returning: self.loadImageDataOnIOQueue(for: uuid))
-			}
+		await performOnIOQueue { manager in
+			manager.loadImageDataOnIOQueue(for: uuid)
 		}
 	}
 
 	func saveImageData(_ data: Data, for uuid: UUID) async -> Bool {
-		await withCheckedContinuation { continuation in
-			ioQueue.async {
-				continuation.resume(returning: self.saveImageDataOnIOQueue(data, for: uuid))
-			}
+		await performOnIOQueue { manager in
+			manager.saveImageDataOnIOQueue(data, for: uuid)
 		}
 	}
 
-	func deleteImage(for uuid: UUID) async {
+	func deleteImage(for uuid: UUID) async -> Bool {
+		await performOnIOQueue { manager in
+			manager.deleteImageOnIOQueue(for: uuid)
+		}
+	}
+
+	private func performOnIOQueue<Value: Sendable>(
+		_ operation: @escaping @Sendable (ICloudDataManager) -> Value
+	) async -> Value {
 		await withCheckedContinuation { continuation in
 			ioQueue.async {
-				self.deleteImageOnIOQueue(for: uuid)
-				continuation.resume()
+				continuation.resume(returning: operation(self))
 			}
 		}
 	}
 
 	/// Apple documents `url(forUbiquityContainerIdentifier:)` as unsafe on the main
 	/// thread because it can take several seconds. Always resolve it on `ioQueue`.
-	private func resolveDirectoryOnIOQueue() -> URL? {
+	private func directoryOnIOQueue() -> URL? {
 		dispatchPrecondition(condition: .onQueue(ioQueue))
 		if let cachedDirectory {
 			return cachedDirectory
@@ -73,12 +76,18 @@ final class ICloudDataManager: CardImageStore, @unchecked Sendable {
 			return nil
 		}
 
-		cachedDirectory = directory
-		return directory
+		do {
+			try fileManager.createDirectory(at: directory, withIntermediateDirectories: true)
+			cachedDirectory = directory
+			return directory
+		} catch {
+			print("Error preparing iCloud directory: \(error)")
+			return nil
+		}
 	}
 
 	private func getImageURLOnIOQueue(for uuid: UUID) -> URL? {
-		resolveDirectoryOnIOQueue()?.appendingPathComponent("\(uuid.uuidString).jpg")
+		directoryOnIOQueue()?.appendingPathComponent("\(uuid.uuidString).jpg")
 	}
 
 	private func saveImageDataOnIOQueue(_ data: Data, for uuid: UUID) -> Bool {
@@ -88,13 +97,10 @@ final class ICloudDataManager: CardImageStore, @unchecked Sendable {
 		}
 
 		do {
-			try fileManager.createDirectory(
-				at: imageURL.deletingLastPathComponent(),
-				withIntermediateDirectories: true
-			)
 			try data.write(to: imageURL)
 			return true
 		} catch {
+			cachedDirectory = nil
 			print("Error saving to iCloud: \(error)")
 			return false
 		}
@@ -102,11 +108,34 @@ final class ICloudDataManager: CardImageStore, @unchecked Sendable {
 
 	private func loadImageDataOnIOQueue(for uuid: UUID) -> Data? {
 		guard let imageURL = getImageURLOnIOQueue(for: uuid) else { return nil }
-		return try? Data(contentsOf: imageURL)
+		do {
+			return try Data(contentsOf: imageURL)
+		} catch {
+			if !isFileNotFound(error) {
+				cachedDirectory = nil
+			}
+			return nil
+		}
 	}
 
-	private func deleteImageOnIOQueue(for uuid: UUID) {
-		guard let imageURL = getImageURLOnIOQueue(for: uuid) else { return }
-		try? fileManager.removeItem(at: imageURL)
+	private func deleteImageOnIOQueue(for uuid: UUID) -> Bool {
+		guard let imageURL = getImageURLOnIOQueue(for: uuid) else { return false }
+		do {
+			try fileManager.removeItem(at: imageURL)
+			return true
+		} catch {
+			if isFileNotFound(error) {
+				return true
+			}
+			cachedDirectory = nil
+			print("Error deleting from iCloud: \(error)")
+			return false
+		}
+	}
+
+	private func isFileNotFound(_ error: Error) -> Bool {
+		let cocoaError = error as NSError
+		return cocoaError.domain == NSCocoaErrorDomain
+			&& cocoaError.code == CocoaError.Code.fileNoSuchFile.rawValue
 	}
 }

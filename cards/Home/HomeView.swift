@@ -179,7 +179,7 @@ struct HomeView: View {
 
 	private func archiveCard(_ card: CardData) {
 		Task { @MainActor in
-			let event: AppAnalyticsEvent = await model.archiveCard(card)
+			let event: AppAnalyticsEvent = await model.cardDataStore.archiveCard(card)
 				? .cardArchived
 				: .cardArchiveFailed
 			track(event)

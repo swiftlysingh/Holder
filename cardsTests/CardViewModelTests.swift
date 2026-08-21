@@ -2,12 +2,6 @@ import Combine
 import XCTest
 @testable import Holder
 
-#if os(macOS)
-import AppKit
-#else
-import UIKit
-#endif
-
 @MainActor
 final class CardViewModelTests: XCTestCase {
 	func testStaleUserDefaultsAuthenticationDoesNotUnlockNewModel() {
@@ -261,22 +255,31 @@ final class CardViewModelTests: XCTestCase {
 	func testICloudDirectoryRetriesAfterTransientUnavailability() async throws {
 		let directory = FileManager.default.temporaryDirectory
 			.appendingPathComponent("holder-icloud-test-\(UUID().uuidString)", isDirectory: true)
-		defer { try? FileManager.default.removeItem(at: directory) }
+		let unusableDirectory = FileManager.default.temporaryDirectory
+			.appendingPathComponent("holder-icloud-file-\(UUID().uuidString)")
+		try Data("not a directory".utf8).write(to: unusableDirectory)
+		defer {
+			try? FileManager.default.removeItem(at: directory)
+			try? FileManager.default.removeItem(at: unusableDirectory)
+		}
 
-		let resolver = SequentialDirectoryResolver(results: [nil, directory])
+		let resolver = SequentialDirectoryResolver(results: [nil, unusableDirectory, directory])
 		let manager = ICloudDataManager(directoryResolver: { resolver.resolve() })
 		let identifier = UUID()
+		let imageData = Data("image".utf8)
 
 		let initialData = await manager.loadImageData(for: identifier)
 		XCTAssertNil(initialData)
 
-		let imageData = try XCTUnwrap(makeTestImage().jpegData(compressionQuality: 0.8))
+		let failedSave = await manager.saveImageData(imageData, for: identifier)
+		XCTAssertFalse(failedSave)
+
 		let didSave = await manager.saveImageData(imageData, for: identifier)
 		XCTAssertTrue(didSave)
 
 		let recoveredData = await manager.loadImageData(for: identifier)
 		XCTAssertEqual(recoveredData, imageData)
-		XCTAssertEqual(resolver.callCount, 2)
+		XCTAssertEqual(resolver.callCount, 3)
 		XCTAssertFalse(resolver.didResolveOnMainThread)
 	}
 
@@ -308,21 +311,6 @@ final class CardViewModelTests: XCTestCase {
 		}
 	}
 
-	private func makeTestImage() -> PlatformImage {
-		#if os(macOS)
-		let image = NSImage(size: NSSize(width: 1, height: 1))
-		image.lockFocus()
-		NSColor.red.setFill()
-		NSBezierPath(rect: NSRect(x: 0, y: 0, width: 1, height: 1)).fill()
-		image.unlockFocus()
-		return image
-		#else
-		return UIGraphicsImageRenderer(size: CGSize(width: 1, height: 1)).image { context in
-			UIColor.red.setFill()
-			context.fill(CGRect(x: 0, y: 0, width: 1, height: 1))
-		}
-		#endif
-	}
 }
 
 // MARK: - Test doubles
@@ -376,55 +364,40 @@ actor ImmediateCardImageStore: CardImageStore {
 		return true
 	}
 
-	func deleteImage(for uuid: UUID) async {
+	func deleteImage(for uuid: UUID) async -> Bool {
 		data = nil
+		return true
 	}
 }
 
-final class GatedCardImageStore: CardImageStore, @unchecked Sendable {
-	private let lock = NSLock()
+actor GatedCardImageStore: CardImageStore {
 	private var loadContinuation: CheckedContinuation<Data?, Never>?
 	private var startedContinuation: CheckedContinuation<Void, Never>?
 	private var loadStarted = false
 
 	func waitUntilLoadStarts() async {
-		await withCheckedContinuation { continuation in
-			let loadAlreadyStarted = lock.withLock {
-				guard !loadStarted else { return true }
-				startedContinuation = continuation
-				return false
-			}
-			if loadAlreadyStarted {
-				continuation.resume()
-			}
-		}
+		if loadStarted { return }
+		await withCheckedContinuation { startedContinuation = $0 }
 	}
 
 	func completeLoad(with data: Data?) async {
-		let continuation = lock.withLock {
-			let continuation = loadContinuation
-			loadContinuation = nil
-			return continuation
-		}
-		continuation?.resume(returning: data)
+		loadContinuation?.resume(returning: data)
+		loadContinuation = nil
 	}
 
 	func loadImageData(for uuid: UUID) async -> Data? {
 		await withCheckedContinuation { continuation in
-			let started = lock.withLock {
-				loadContinuation = continuation
-				loadStarted = true
-				let started = startedContinuation
-				startedContinuation = nil
-				return started
-			}
+			loadContinuation = continuation
+			loadStarted = true
+			let started = startedContinuation
+			startedContinuation = nil
 			started?.resume()
 		}
 	}
 
 	func saveImageData(_ data: Data, for uuid: UUID) async -> Bool { false }
 
-	func deleteImage(for uuid: UUID) async {}
+	func deleteImage(for uuid: UUID) async -> Bool { true }
 }
 
 private final class SequentialDirectoryResolver: @unchecked Sendable {
@@ -438,23 +411,19 @@ private final class SequentialDirectoryResolver: @unchecked Sendable {
 	}
 
 	func resolve() -> URL? {
-		lock.lock()
-		defer { lock.unlock() }
-		callCountStorage += 1
-		didResolveOnMainThreadStorage = didResolveOnMainThreadStorage || Thread.isMainThread
-		return results.isEmpty ? nil : results.removeFirst()
+		lock.withLock {
+			callCountStorage += 1
+			didResolveOnMainThreadStorage = didResolveOnMainThreadStorage || Thread.isMainThread
+			return results.isEmpty ? nil : results.removeFirst()
+		}
 	}
 
 	var callCount: Int {
-		lock.lock()
-		defer { lock.unlock() }
-		return callCountStorage
+		lock.withLock { callCountStorage }
 	}
 
 	var didResolveOnMainThread: Bool {
-		lock.lock()
-		defer { lock.unlock() }
-		return didResolveOnMainThreadStorage
+		lock.withLock { didResolveOnMainThreadStorage }
 	}
 }
 

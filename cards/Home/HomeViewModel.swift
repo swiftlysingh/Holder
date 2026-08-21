@@ -28,30 +28,6 @@ final class HomeViewModel: ObservableObject {
 		Bundle.main.object(forInfoDictionaryKey: "CFBundleDisplayName") as? String
 	}
 
-	func deleteCard(at offsets: IndexSet, inSection cardType: CardType) async {
-		let cardIDs = offsets.compactMap { cardDataStore.cardsByType[cardType]?[$0].id }
-		for id in cardIDs {
-			if !(await cardDataStore.deleteCard(with: id)) {
-				print("Error deleting")
-			}
-		}
-	}
-
-	@discardableResult
-	func archiveCard(_ card: CardData) async -> Bool {
-		await cardDataStore.archiveCard(card)
-	}
-
-	@discardableResult
-	func unarchiveCard(_ card: CardData) async -> Bool {
-		await cardDataStore.unarchiveCard(card)
-	}
-
-	@discardableResult
-	func deleteArchivedCard(_ card: CardData) async -> Bool {
-		await cardDataStore.deleteCard(with: card.id)
-	}
-
 	/// Handles deep link URL from widget (holder://card/{uuid})
 	/// - Parameter onOpenedFromWidget: Invoked only after a matching card is selected.
 	func handleDeepLink(_ url: URL, onOpenedFromWidget: (() -> Void)? = nil) {

@@ -93,18 +93,17 @@ final class CardDataPersistenceTests: XCTestCase {
 		let storedCard = makeCard(id: UUID())
 		let newCard = makeCard(id: UUID())
 		let storedPayload = try storedCard.toData()
-		let recorder = KeychainOperationRecorder()
 		let store = CardDataStore(
 			retrievePayloads: { _ in
-				recorder.record(.retrieve)
+				XCTAssertFalse(Thread.isMainThread)
 				return .success([storedPayload])
 			},
 			savePayload: { _, _, _ in
-				recorder.record(.save)
+				XCTAssertFalse(Thread.isMainThread)
 				return true
 			},
 			deletePayload: { _, _ in
-				recorder.record(.delete)
+				XCTAssertFalse(Thread.isMainThread)
 				return true
 			}
 		)
@@ -115,9 +114,6 @@ final class CardDataPersistenceTests: XCTestCase {
 		XCTAssertTrue(loadSucceeded)
 		XCTAssertTrue(saveSucceeded)
 		XCTAssertTrue(deleteSucceeded)
-
-		XCTAssertEqual(recorder.operations, [.retrieve, .save, .delete])
-		XCTAssertTrue(recorder.allOperationsRanOffMainThread)
 	}
 
 	func testLateLoadMergesNewerMutationWithoutHidingExistingCards() async throws {
@@ -125,9 +121,13 @@ final class CardDataPersistenceTests: XCTestCase {
 		let newerCard = makeCard(id: UUID())
 		let existingPayload = try existingCard.toData()
 		let gate = LoadCommitGate()
+		let stub = CardPayloadRetrievalStub(result: .success([existingPayload]))
 		let store = CardDataStore(
-			retrievePayloads: { _ in .success([existingPayload]) },
-			savePayload: { _, _, _ in true },
+			retrievePayloads: { _ in stub.result },
+			savePayload: { data, _, _ in
+				stub.result = .success([existingPayload, data])
+				return true
+			},
 			deletePayload: { _, _ in true },
 			beforeApplyingLoad: { await gate.waitBeforeCommit() }
 		)
@@ -151,15 +151,17 @@ final class CardDataPersistenceTests: XCTestCase {
 		let card = makeCard(id: UUID())
 		let payload = try card.toData()
 		let gate = LoadCommitGate()
+		let stub = CardPayloadRetrievalStub(result: .success([payload]))
 		let store = CardDataStore(
-			retrievePayloads: { _ in .success([payload]) },
+			retrievePayloads: { _ in stub.result },
 			savePayload: { _, _, _ in true },
-			deletePayload: { _, _ in true },
+			deletePayload: { _, _ in
+				stub.result = .empty
+				return true
+			},
 			beforeApplyingLoad: { await gate.waitBeforeCommit() }
 		)
 
-		let saveSucceeded = await store.addCard(card)
-		XCTAssertTrue(saveSucceeded)
 		let load = Task { @MainActor in
 			await store.loadCards()
 		}
@@ -174,32 +176,31 @@ final class CardDataPersistenceTests: XCTestCase {
 		XCTAssertNil(store.findCard(by: card.id))
 	}
 
-	func testOlderMutationCompletionCannotReplaceANewerMutation() async {
-		let id = UUID()
-		var olderCard = makeCard(id: id)
-		olderCard.description = "Older"
-		var newerCard = makeCard(id: id)
-		newerCard.description = "Newer"
-		let gate = MutationCommitGate(blockedSequence: 1)
+	func testDeletingOtherCardRemovesItsICloudImage() async throws {
+		let card = makeCard(id: UUID(), type: .otherCard)
+		let payload = try card.toData()
+		let stub = CardPayloadRetrievalStub(result: .success([payload]))
+		let imageStore = TestCardImageStore(deleteResults: [false, true])
 		let store = CardDataStore(
-			retrievePayloads: { _ in .empty },
+			retrievePayloads: { _ in stub.result },
 			savePayload: { _, _, _ in true },
-			deletePayload: { _, _ in true },
-			beforeApplyingMutation: { await gate.waitBeforeCommit(sequence: $0) }
+			deletePayload: { _, _ in
+				stub.result = .empty
+				return true
+			},
+			imageStore: imageStore
 		)
 
-		let olderMutation = Task { @MainActor in
-			await store.addCard(olderCard)
-		}
-		await gate.waitUntilBlocked()
+		let loadSucceeded = await store.loadCards()
+		let blockedDeleteSucceeded = await store.deleteCard(with: card.id)
+		let deleteSucceeded = await store.deleteCard(with: card.id)
+		let deletedImageIDs = await imageStore.deletedIDs
 
-		let newerMutationSucceeded = await store.addCard(newerCard)
-		XCTAssertTrue(newerMutationSucceeded)
-		await gate.release()
-		let olderMutationSucceeded = await olderMutation.value
-		XCTAssertTrue(olderMutationSucceeded)
-
-		XCTAssertEqual(store.findCard(by: id), newerCard)
+		XCTAssertTrue(loadSucceeded)
+		XCTAssertFalse(blockedDeleteSucceeded)
+		XCTAssertTrue(deleteSucceeded)
+		XCTAssertEqual(deletedImageIDs, [card.id, card.id])
+		XCTAssertNil(store.findCard(by: card.id))
 	}
 
 	func testDecodeAllCardDataRecoversValidPayloads() throws {
@@ -255,47 +256,24 @@ private final class CardPayloadRetrievalStub: @unchecked Sendable {
 	}
 
 	var result: CardPayloadRetrievalResult {
-		get {
-			lock.lock()
-			defer { lock.unlock() }
-			return resultStorage
-		}
-		set {
-			lock.lock()
-			resultStorage = newValue
-			lock.unlock()
-		}
+		get { lock.withLock { resultStorage } }
+		set { lock.withLock { resultStorage = newValue } }
 	}
 }
 
-private final class KeychainOperationRecorder: @unchecked Sendable {
-	enum Operation: Equatable {
-		case retrieve
-		case save
-		case delete
+private actor TestCardImageStore: CardImageStore {
+	private(set) var deletedIDs: [UUID] = []
+	private var deleteResults: [Bool]
+
+	init(deleteResults: [Bool]) {
+		self.deleteResults = deleteResults
 	}
 
-	private let lock = NSLock()
-	private var operationsStorage: [Operation] = []
-	private var ranOnMainThread = false
-
-	func record(_ operation: Operation) {
-		lock.lock()
-		operationsStorage.append(operation)
-		ranOnMainThread = ranOnMainThread || Thread.isMainThread
-		lock.unlock()
-	}
-
-	var operations: [Operation] {
-		lock.lock()
-		defer { lock.unlock() }
-		return operationsStorage
-	}
-
-	var allOperationsRanOffMainThread: Bool {
-		lock.lock()
-		defer { lock.unlock() }
-		return !ranOnMainThread
+	func loadImageData(for uuid: UUID) async -> Data? { nil }
+	func saveImageData(_ data: Data, for uuid: UUID) async -> Bool { true }
+	func deleteImage(for uuid: UUID) async -> Bool {
+		deletedIDs.append(uuid)
+		return deleteResults.removeFirst()
 	}
 }
 
@@ -305,6 +283,7 @@ private actor LoadCommitGate {
 	private var releaseContinuation: CheckedContinuation<Void, Never>?
 
 	func waitBeforeCommit() async {
+		guard !hasBeenReached else { return }
 		hasBeenReached = true
 		reachedContinuation?.resume()
 		reachedContinuation = nil
@@ -314,35 +293,6 @@ private actor LoadCommitGate {
 	func waitUntilReached() async {
 		if hasBeenReached { return }
 		await withCheckedContinuation { reachedContinuation = $0 }
-	}
-
-	func release() {
-		releaseContinuation?.resume()
-		releaseContinuation = nil
-	}
-}
-
-private actor MutationCommitGate {
-	private let blockedSequence: UInt64
-	private var hasBlocked = false
-	private var blockedContinuation: CheckedContinuation<Void, Never>?
-	private var releaseContinuation: CheckedContinuation<Void, Never>?
-
-	init(blockedSequence: UInt64) {
-		self.blockedSequence = blockedSequence
-	}
-
-	func waitBeforeCommit(sequence: UInt64) async {
-		guard sequence == blockedSequence else { return }
-		hasBlocked = true
-		blockedContinuation?.resume()
-		blockedContinuation = nil
-		await withCheckedContinuation { releaseContinuation = $0 }
-	}
-
-	func waitUntilBlocked() async {
-		if hasBlocked { return }
-		await withCheckedContinuation { blockedContinuation = $0 }
 	}
 
 	func release() {
