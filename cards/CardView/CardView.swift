@@ -15,6 +15,7 @@ import PhotosUI
 import AppKit
 #endif
 
+@MainActor
 struct CardView: View {
 
 	@StateObject private var model: CardViewModel
@@ -394,10 +395,7 @@ struct CardView: View {
 	}
 
 	private var editToolbarButton: some View {
-		Button {
-			model.isEditing.toggle()
-			saveCardIfNeeded()
-		} label: {
+		Button(action: toggleEditing) {
 			if model.isEditing {
 				Text("Done")
 			} else {
@@ -407,7 +405,7 @@ struct CardView: View {
 		.accessibilityLabel(model.isEditing ? "Done" : "Edit")
 	}
 
-	private func saveCardIfNeeded() {
+	private func saveCardIfNeeded() async {
 		guard !model.isEditing,
 			  model.card.type == .otherCard || !model.card.number.isEmpty else {
 			return
@@ -415,7 +413,7 @@ struct CardView: View {
 
 		let operation: AppAnalyticsEvent.SaveOperation = model.isAddNewFlow ? .create : .update
 		let inputMethod: AppAnalyticsEvent.InputMethod = model.didUseScanner ? .scanner : .manual
-		let succeeded = model.addUpdateCard(model.card)
+		let succeeded = await model.addUpdateCard(model.card)
 		let event: AppAnalyticsEvent = succeeded
 			? .cardSaveCompleted(
 				operation: operation,
@@ -426,6 +424,16 @@ struct CardView: View {
 				inputMethod: inputMethod
 			)
 		track(event)
+	}
+
+	private func toggleEditing() {
+		let isFinishingEdit = model.isEditing
+		model.isEditing.toggle()
+		if isFinishingEdit {
+			Task { @MainActor in
+				await saveCardIfNeeded()
+			}
+		}
 	}
 
 	private func track(_ event: AppAnalyticsEvent) {

@@ -7,42 +7,46 @@
 
 import Foundation
 
-#if os(macOS)
-import AppKit
-#else
-import UIKit
-#endif
-
 /// Card image persistence. Implementations must not block the main thread.
-protocol CardImageStore: AnyObject {
-	func loadImage(for uuid: UUID) async -> PlatformImage?
-	func saveImage(_ image: PlatformImage, for uuid: UUID) async -> Bool
+protocol CardImageStore: AnyObject, Sendable {
+	func loadImageData(for uuid: UUID) async -> Data?
+	func saveImageData(_ data: Data, for uuid: UUID) async -> Bool
 	func deleteImage(for uuid: UUID) async
 }
 
-final class ICloudDataManager: CardImageStore {
+/// `ioQueue` serializes all mutable state and every resolver/file operation.
+final class ICloudDataManager: CardImageStore, @unchecked Sendable {
 
 	static let shared = ICloudDataManager()
 
 	private let fileManager = FileManager.default
 	private let ioQueue = DispatchQueue(label: "com.swiftlysingh.holder.icloud", qos: .userInitiated)
+	private let directoryResolver: @Sendable () -> URL?
 	private var cachedDirectory: URL?
-	private var didResolveDirectory = false
 
-	private init() {}
+	private init() {
+		directoryResolver = {
+			FileManager.default.url(forUbiquityContainerIdentifier: nil)?
+				.appendingPathComponent("Documents")
+		}
+	}
 
-	func loadImage(for uuid: UUID) async -> PlatformImage? {
+	init(directoryResolver: @escaping @Sendable () -> URL?) {
+		self.directoryResolver = directoryResolver
+	}
+
+	func loadImageData(for uuid: UUID) async -> Data? {
 		await withCheckedContinuation { continuation in
 			ioQueue.async {
-				continuation.resume(returning: self.loadImageOnIOQueue(for: uuid))
+				continuation.resume(returning: self.loadImageDataOnIOQueue(for: uuid))
 			}
 		}
 	}
 
-	func saveImage(_ image: PlatformImage, for uuid: UUID) async -> Bool {
+	func saveImageData(_ data: Data, for uuid: UUID) async -> Bool {
 		await withCheckedContinuation { continuation in
 			ioQueue.async {
-				continuation.resume(returning: self.saveImageOnIOQueue(image, for: uuid))
+				continuation.resume(returning: self.saveImageDataOnIOQueue(data, for: uuid))
 			}
 		}
 	}
@@ -60,37 +64,35 @@ final class ICloudDataManager: CardImageStore {
 	/// thread because it can take several seconds. Always resolve it on `ioQueue`.
 	private func resolveDirectoryOnIOQueue() -> URL? {
 		dispatchPrecondition(condition: .onQueue(ioQueue))
-		if !didResolveDirectory {
-			cachedDirectory = fileManager.url(forUbiquityContainerIdentifier: nil)?
-				.appendingPathComponent("Documents")
-			didResolveDirectory = true
-			if cachedDirectory == nil {
-				print("Warning: iCloud is not available. Images will not be synced across devices.")
-			}
+		if let cachedDirectory {
+			return cachedDirectory
 		}
-		return cachedDirectory
+
+		guard let directory = directoryResolver() else {
+			print("Warning: iCloud is not available. Images will not be synced across devices.")
+			return nil
+		}
+
+		cachedDirectory = directory
+		return directory
 	}
 
 	private func getImageURLOnIOQueue(for uuid: UUID) -> URL? {
 		resolveDirectoryOnIOQueue()?.appendingPathComponent("\(uuid.uuidString).jpg")
 	}
 
-	private func saveImageOnIOQueue(_ image: PlatformImage, for uuid: UUID) -> Bool {
-		guard resolveDirectoryOnIOQueue() != nil else {
+	private func saveImageDataOnIOQueue(_ data: Data, for uuid: UUID) -> Bool {
+		guard let imageURL = getImageURLOnIOQueue(for: uuid) else {
 			print("Error: Cannot save image - iCloud is not available")
 			return false
 		}
 
-		guard let imageData = image.jpegData(compressionQuality: 0.8),
-			  let imageURL = getImageURLOnIOQueue(for: uuid) else {
-			return false
-		}
-
 		do {
-			if let directory = resolveDirectoryOnIOQueue() {
-				try fileManager.createDirectory(at: directory, withIntermediateDirectories: true)
-			}
-			try imageData.write(to: imageURL)
+			try fileManager.createDirectory(
+				at: imageURL.deletingLastPathComponent(),
+				withIntermediateDirectories: true
+			)
+			try data.write(to: imageURL)
 			return true
 		} catch {
 			print("Error saving to iCloud: \(error)")
@@ -98,13 +100,9 @@ final class ICloudDataManager: CardImageStore {
 		}
 	}
 
-	private func loadImageOnIOQueue(for uuid: UUID) -> PlatformImage? {
-		guard let imageURL = getImageURLOnIOQueue(for: uuid),
-			  let imageData = try? Data(contentsOf: imageURL),
-			  let image = PlatformImage(data: imageData) else {
-			return nil
-		}
-		return image
+	private func loadImageDataOnIOQueue(for uuid: UUID) -> Data? {
+		guard let imageURL = getImageURLOnIOQueue(for: uuid) else { return nil }
+		return try? Data(contentsOf: imageURL)
 	}
 
 	private func deleteImageOnIOQueue(for uuid: UUID) {

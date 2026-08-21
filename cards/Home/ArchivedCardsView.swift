@@ -8,6 +8,7 @@
 import SinghDevKit
 import SwiftUI
 
+@MainActor
 struct ArchivedCardsView: View {
 	@ObservedObject var model: HomeViewModel
 	@Environment(\.analytics) private var analytics
@@ -57,17 +58,21 @@ struct ArchivedCardsView: View {
 	}
 
 	private func deleteCard(_ card: CardData) {
-		let event: AppAnalyticsEvent = model.deleteArchivedCard(card)
-			? .cardDeleted(location: .archived)
-			: .cardDeleteFailed(location: .archived)
-		track(event)
+		Task { @MainActor in
+			let event: AppAnalyticsEvent = await model.deleteArchivedCard(card)
+				? .cardDeleted(location: .archived)
+				: .cardDeleteFailed(location: .archived)
+			track(event)
+		}
 	}
 
 	private func unarchiveCard(_ card: CardData) {
-		let event: AppAnalyticsEvent = model.unarchiveCard(card)
-			? .cardUnarchived
-			: .cardUnarchiveFailed
-		track(event)
+		Task { @MainActor in
+			let event: AppAnalyticsEvent = await model.unarchiveCard(card)
+				? .cardUnarchived
+				: .cardUnarchiveFailed
+			track(event)
+		}
 	}
 
 	private func track(_ event: AppAnalyticsEvent) {
