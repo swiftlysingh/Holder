@@ -52,6 +52,7 @@ struct ArchivedCardsView: View {
 			}
 		}
 		.navigationTitle("Archived Cards")
+		.toolbarTitleDisplayMode(.inlineLarge)
 		.sdkScreen(AppAnalyticsScreen.archivedCards)
 	}
 
