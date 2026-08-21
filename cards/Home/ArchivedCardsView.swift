@@ -75,7 +75,7 @@ struct ArchivedCardsView: View {
 
 	private func deleteCard(_ card: CardData) {
 		Task { @MainActor in
-			let event: AppAnalyticsEvent = await model.deleteArchivedCard(card)
+			let event: AppAnalyticsEvent = await model.cardDataStore.deleteCard(with: card.id)
 				? .cardDeleted(location: .archived)
 				: .cardDeleteFailed(location: .archived)
 			track(event)
@@ -94,7 +94,7 @@ struct ArchivedCardsView: View {
 
 	private func unarchiveCard(_ card: CardData) {
 		Task { @MainActor in
-			let event: AppAnalyticsEvent = await model.unarchiveCard(card)
+			let event: AppAnalyticsEvent = await model.cardDataStore.unarchiveCard(card)
 				? .cardUnarchived
 				: .cardUnarchiveFailed
 			track(event)

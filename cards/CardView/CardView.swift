@@ -259,29 +259,16 @@ struct CardView: View {
 								.foregroundStyle(.gray)
 						}
 					}
-				.onChange(of: model.selectedItem) {
-					Task {
-						do {
-							guard let data = try await model.selectedItem?.loadTransferable(type: Data.self) else {
+					.disabled(model.isImageMutationInProgress)
+					.onChange(of: model.selectedItem) {
+						guard let item = model.selectedItem else { return }
+						model.saveStoredImage {
+							guard let data = try await item.loadTransferable(type: Data.self) else {
 								throw URLError(.cannotDecodeContentData)
 							}
-
-							guard let uiImage = UIImage(data: data) else {
-								throw URLError(.cannotDecodeContentData)
-							}
-
-							guard await model.saveStoredImage(uiImage) else {
-								throw URLError(.cannotCreateFile)
-							}
-
-							model.errorMessage = nil
-						} catch {
-							model.errorMessage = "Unable to save image: \(error.localizedDescription)"
-							model.showErrorAlert = true
+							return data
 						}
 					}
-				}
-
 
 					if model.cardImage != nil {
 						Button(role: .destructive) {
@@ -292,6 +279,7 @@ struct CardView: View {
 								Text("Remove Image")
 							}
 						}
+						.disabled(model.isImageMutationInProgress)
 					}
 				}
 			}
@@ -314,6 +302,7 @@ struct CardView: View {
 						}
 					}
 					.buttonStyle(.plain)
+					.disabled(model.isImageMutationInProgress)
 
 					if model.cardImage != nil {
 						Button(role: .destructive) {
@@ -324,6 +313,7 @@ struct CardView: View {
 								Text("Remove Image")
 							}
 						}
+						.disabled(model.isImageMutationInProgress)
 					}
 				}
 			}
@@ -472,13 +462,10 @@ struct CardView: View {
 		panel.title = "Select Card Image"
 
 		if panel.runModal() == .OK, let url = panel.url {
-			Task {
-				guard let image = NSImage(contentsOf: url) else { return }
-				if await model.saveStoredImage(image) {
-					return
-				}
-				model.errorMessage = "Failed to save image to iCloud"
-				model.showErrorAlert = true
+			model.saveStoredImage {
+				try await Task.detached(priority: .userInitiated) {
+					try Data(contentsOf: url)
+				}.value
 			}
 		}
 	}
@@ -740,6 +727,7 @@ struct CardView: View {
 							Text(model.cardImage == nil ? "Add Card Image" : "Change Card Image")
 						}
 					}
+					.disabled(model.isImageMutationInProgress)
 
 					if model.cardImage != nil {
 						Button(role: .destructive) {
@@ -750,6 +738,7 @@ struct CardView: View {
 								Text("Remove Image")
 							}
 						}
+						.disabled(model.isImageMutationInProgress)
 					}
 
 					Text("Images are stored in iCloud storage")

@@ -20,7 +20,9 @@ final class CardViewModel: ObservableObject {
 	@Published var isShowingScanner = false
 	@Published var errorMessage: String?
 	@Published var showErrorAlert = false
+	@Published private(set) var isImageMutationInProgress = false
 	private var imageLoadTask: Task<Void, Never>?
+	private var imageMutationTask: Task<Void, Never>?
 	private let imageStore: CardImageStore
 	private(set) var didUseScanner = false
 
@@ -45,38 +47,66 @@ final class CardViewModel: ObservableObject {
 		self.addUpdateCard = addUpdateCard
 		self.isAddNewFlow = addNewFlow
 		self.imageStore = imageStore
-		loadStoredImage()
-	}
-
-	deinit {
-		imageLoadTask?.cancel()
-	}
-
-	func loadStoredImage() {
-		imageLoadTask?.cancel()
-		let store = imageStore
 		let id = card.id
-		imageLoadTask = Task { [weak self, store, id] in
-			let data = await store.loadImageData(for: id)
+		imageLoadTask = Task { [weak self, imageStore, id] in
+			let data = await imageStore.loadImageData(for: id)
 			guard !Task.isCancelled else { return }
 			self?.cardImage = data.flatMap { PlatformImage(data: $0) }
 		}
 	}
 
-	func saveStoredImage(_ image: PlatformImage) async -> Bool {
-		guard let data = image.jpegData(compressionQuality: 0.8) else { return false }
-		let saved = await imageStore.saveImageData(data, for: card.id)
-		guard saved else { return false }
-		cardImage = image
-		return true
+	deinit {
+		imageLoadTask?.cancel()
+		imageMutationTask?.cancel()
+	}
+
+	func saveStoredImage(
+		loadData: @escaping @Sendable () async throws -> Data
+	) {
+		let store = imageStore
+		let id = card.id
+		performImageMutation {
+			let data = try await loadData()
+			guard let image = PlatformImage(data: data) else {
+				throw URLError(.cannotDecodeContentData)
+			}
+			guard await store.saveImageData(data, for: id) else {
+				throw URLError(.cannotCreateFile)
+			}
+			return image
+		}
 	}
 
 	func removeStoredImage() {
-		cardImage = nil
 		let store = imageStore
 		let id = card.id
-		Task { [store, id] in
-			await store.deleteImage(for: id)
+		performImageMutation {
+			guard await store.deleteImage(for: id) else {
+				throw URLError(.cannotRemoveFile)
+			}
+			return nil
+		}
+	}
+
+	private func performImageMutation(
+		_ operation: @escaping @MainActor @Sendable () async throws -> PlatformImage?
+	) {
+		guard !isImageMutationInProgress else { return }
+		imageLoadTask?.cancel()
+		isImageMutationInProgress = true
+		imageMutationTask = Task { @MainActor [weak self] in
+			defer { self?.isImageMutationInProgress = false }
+			do {
+				let image = try await operation()
+				guard !Task.isCancelled else { return }
+				self?.cardImage = image
+				self?.errorMessage = nil
+			} catch is CancellationError {
+				return
+			} catch {
+				self?.errorMessage = "Unable to update image: \(error.localizedDescription)"
+				self?.showErrorAlert = true
+			}
 		}
 	}
 
