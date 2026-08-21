@@ -50,8 +50,14 @@ final class CardViewModel: ObservableObject {
 		let id = card.id
 		imageLoadTask = Task { [weak self, imageStore, id] in
 			let data = await imageStore.loadImageData(for: id)
+			let image: PlatformImage?
+			if let data {
+				image = await CardImageData.decodeOffMain(data)
+			} else {
+				image = nil
+			}
 			guard !Task.isCancelled else { return }
-			self?.cardImage = data.flatMap { PlatformImage(data: $0) }
+			self?.cardImage = image
 		}
 	}
 
@@ -67,7 +73,7 @@ final class CardViewModel: ObservableObject {
 		let id = card.id
 		performImageMutation {
 			let data = try await loadData()
-			guard let image = PlatformImage(data: data) else {
+			guard let image = await CardImageData.decodeOffMain(data) else {
 				throw URLError(.cannotDecodeContentData)
 			}
 			guard await store.saveImageData(data, for: id) else {
