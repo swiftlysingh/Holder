@@ -44,10 +44,19 @@ enum CardScanUpdate: Sendable {
 @MainActor
 protocol CardScanningEngine: AnyObject {
 	var engineID: String { get }
+	var isTorchAvailable: Bool { get }
 	func makeCameraView() -> AnyView
 	func scanUpdates() -> AsyncStream<CardScanUpdate>
 	func verifyCurrentCandidate() async -> CardScanResult?
+	@discardableResult func setTorchEnabled(_ isEnabled: Bool) -> Bool
 	func stop()
+}
+
+extension CardScanningEngine {
+	var isTorchAvailable: Bool { false }
+
+	@discardableResult
+	func setTorchEnabled(_ isEnabled: Bool) -> Bool { false }
 }
 
 enum CardScanningEngineID {

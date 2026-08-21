@@ -39,6 +39,17 @@ struct CardScannerView: View {
 					.padding(.vertical, 8)
 					.background(.black.opacity(0.45), in: Capsule())
 					Spacer()
+					if model.isTorchAvailable {
+						Button {
+							model.toggleTorch()
+						} label: {
+							Image(systemName: model.isTorchOn ? "flashlight.on.fill" : "flashlight.off.fill")
+								.frame(width: 40, height: 40)
+						}
+						.foregroundStyle(model.isTorchOn ? Color.yellow : Color.white)
+						.background(.black.opacity(0.45), in: Circle())
+						.accessibilityLabel(model.isTorchOn ? "Turn flashlight off" : "Turn flashlight on")
+					}
 				}
 				.padding()
 
@@ -92,6 +103,7 @@ final class CardScannerViewModel: ObservableObject {
 	@Published var guidance = "Fit the whole card in the frame"
 	@Published var candidateLastFour: String?
 	@Published var candidateNetwork: CardNetwork?
+	@Published private(set) var isTorchOn = false
 	@Published var showsMessage = false
 	@Published var message = ""
 
@@ -104,6 +116,14 @@ final class CardScannerViewModel: ObservableObject {
 	init(isRescan: Bool, engine: (any CardScanningEngine)? = nil) {
 		self.isRescan = isRescan
 		self.engine = engine ?? CardScanningEngineFactory.make()
+	}
+
+	var isTorchAvailable: Bool {
+		engine.isTorchAvailable
+	}
+
+	func toggleTorch() {
+		isTorchOn = engine.setTorchEnabled(!isTorchOn)
 	}
 
 	func consumeUpdates(
@@ -149,6 +169,8 @@ final class CardScannerViewModel: ObservableObject {
 	func stop() {
 		guard !stopped else { return }
 		stopped = true
+		isTorchOn = false
+		engine.setTorchEnabled(false)
 		engine.stop()
 	}
 

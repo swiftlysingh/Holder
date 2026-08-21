@@ -110,6 +110,44 @@ final class CardCandidateEngineTests: XCTestCase {
 		XCTAssertEqual(CardholderNameParser.parse(from: items, panDigits: nil), "JANE DOE")
 	}
 
+	func testCardholderNameRejectsIssuerAndWebsiteText() {
+		let rejected = [
+			"www.hdfcbank.com",
+			"HDFC BANK",
+			"STATE BANK OF INDIA",
+			"HDFCBANK COM",
+			"CUSTOMER CARE",
+			"ACME CARD SERVICES"
+		]
+
+		for text in rejected {
+			XCTAssertNil(CardholderNameParser.normalizedName(text), text)
+		}
+	}
+
+	func testCardholderNameKeepsPunctuationUsedInNames() {
+		XCTAssertEqual(CardholderNameParser.normalizedName("ANNE-MARIE O'NEIL"), "ANNE-MARIE O'NEIL")
+	}
+
+	func testObservationPrefersANameOverBankBranding() {
+		let observation = CardCandidateEngine.observe([
+			OCRTextItem(text: "www . hdfc bank . com"),
+			OCRTextItem(text: "STATE BANK OF INDIA"),
+			OCRTextItem(text: "JANE DOE")
+		])
+
+		XCTAssertEqual(observation.cardholderName, "JANE DOE")
+	}
+
+	func testObservationReturnsNoNameForBrandingOnly() {
+		let observation = CardCandidateEngine.observe([
+			OCRTextItem(text: "www.hdfcbank.com"),
+			OCRTextItem(text: "HDFC BANK")
+		])
+
+		XCTAssertNil(observation.cardholderName)
+	}
+
 	func testTemporalVotingRequiresRepeatedPAN() {
 		var voter = TemporalPANVoter(windowSize: 8, requiredVotes: 2)
 		XCTAssertNil(voter.record("4111111111111111"))
@@ -132,6 +170,49 @@ final class CardCandidateEngineTests: XCTestCase {
 		return Calendar(identifier: .gregorian).date(from: components)!
 	}
 }
+
+#if os(iOS)
+@MainActor
+final class CardScannerTorchTests: XCTestCase {
+	func testTorchToggleAndScannerStopTurnTorchOff() {
+		let engine = TorchSpyCardScanningEngine()
+		let model = CardScannerViewModel(isRescan: false, engine: engine)
+
+		XCTAssertTrue(model.isTorchAvailable)
+		XCTAssertFalse(model.isTorchOn)
+
+		model.toggleTorch()
+		XCTAssertTrue(model.isTorchOn)
+		XCTAssertEqual(engine.torchRequests, [true])
+
+		model.stop()
+		XCTAssertFalse(model.isTorchOn)
+		XCTAssertEqual(engine.torchRequests, [true, false])
+		XCTAssertTrue(engine.didStop)
+	}
+}
+
+@MainActor
+private final class TorchSpyCardScanningEngine: CardScanningEngine {
+	let engineID = "torch-spy"
+	let isTorchAvailable = true
+	var torchRequests: [Bool] = []
+	var didStop = false
+
+	func makeCameraView() -> AnyView { AnyView(EmptyView()) }
+	func scanUpdates() -> AsyncStream<CardScanUpdate> { AsyncStream { $0.finish() } }
+	func verifyCurrentCandidate() async -> CardScanResult? { nil }
+
+	func setTorchEnabled(_ isEnabled: Bool) -> Bool {
+		torchRequests.append(isEnabled)
+		return isEnabled
+	}
+
+	func stop() {
+		didStop = true
+	}
+}
+#endif
 
 @MainActor
 final class CardScanSessionTests: XCTestCase {
