@@ -31,9 +31,18 @@ enum AppAnalyticsEvent: AnalyticsEvent {
     case cardArchiveFailed
     case cardUnarchived
     case cardUnarchiveFailed
-    case cardScanStarted
-    case cardScanCompleted
-    case cardScanPermissionDenied
+    case cardScanStarted(engine: String)
+    case cardScanCompleted(
+        engine: String,
+        panSuccess: Bool,
+        expirySuccess: Bool,
+        holderSuccess: Bool,
+        timeToPanMs: Int?,
+        timeToCompleteMs: Int,
+        rescan: Bool
+    )
+    case cardScanPermissionDenied(engine: String)
+    case cardScanRescanRequested(engine: String)
     case cardOpenedFromWidget
 
     var name: String {
@@ -62,6 +71,8 @@ enum AppAnalyticsEvent: AnalyticsEvent {
             "card_scan_completed"
         case .cardScanPermissionDenied:
             "card_scan_permission_denied"
+        case .cardScanRescanRequested:
+            "card_scan_rescan_requested"
         case .cardOpenedFromWidget:
             "card_opened_from_widget"
         }
@@ -71,23 +82,45 @@ enum AppAnalyticsEvent: AnalyticsEvent {
         switch self {
         case .cardSaveCompleted(let operation, let inputMethod),
              .cardSaveFailed(let operation, let inputMethod):
-            [
+            return [
                 "operation": .string(operation.rawValue),
                 "input_method": .string(inputMethod.rawValue)
             ]
         case .cardDeleted(let location),
              .cardDeleteFailed(let location):
-            ["location": .string(location.rawValue)]
+            return ["location": .string(location.rawValue)]
+        case .cardScanStarted(let engine),
+             .cardScanPermissionDenied(let engine),
+             .cardScanRescanRequested(let engine):
+            return ["engine": .string(engine)]
+        case .cardScanCompleted(
+            let engine,
+            let panSuccess,
+            let expirySuccess,
+            let holderSuccess,
+            let timeToPanMs,
+            let timeToCompleteMs,
+            let rescan
+        ):
+            var properties: AnalyticsProperties = [
+                "engine": .string(engine),
+                "pan_success": .bool(panSuccess),
+                "expiry_success": .bool(expirySuccess),
+                "holder_success": .bool(holderSuccess),
+                "time_to_complete_ms": .int(timeToCompleteMs),
+                "rescan": .bool(rescan)
+            ]
+            if let timeToPanMs {
+                properties["time_to_pan_ms"] = .int(timeToPanMs)
+            }
+            return properties
         case .cardAddStarted,
              .cardArchived,
              .cardArchiveFailed,
              .cardUnarchived,
              .cardUnarchiveFailed,
-             .cardScanStarted,
-             .cardScanCompleted,
-             .cardScanPermissionDenied,
              .cardOpenedFromWidget:
-            [:]
+            return [:]
         }
     }
 
@@ -105,6 +138,7 @@ enum AppAnalyticsEvent: AnalyticsEvent {
              .cardScanStarted,
              .cardScanCompleted,
              .cardScanPermissionDenied,
+             .cardScanRescanRequested,
              .cardOpenedFromWidget:
             .breadcrumb()
         }
