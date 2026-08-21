@@ -321,7 +321,9 @@ struct MenuBarView: View {
     // MARK: - Helpers
 
     private func refreshCards() {
-        didCardLoadFail = !cardStore.loadCards()
+        Task {
+            didCardLoadFail = !(await cardStore.loadCardsAsync())
+        }
     }
 
     private var allCards: [CardData] {
