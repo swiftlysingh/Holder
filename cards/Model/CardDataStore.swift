@@ -70,6 +70,32 @@ private final class CardKeychainPersistence: @unchecked Sendable {
 	}
 }
 
+/// Serializes complete card mutations, including their in-memory commits.
+private actor CardMutationGate {
+	private var isLocked = false
+	private var waiters: [CheckedContinuation<Void, Never>] = []
+
+	func acquire() async {
+		guard isLocked else {
+			isLocked = true
+			return
+		}
+
+		await withCheckedContinuation { continuation in
+			waiters.append(continuation)
+		}
+	}
+
+	func release() {
+		guard !waiters.isEmpty else {
+			isLocked = false
+			return
+		}
+
+		waiters.removeFirst().resume()
+	}
+}
+
 @MainActor
 @Observable
 final class CardDataStore {
@@ -107,7 +133,10 @@ final class CardDataStore {
 	private let imageStore: CardImageStore
 	@ObservationIgnored
 	private let beforeApplyingLoad: () async -> Void
+	@ObservationIgnored
+	private let mutationGate = CardMutationGate()
 	private var latestLoadGeneration: UInt64 = 0
+	private var hasCompletedSuccessfulLoad = false
 
 	init(
 		retrievePayloads: (@Sendable (String) -> CardPayloadRetrievalResult)? = nil,
@@ -228,6 +257,7 @@ final class CardDataStore {
 		let partition = Self.partition(cards)
 		cardsByType = partition.cardsByType
 		archivedCards = partition.archivedCards
+		hasCompletedSuccessfulLoad = true
 		syncCardsToWidget()
 	}
 
@@ -271,7 +301,24 @@ final class CardDataStore {
 
 	@discardableResult
 	func addCard(_ card: CardData) async -> Bool {
-		await persist(card, failureMessage: "Failed to save card: \(card.id)")
+		await persistCard(card, requiresExistingCard: false)
+	}
+
+	@discardableResult
+	func updateCard(_ card: CardData) async -> Bool {
+		await persistCard(card, requiresExistingCard: true)
+	}
+
+	private func persistCard(_ card: CardData, requiresExistingCard: Bool) async -> Bool {
+		await performMutation {
+			guard requiresExistingCard == (self.storedCard(by: card.id) != nil) else { return false }
+			guard await self.saveCardData(card) else {
+				print("Failed to save card: \(card.id)")
+				return false
+			}
+			self.commitUpsert(card)
+			return true
+		}
 	}
 
 	/// Finds a card by its UUID (used for deep linking from widgets)
@@ -285,40 +332,84 @@ final class CardDataStore {
 	}
 
 	func deleteCard(with id: UUID) async -> Bool {
-		let card = findCard(by: id) ?? archivedCards.first { $0.id == id }
-		if card?.type == .otherCard {
-			// Remove the less-protected iCloud copy first. If Keychain deletion then
-			// fails, losing the image is safer than leaving it orphaned in iCloud.
-			guard await imageStore.deleteImage(for: id) else { return false }
-		}
+		await performMutation {
+			guard let card = self.storedCard(by: id) else { return false }
 
-		let service = Bundle.main.bundleIdentifier ?? "com.myApp.defaultService"
-		guard await persistence.delete(service: service, account: id.uuidString) else { return false }
-		return await loadCards()
+			let service = Bundle.main.bundleIdentifier ?? "com.myApp.defaultService"
+			guard await self.persistence.delete(service: service, account: id.uuidString) else { return false }
+
+			self.commitRemoval(of: id)
+			if card.type == .otherCard {
+				_ = await self.imageStore.deleteImage(for: id)
+			}
+			return true
+		}
 	}
 
 	// MARK: - Archive
 
 	@discardableResult
 	func archiveCard(_ card: CardData) async -> Bool {
-		var archivedCard = card
-		archivedCard.isArchived = true
-		return await persist(archivedCard, failureMessage: "Failed to archive card: \(card.id)")
+		await updateArchiveState(for: card.id, isArchived: true)
 	}
 
 	@discardableResult
 	func unarchiveCard(_ card: CardData) async -> Bool {
-		var unarchivedCard = card
-		unarchivedCard.isArchived = false
-		return await persist(unarchivedCard, failureMessage: "Failed to unarchive card: \(card.id)")
+		await updateArchiveState(for: card.id, isArchived: false)
 	}
 
-	private func persist(_ card: CardData, failureMessage: String) async -> Bool {
-		guard await saveCardData(card) else {
-			print(failureMessage)
-			return false
+	private func updateArchiveState(for id: UUID, isArchived: Bool) async -> Bool {
+		await performMutation {
+			guard var currentCard = self.storedCard(by: id) else { return false }
+			currentCard.isArchived = isArchived
+			guard await self.saveCardData(currentCard) else {
+				print("Failed to update archive state: \(id)")
+				return false
+			}
+			self.commitUpsert(currentCard)
+			return true
 		}
-		return await loadCards()
+	}
+
+	private func performMutation(
+		_ operation: @escaping @MainActor () async -> Bool
+	) async -> Bool {
+		await mutationGate.acquire()
+
+		if !hasCompletedSuccessfulLoad {
+			let didLoad = await loadCards()
+			guard didLoad && hasCompletedSuccessfulLoad else {
+				await mutationGate.release()
+				return false
+			}
+		}
+
+		latestLoadGeneration &+= 1
+		let result = await operation()
+		await mutationGate.release()
+		return result
+	}
+
+	private func storedCard(by id: UUID) -> CardData? {
+		findCard(by: id) ?? archivedCards.first { $0.id == id }
+	}
+
+	private var allStoredCards: [CardData] {
+		CardType.allCases.flatMap { cardsByType[$0] ?? [] } + archivedCards
+	}
+
+	private func commitUpsert(_ card: CardData) {
+		var cards = allStoredCards
+		if let index = cards.firstIndex(where: { $0.id == card.id }) {
+			cards[index] = card
+		} else {
+			cards.append(card)
+		}
+		commitCards(cards)
+	}
+
+	private func commitRemoval(of id: UUID) {
+		commitCards(allStoredCards.filter { $0.id != id })
 	}
 
 	private func saveCardData(

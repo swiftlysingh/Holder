@@ -2,6 +2,12 @@ import Combine
 import XCTest
 @testable import Holder
 
+#if os(macOS)
+import AppKit
+#else
+import UIKit
+#endif
+
 @MainActor
 final class CardViewModelTests: XCTestCase {
 	func testStaleUserDefaultsAuthenticationDoesNotUnlockNewModel() {
@@ -252,7 +258,35 @@ final class CardViewModelTests: XCTestCase {
 		XCTAssertNil(model.cardImage)
 	}
 
-	func testICloudDirectoryRetriesAfterTransientUnavailability() async throws {
+	func testImageDataNormalizerConvertsPNGToJPEG() throws {
+		let png = try makePNGData()
+
+		let jpeg = try XCTUnwrap(CardImageData.normalizedJPEG(from: png))
+
+		XCTAssertEqual(Array(jpeg.prefix(2)), [0xFF, 0xD8])
+		XCTAssertNotEqual(jpeg, png)
+		XCTAssertNotNil(PlatformImage(data: jpeg))
+	}
+
+	func testLoadingExistingImageDoesNotRewriteItsData() async throws {
+		let directory = FileManager.default.temporaryDirectory
+			.appendingPathComponent("holder-existing-image-\(UUID().uuidString)", isDirectory: true)
+		try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+		defer { try? FileManager.default.removeItem(at: directory) }
+
+		let identifier = UUID()
+		let imageURL = directory.appendingPathComponent("\(identifier.uuidString).jpg")
+		let existingData = try makePNGData()
+		try existingData.write(to: imageURL)
+		let manager = ICloudDataManager(directoryResolver: { directory })
+
+		let loadedData = await manager.loadImageData(for: identifier)
+
+		XCTAssertEqual(loadedData, existingData)
+		XCTAssertEqual(try Data(contentsOf: imageURL), existingData)
+	}
+
+	func testICloudDirectoryRetriesAndNormalizesAfterTransientUnavailability() async throws {
 		let directory = FileManager.default.temporaryDirectory
 			.appendingPathComponent("holder-icloud-test-\(UUID().uuidString)", isDirectory: true)
 		let unusableDirectory = FileManager.default.temporaryDirectory
@@ -266,7 +300,7 @@ final class CardViewModelTests: XCTestCase {
 		let resolver = SequentialDirectoryResolver(results: [nil, unusableDirectory, directory])
 		let manager = ICloudDataManager(directoryResolver: { resolver.resolve() })
 		let identifier = UUID()
-		let imageData = Data("image".utf8)
+		let imageData = try makePNGData()
 
 		let initialData = await manager.loadImageData(for: identifier)
 		XCTAssertNil(initialData)
@@ -278,7 +312,9 @@ final class CardViewModelTests: XCTestCase {
 		XCTAssertTrue(didSave)
 
 		let recoveredData = await manager.loadImageData(for: identifier)
-		XCTAssertEqual(recoveredData, imageData)
+		let jpegData = try XCTUnwrap(recoveredData)
+		XCTAssertEqual(Array(jpegData.prefix(2)), [0xFF, 0xD8])
+		XCTAssertNotNil(PlatformImage(data: jpegData))
 		XCTAssertEqual(resolver.callCount, 3)
 		XCTAssertFalse(resolver.didResolveOnMainThread)
 	}
@@ -303,6 +339,32 @@ final class CardViewModelTests: XCTestCase {
 			sleeper: sleeper,
 			imageStore: imageStore
 		)
+	}
+
+	private func makePNGData() throws -> Data {
+		#if os(macOS)
+		let bitmap = try XCTUnwrap(NSBitmapImageRep(
+			bitmapDataPlanes: nil,
+			pixelsWide: 1,
+			pixelsHigh: 1,
+			bitsPerSample: 8,
+			samplesPerPixel: 4,
+			hasAlpha: true,
+			isPlanar: false,
+			colorSpaceName: .deviceRGB,
+			bytesPerRow: 4,
+			bitsPerPixel: 32
+		))
+		bitmap.setColor(.red, atX: 0, y: 0)
+		return try XCTUnwrap(bitmap.representation(using: .png, properties: [:]))
+		#else
+		let renderer = UIGraphicsImageRenderer(size: CGSize(width: 1, height: 1))
+		let image = renderer.image { context in
+			UIColor.red.setFill()
+			context.cgContext.fill(CGRect(x: 0, y: 0, width: 1, height: 1))
+		}
+		return try XCTUnwrap(image.pngData())
+		#endif
 	}
 
 	private func waitUntilLocked(_ model: CardViewModel) async {

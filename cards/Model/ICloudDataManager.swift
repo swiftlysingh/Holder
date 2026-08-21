@@ -95,9 +95,13 @@ final class ICloudDataManager: CardImageStore, @unchecked Sendable {
 			print("Error: Cannot save image - iCloud is not available")
 			return false
 		}
+		guard let jpegData = CardImageData.normalizedJPEG(from: data) else {
+			print("Error: Cannot save image - unsupported image data")
+			return false
+		}
 
 		do {
-			try data.write(to: imageURL)
+			try jpegData.write(to: imageURL, options: .atomic)
 			return true
 		} catch {
 			cachedDirectory = nil

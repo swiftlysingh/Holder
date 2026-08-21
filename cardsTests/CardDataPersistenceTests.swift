@@ -116,6 +116,54 @@ final class CardDataPersistenceTests: XCTestCase {
 		XCTAssertTrue(deleteSucceeded)
 	}
 
+	func testLoadingExistingCardsDoesNotWriteOrDelete() async throws {
+		let card = makeCard(id: UUID())
+		let recorder = MutationCallRecorder()
+		let store = CardDataStore(
+			retrievePayloads: { _ in .success([try? card.toData()]) },
+			savePayload: { _, _, _ in
+				recorder.recordSave()
+				return true
+			},
+			deletePayload: { _, _ in
+				recorder.recordDelete()
+				return true
+			}
+		)
+
+		let didLoad = await store.loadCards()
+		XCTAssertTrue(didLoad)
+		XCTAssertEqual(store.findCard(by: card.id), card)
+		XCTAssertEqual(recorder.saveCount, 0)
+		XCTAssertEqual(recorder.deleteCount, 0)
+	}
+
+	func testSuccessfulSaveDoesNotDependOnFollowingReload() async throws {
+		let existingCard = makeCard(id: UUID())
+		let newCard = makeCard(id: UUID(), type: .debitCard)
+		let stub = CardPayloadRetrievalStub(result: .success([try existingCard.toData()]))
+		let store = CardDataStore(
+			retrievePayloads: { _ in stub.result },
+			savePayload: { _, _, _ in
+				stub.result = .failure
+				return true
+			},
+			deletePayload: { _, _ in false }
+		)
+
+		let didLoad = await store.loadCards()
+		let didAdd = await store.addCard(newCard)
+		XCTAssertTrue(didLoad)
+		XCTAssertTrue(didAdd)
+		XCTAssertEqual(store.findCard(by: existingCard.id), existingCard)
+		XCTAssertEqual(store.findCard(by: newCard.id), newCard)
+
+		let didReload = await store.loadCards()
+		XCTAssertFalse(didReload)
+		XCTAssertEqual(store.findCard(by: existingCard.id), existingCard)
+		XCTAssertEqual(store.findCard(by: newCard.id), newCard)
+	}
+
 	func testLateLoadMergesNewerMutationWithoutHidingExistingCards() async throws {
 		let existingCard = makeCard(id: UUID())
 		let newerCard = makeCard(id: UUID())
@@ -176,11 +224,31 @@ final class CardDataPersistenceTests: XCTestCase {
 		XCTAssertNil(store.findCard(by: card.id))
 	}
 
-	func testDeletingOtherCardRemovesItsICloudImage() async throws {
+	func testDeletingOtherCardKeepsImageWhenKeychainDeleteFails() async throws {
 		let card = makeCard(id: UUID(), type: .otherCard)
 		let payload = try card.toData()
 		let stub = CardPayloadRetrievalStub(result: .success([payload]))
-		let imageStore = TestCardImageStore(deleteResults: [false, true])
+		let imageStore = TestCardImageStore(deleteResults: [])
+		let store = CardDataStore(
+			retrievePayloads: { _ in stub.result },
+			savePayload: { _, _, _ in true },
+			deletePayload: { _, _ in false },
+			imageStore: imageStore
+		)
+
+		let didLoad = await store.loadCards()
+		let didDelete = await store.deleteCard(with: card.id)
+		let deletedImageIDs = await imageStore.deletedIDs
+		XCTAssertTrue(didLoad)
+		XCTAssertFalse(didDelete)
+		XCTAssertEqual(store.findCard(by: card.id), card)
+		XCTAssertTrue(deletedImageIDs.isEmpty)
+	}
+
+	func testDeletingOtherCardRemovesCardWhenImageCleanupFails() async throws {
+		let card = makeCard(id: UUID(), type: .otherCard)
+		let stub = CardPayloadRetrievalStub(result: .success([try card.toData()]))
+		let imageStore = TestCardImageStore(deleteResults: [false])
 		let store = CardDataStore(
 			retrievePayloads: { _ in stub.result },
 			savePayload: { _, _, _ in true },
@@ -191,16 +259,37 @@ final class CardDataPersistenceTests: XCTestCase {
 			imageStore: imageStore
 		)
 
-		let loadSucceeded = await store.loadCards()
-		let blockedDeleteSucceeded = await store.deleteCard(with: card.id)
-		let deleteSucceeded = await store.deleteCard(with: card.id)
+		let didLoad = await store.loadCards()
+		let didDelete = await store.deleteCard(with: card.id)
 		let deletedImageIDs = await imageStore.deletedIDs
-
-		XCTAssertTrue(loadSucceeded)
-		XCTAssertFalse(blockedDeleteSucceeded)
-		XCTAssertTrue(deleteSucceeded)
-		XCTAssertEqual(deletedImageIDs, [card.id, card.id])
+		XCTAssertTrue(didLoad)
+		XCTAssertTrue(didDelete)
 		XCTAssertNil(store.findCard(by: card.id))
+		XCTAssertEqual(deletedImageIDs, [card.id])
+	}
+
+	func testQueuedUpdateDoesNotRestoreDeletedCard() async throws {
+		let card = makeCard(id: UUID())
+		let persistence = BlockingDeletePersistence(payload: try card.toData())
+		let store = CardDataStore(
+			retrievePayloads: { _ in persistence.retrieve() },
+			savePayload: { data, _, _ in persistence.save(data) },
+			deletePayload: { _, _ in persistence.delete() }
+		)
+
+		let didLoad = await store.loadCards()
+		XCTAssertTrue(didLoad)
+		let delete = Task { @MainActor in await store.deleteCard(with: card.id) }
+		await persistence.waitUntilDeleteStarts()
+		let update = Task { @MainActor in await store.updateCard(card) }
+		persistence.allowDeleteToFinish()
+
+		let didDelete = await delete.value
+		let didUpdate = await update.value
+		XCTAssertTrue(didDelete)
+		XCTAssertFalse(didUpdate)
+		XCTAssertNil(store.findCard(by: card.id))
+		XCTAssertEqual(persistence.saveCount, 0)
 	}
 
 	func testDecodeAllCardDataRecoversValidPayloads() throws {
@@ -245,6 +334,7 @@ final class CardDataPersistenceTests: XCTestCase {
 			isArchived: isArchived
 		)
 	}
+
 }
 
 private final class CardPayloadRetrievalStub: @unchecked Sendable {
@@ -273,8 +363,73 @@ private actor TestCardImageStore: CardImageStore {
 	func saveImageData(_ data: Data, for uuid: UUID) async -> Bool { true }
 	func deleteImage(for uuid: UUID) async -> Bool {
 		deletedIDs.append(uuid)
-		return deleteResults.removeFirst()
+		return deleteResults.isEmpty ? true : deleteResults.removeFirst()
 	}
+}
+
+private final class MutationCallRecorder: @unchecked Sendable {
+	private let lock = NSLock()
+	private var saves = 0
+	private var deletes = 0
+
+	func recordSave() {
+		lock.withLock { saves += 1 }
+	}
+
+	func recordDelete() {
+		lock.withLock { deletes += 1 }
+	}
+
+	var saveCount: Int { lock.withLock { saves } }
+	var deleteCount: Int { lock.withLock { deletes } }
+}
+
+private final class BlockingDeletePersistence: @unchecked Sendable {
+	private let lock = NSLock()
+	private let deleteStarted = DispatchGroup()
+	private let finishDelete = DispatchSemaphore(value: 0)
+	private var payload: Data?
+	private var saves = 0
+
+	init(payload: Data) {
+		self.payload = payload
+		deleteStarted.enter()
+	}
+
+	func retrieve() -> CardPayloadRetrievalResult {
+		lock.withLock {
+			payload.map { .success([$0]) } ?? .empty
+		}
+	}
+
+	func save(_ data: Data) -> Bool {
+		lock.withLock {
+			saves += 1
+			payload = data
+		}
+		return true
+	}
+
+	func delete() -> Bool {
+		deleteStarted.leave()
+		finishDelete.wait()
+		lock.withLock { payload = nil }
+		return true
+	}
+
+	func waitUntilDeleteStarts() async {
+		await withCheckedContinuation { continuation in
+			deleteStarted.notify(queue: .global(qos: .userInitiated)) {
+				continuation.resume()
+			}
+		}
+	}
+
+	func allowDeleteToFinish() {
+		finishDelete.signal()
+	}
+
+	var saveCount: Int { lock.withLock { saves } }
 }
 
 private actor LoadCommitGate {

@@ -104,7 +104,7 @@ struct HomeView: View {
 				CardView(model: CardViewModel(
 								card: card,
 								addUpdateCard: { card in
-									await model.cardDataStore.addCard(card)
+									await model.cardDataStore.updateCard(card)
 								}))
 					.id(card.id)
 			} 
@@ -122,7 +122,7 @@ struct HomeView: View {
 			CardView(model: CardViewModel(
 				card: card,
 				addUpdateCard: { card in
-					await model.cardDataStore.addCard(card)
+					await model.cardDataStore.updateCard(card)
 				}))
 			.id(card.id)
 		}
