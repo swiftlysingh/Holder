@@ -18,6 +18,13 @@ final class CardViewModel: ObservableObject {
 	@Published var isEditing = false
 	@Published var cardImage: PlatformImage?
 	@Published var isShowingScanner = false
+	@Published var selectedCardType: CardType? {
+		didSet {
+			if let selectedCardType {
+				card.type = selectedCardType
+			}
+		}
+	}
 	@Published var errorMessage: String?
 	@Published var showErrorAlert = false
 	@Published private(set) var isImageMutationInProgress = false
@@ -36,7 +43,8 @@ final class CardViewModel: ObservableObject {
 	var isAddNewFlow : Bool
 	var addUpdateCard: CardUpdateAction
 	var canFinishEditing: Bool {
-		card.type == .otherCard || !card.number.isEmpty
+		guard let selectedCardType else { return false }
+		return selectedCardType == .otherCard || !card.number.isEmpty
 	}
 
 	init(
@@ -51,6 +59,7 @@ final class CardViewModel: ObservableObject {
 		self.addUpdateCard = addUpdateCard
 		self.isAddNewFlow = addNewFlow
 		self.imageStore = imageStore
+		self.selectedCardType = addNewFlow ? nil : card.type
 		let id = card.id
 		imageLoadTask = Task { [weak self, imageStore, id] in
 			let data = await imageStore.loadImageData(for: id)

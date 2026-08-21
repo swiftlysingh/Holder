@@ -52,6 +52,19 @@ struct HomeView: View {
 			.task {
 				await model.cardDataStore.loadCards()
 			}
+			.toolbar {
+				ToolbarItem {
+					Button {
+						track(.cardAddStarted)
+						#if os(iOS)
+						addCardSheetDetent = .fraction(0.5)
+						#endif
+						model.isAddingCard = true
+					} label: {
+						Label("Add Card", systemImage: "plus")
+					}
+				}
+			}
 			#if !os(macOS)
 			.toolbar {
 				ToolbarItem(placement: .topBarTrailing) {
@@ -90,7 +103,7 @@ struct HomeView: View {
 				}))
 			.id(card.id)
 		}
-		.sheet(item: $model.addingType) { type in
+		.sheet(isPresented: $model.isAddingCard) {
 			let cardViewModel = CardViewModel(
 				card: .init(id: UUID(),
 						number: "",
@@ -98,7 +111,7 @@ struct HomeView: View {
 						expiration: "",
 						name: "",
 						description: "",
-						type: type
+						type: .creditCard
 				   ),
 				isEditing: true,
 				addNewFlow: true,
@@ -106,7 +119,7 @@ struct HomeView: View {
 					// Keep the sheet open on failure so the entered form is preserved for retry.
 					let succeeded = await model.cardDataStore.addCard(card)
 					if succeeded {
-						model.addingType = nil
+						model.isAddingCard = false
 					}
 					return succeeded
 				}
@@ -188,13 +201,6 @@ struct HomeView: View {
 							Label("Delete", systemImage: "trash")
 						}
 					}
-			}
-			Button("Add a new \(type.rawValue)") {
-				track(.cardAddStarted)
-				#if os(iOS)
-				addCardSheetDetent = .fraction(0.5)
-				#endif
-				model.addingType = type
 			}
 		}
 	}

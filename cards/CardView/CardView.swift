@@ -87,7 +87,7 @@ struct CardView: View {
 				addCardHeader
 			}
 
-			if model.isAddNewFlow && model.card.type != .otherCard && !model.isShowingScanner {
+			if model.isAddNewFlow && model.selectedCardType != .otherCard && !model.isShowingScanner {
 				scanCardButton
 			}
 
@@ -371,7 +371,7 @@ struct CardView: View {
 				#endif
 
 				Group {
-				  if model.card.type != .other {
+				  if model.selectedCardType != .other {
 					Picker("Card Network", selection: $model.card.network) {
 					  ForEach(CardNetwork.allCases) { pref in
 						Text(pref.rawValue)
@@ -381,9 +381,12 @@ struct CardView: View {
 					.disabled(!model.isEditing)
 					.bold()
 				  }
-					Picker("Card Type", selection: $model.card.type) {
+					Picker("Card Type", selection: $model.selectedCardType) {
+						if model.isAddNewFlow {
+							Text("Select Card Type").tag(nil as CardType?)
+						}
 						ForEach(CardType.allCases) { pref in
-							Text(pref.rawValue)
+							Text(pref.rawValue).tag(pref as CardType?)
 						}
 					}
 					.disabled(!model.isEditing)
@@ -391,7 +394,7 @@ struct CardView: View {
 				}
 			}
 
-			if let image = model.cardImage, model.card.type == .other {
+			if let image = model.cardImage, model.selectedCardType == .other {
 				Section {
 					#if os(iOS)
 					Image(uiImage: image)
@@ -406,7 +409,7 @@ struct CardView: View {
 			}
 
 			#if os(iOS)
-			if model.isEditing && model.card.type == .other {
+			if model.isEditing && model.selectedCardType == .other {
 				Section {
 					PhotosPicker(selection: $model.selectedItem, matching: .images) {
 						VStack(alignment: .leading) {
@@ -446,7 +449,7 @@ struct CardView: View {
 				}
 			}
 			#else
-			if model.isEditing && model.card.type == .other {
+			if model.isEditing && model.selectedCardType == .other {
 				Section {
 					Button {
 						selectImageFile()
@@ -502,7 +505,6 @@ struct CardView: View {
 			}
 		}
 	}
-
 	private var editToolbarButton: some View {
 		Button(action: toggleEditing) {
 			if model.isEditing {
@@ -604,12 +606,12 @@ struct CardView: View {
 		ScrollView {
 			VStack(spacing: 24) {
 				// Visual Card Preview (only for credit/debit cards)
-				if model.card.type != .other && !model.isEditing {
+				if model.selectedCardType != .other && !model.isEditing {
 					macOSCardPreview()
 				}
 
 				// Card Image for Other Cards
-				if let image = model.cardImage, model.card.type == .other {
+				if let image = model.cardImage, model.selectedCardType == .other {
 					Image(nsImage: image)
 						.resizable()
 						.scaledToFit()
@@ -663,7 +665,7 @@ struct CardView: View {
 							.foregroundStyle(.white.opacity(0.9))
 					}
 					Spacer()
-					Text(model.card.type.rawValue)
+					Text(model.selectedCardType?.rawValue ?? "Card")
 						.font(.caption)
 						.fontWeight(.medium)
 						.foregroundStyle(.white.opacity(0.8))
@@ -803,7 +805,7 @@ struct CardView: View {
 				}
 
 				// Pickers
-				if model.card.type != .other {
+				if model.selectedCardType != .other {
 					Divider()
 					HStack {
 						Text("Network")
@@ -826,9 +828,12 @@ struct CardView: View {
 					Text("Type")
 						.foregroundStyle(.secondary)
 					Spacer()
-					Picker("", selection: $model.card.type) {
+					Picker("", selection: $model.selectedCardType) {
+						if model.isAddNewFlow {
+							Text("Select Card Type").tag(nil as CardType?)
+						}
 						ForEach(CardType.allCases) { type in
-							Text(type.rawValue).tag(type)
+							Text(type.rawValue).tag(type as CardType?)
 						}
 					}
 					.labelsHidden()
@@ -844,7 +849,7 @@ struct CardView: View {
 		.frame(maxWidth: 400)
 
 		// Image section for Other Cards
-		if model.isEditing && model.card.type == .other {
+		if model.isEditing && model.selectedCardType == .other {
 			GroupBox {
 				VStack(spacing: 12) {
 					Button {
