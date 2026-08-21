@@ -69,6 +69,24 @@ final class CardDataPersistenceTests: XCTestCase {
 		XCTAssertNil(store.findCard(by: card.id))
 	}
 
+	func testLoadCardsAsyncRetrievesOffTheMainThread() async {
+		let card = makeCard(id: UUID())
+		let store = CardDataStore(
+			retrieveCards: { _ in
+				XCTAssertFalse(
+					Thread.isMainThread,
+					"iCloud Keychain retrieval must not run on the main thread"
+				)
+				return .success([card])
+			},
+			loadImmediately: false
+		)
+
+		XCTAssertNil(store.findCard(by: card.id))
+		XCTAssertTrue(await store.loadCardsAsync())
+		XCTAssertEqual(store.findCard(by: card.id), card)
+	}
+
 	func testDecodeAllCardDataRecoversValidPayloads() throws {
 		let valid = try JSONEncoder().encode(makeCard(id: UUID()))
 		let invalid = Data("{}".utf8)
