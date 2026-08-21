@@ -356,12 +356,7 @@ struct CardView: View {
 			ShareLink(item: model.card.toShareString()) {
 				Label("Click to share", systemImage: "square.and.arrow.up")
 			}
-			Button(action: {
-				model.isEditing.toggle()
-				saveCardIfNeeded()
-			}) {
-				Text(model.isEditing ? "Done" : "Edit")
-			}
+			editToolbarButton
 		}
 		.disabled(!$model.isAuthenticated.wrappedValue)
 		#if os(iOS)
@@ -399,6 +394,20 @@ struct CardView: View {
 			}
 		}
 		#endif
+	}
+
+	private var editToolbarButton: some View {
+		Button {
+			model.isEditing.toggle()
+			saveCardIfNeeded()
+		} label: {
+			if model.isEditing {
+				Text("Done")
+			} else {
+				Image(systemName: "pencil")
+			}
+		}
+		.accessibilityLabel(model.isEditing ? "Done" : "Edit")
 	}
 
 	private func saveCardIfNeeded() {
@@ -485,12 +494,7 @@ struct CardView: View {
 			ShareLink(item: model.card.toShareString()) {
 				Label("Share", systemImage: "square.and.arrow.up")
 			}
-			Button(action: {
-				model.isEditing.toggle()
-				saveCardIfNeeded()
-			}) {
-				Text(model.isEditing ? "Done" : "Edit")
-			}
+			editToolbarButton
 		}
 		.disabled(!model.isAuthenticated)
 	}

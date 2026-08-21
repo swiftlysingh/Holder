@@ -13,6 +13,9 @@ struct HomeView: View {
 	@ObservedObject var model: HomeViewModel
 	@Environment(\.analytics) private var analytics
 	@Environment(\.sdk) private var sdk
+	#if !os(macOS)
+	@State private var isShowingSettings = false
+	#endif
 
 	init(cardDataStore: CardDataStore = CardDataStore()) {
 		self.model = HomeViewModel(cardDataStore: cardDataStore)
@@ -79,11 +82,9 @@ struct HomeView: View {
 			#if !os(macOS)
 			.toolbar {
 				ToolbarItem(placement: .topBarTrailing) {
-					NavigationLink(
-						destination: sdk.settingsView()
-							.sdkScreen(AppAnalyticsScreen.settings)
-							.toolbarTitleDisplayMode(.inlineLarge)
-					) {
+					Button {
+						isShowingSettings = true
+					} label: {
 						Image(systemName: "gear")
 					}
 				}
@@ -148,6 +149,21 @@ struct HomeView: View {
 				)
 			}
 		}
+		#if !os(macOS)
+		.sheet(isPresented: $isShowingSettings) {
+			NavigationStack {
+				sdk.settingsView()
+					.sdkScreen(AppAnalyticsScreen.settings)
+					.toolbar {
+						ToolbarItem(placement: .confirmationAction) {
+							Button("Done") {
+								isShowingSettings = false
+							}
+						}
+					}
+			}
+		}
+		#endif
 		.sdkScreen(AppAnalyticsScreen.home)
 	}
 
