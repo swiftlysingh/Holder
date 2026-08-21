@@ -11,7 +11,6 @@ import VisionKit
 @MainActor
 final class VisionCardScanningEngine: NSObject, CardScanningEngine {
 	let engineID = CardScanningEngineID.vision
-	let showsCustomOverlay = true
 
 	private let host = VisionScannerHostViewController()
 	private var continuation: AsyncStream<CardScanUpdate>.Continuation?
@@ -145,6 +144,7 @@ extension VisionCardScanningEngine: VisionScannerHostDelegate {
 	}
 }
 
+@MainActor
 private protocol VisionScannerHostDelegate: AnyObject {
 	func scannerHostDidFailUnsupported()
 	func scannerHostDidFail(_ message: String)
@@ -215,8 +215,6 @@ private final class VisionScannerHostViewController: UIViewController {
 	}
 
 	func captureStill() async -> UIImage? {
-		scanner?.isPaused = true
-		defer { scanner?.isPaused = false }
 		return try? await scanner?.capturePhoto()
 	}
 }
@@ -237,7 +235,12 @@ extension VisionScannerHostViewController: DataScannerViewControllerDelegate {
 	private func emit(_ items: [RecognizedItem]) {
 		let ocrItems: [OCRTextItem] = items.compactMap { item in
 			guard case .text(let text) = item else { return nil }
-			return OCRTextItem(text: text.transcript, candidates: [text.transcript], boundingBox: nil)
+			let candidates = text.observation.topCandidates(5).map(\.string)
+			return OCRTextItem(
+				text: text.transcript,
+				candidates: candidates,
+				boundingBox: text.observation.boundingBox
+			)
 		}
 		guard !ocrItems.isEmpty else { return }
 		delegate?.scannerHostDidRecognize(ocrItems)

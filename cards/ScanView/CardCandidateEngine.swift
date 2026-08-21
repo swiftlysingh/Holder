@@ -8,7 +8,6 @@
 //
 
 import CoreGraphics
-import CoreGraphics
 import Foundation
 
 struct OCRTextItem: Equatable, Sendable {
@@ -137,7 +136,6 @@ enum CardPAN {
 enum CardExpiryParser {
 	static func parse(_ raw: String, now: Date = Date()) -> String? {
 		let compact = raw.uppercased()
-			.replacingOccurrences(of: " ", with: "")
 			.replacingOccurrences(of: "-", with: "/")
 			.replacingOccurrences(of: ".", with: "/")
 
@@ -148,8 +146,7 @@ enum CardExpiryParser {
 
 		for pattern in patterns {
 			if let match = firstMatch(pattern, in: compact) {
-				let month = match.1
-				if let formatted = validated(month: month, year: match.2, now: now) {
+				if let formatted = validated(month: match.0, year: match.1, now: now) {
 					return formatted
 				}
 			}
@@ -173,8 +170,7 @@ enum CardExpiryParser {
 		let calendar = Calendar(identifier: .gregorian)
 		let presentYear = calendar.component(.year, from: now) % 100
 		let maxYear = presentYear + 10
-		let minYear = presentYear - 1
-		guard yearValue >= minYear, yearValue <= maxYear else { return nil }
+		guard yearValue >= presentYear, yearValue <= maxYear else { return nil }
 
 		if yearValue == presentYear {
 			let presentMonth = calendar.component(.month, from: now)

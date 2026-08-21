@@ -83,7 +83,7 @@ struct CardView: View {
 					model.isShowingScanner = false
 				},
 				onResult: { result, metrics in
-					model.applyScan(result, wasRescan: metrics.wasRescan)
+					model.applyScan(result)
 					track(
 						.cardScanCompleted(
 							engine: metrics.engine,
@@ -457,7 +457,7 @@ struct CardView: View {
 		}
 		#if os(iOS)
 		.toolbar {
-			if model.isAddNewFlow && model.card.type != .otherCard {
+			if model.isAddNewFlow && model.card.type != .otherCard && model.entryMode == .form {
 				ToolbarItem(placement: .topBarLeading) {
 					Button {
 						startScan(isRescan: model.didUseScanner)

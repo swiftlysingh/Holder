@@ -9,7 +9,6 @@ struct CardScannerView: View {
 	var onResult: (CardScanResult, CardScanMetrics) -> Void
 
 	@StateObject private var model: CardScannerViewModel
-	@Environment(\.analytics) private var analytics
 
 	init(
 		isRescan: Bool,

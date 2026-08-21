@@ -82,17 +82,17 @@ enum AppAnalyticsEvent: AnalyticsEvent {
         switch self {
         case .cardSaveCompleted(let operation, let inputMethod),
              .cardSaveFailed(let operation, let inputMethod):
-            [
+            return [
                 "operation": .string(operation.rawValue),
                 "input_method": .string(inputMethod.rawValue)
             ]
         case .cardDeleted(let location),
              .cardDeleteFailed(let location):
-            ["location": .string(location.rawValue)]
+            return ["location": .string(location.rawValue)]
         case .cardScanStarted(let engine),
              .cardScanPermissionDenied(let engine),
              .cardScanRescanRequested(let engine):
-            ["engine": .string(engine)]
+            return ["engine": .string(engine)]
         case .cardScanCompleted(
             let engine,
             let panSuccess,
@@ -104,14 +104,14 @@ enum AppAnalyticsEvent: AnalyticsEvent {
         ):
             var properties: AnalyticsProperties = [
                 "engine": .string(engine),
-                "pan_success": .string(panSuccess ? "true" : "false"),
-                "expiry_success": .string(expirySuccess ? "true" : "false"),
-                "holder_success": .string(holderSuccess ? "true" : "false"),
-                "time_to_complete_ms": .string(String(timeToCompleteMs)),
-                "rescan": .string(rescan ? "true" : "false")
+                "pan_success": .bool(panSuccess),
+                "expiry_success": .bool(expirySuccess),
+                "holder_success": .bool(holderSuccess),
+                "time_to_complete_ms": .int(timeToCompleteMs),
+                "rescan": .bool(rescan)
             ]
             if let timeToPanMs {
-                properties["time_to_pan_ms"] = .string(String(timeToPanMs))
+                properties["time_to_pan_ms"] = .int(timeToPanMs)
             }
             return properties
         case .cardAddStarted,
@@ -120,7 +120,7 @@ enum AppAnalyticsEvent: AnalyticsEvent {
              .cardUnarchived,
              .cardUnarchiveFailed,
              .cardOpenedFromWidget:
-            [:]
+            return [:]
         }
     }
 

@@ -27,7 +27,6 @@ final class CardViewModel: ObservableObject {
 	private var imageMutationTask: Task<Void, Never>?
 	private let imageStore: CardImageStore
 	private(set) var didUseScanner = false
-	private(set) var lastScanWasRescan = false
 
 	#if os(iOS)
 	@Published var selectedItem: PhotosPickerItem?
@@ -129,19 +128,14 @@ final class CardViewModel: ObservableObject {
 		HapticService.trigger(.success)
 	}
 
-	func markScannerCompleted() {
-		didUseScanner = true
-	}
-
 	func beginManualEntry() {
 		entryMode = .form
 	}
 
-	func applyScan(_ result: CardScanResult, wasRescan: Bool) {
+	func applyScan(_ result: CardScanResult) {
 		CardScanSession.apply(result, to: &card)
 		lastScanPreview = result
 		didUseScanner = true
-		lastScanWasRescan = wasRescan
 		entryMode = .form
 		isShowingScanner = false
 		isEditing = true
