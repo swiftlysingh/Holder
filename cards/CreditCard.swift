@@ -27,17 +27,42 @@ enum MainWindowScene {
 @MainActor
 enum MainWindowCoordinator {
     private static weak var mainWindow: NSWindow?
+    private static weak var authenticationSession: AuthenticationSession?
     private static var openWindow: OpenWindowAction?
+    private static var closeObserver: NSObjectProtocol?
+
+    static func register(authenticationSession: AuthenticationSession) {
+        self.authenticationSession = authenticationSession
+    }
 
     static func register(window: NSWindow) {
+        guard mainWindow !== window else { return }
+        stopObservingMainWindowClose()
         mainWindow = window
+        closeObserver = NotificationCenter.default.addObserver(
+            forName: NSWindow.willCloseNotification,
+            object: window,
+            queue: .main
+        ) { notification in
+            guard let window = notification.object as? NSWindow else { return }
+            MainActor.assumeIsolated {
+                MainWindowCoordinator.mainWindowDidClose(window: window)
+            }
+        }
     }
 
     /// Clears the registered window only when `window` is the currently tracked host,
     /// so an obsolete accessor cannot unregister a newer main window.
     static func unregister(window: NSWindow) {
         guard mainWindow === window else { return }
+        stopObservingMainWindowClose()
         mainWindow = nil
+    }
+
+    private static func mainWindowDidClose(window: NSWindow) {
+        guard mainWindow === window else { return }
+        authenticationSession?.didEnterBackground()
+        unregister(window: window)
     }
 
     static func register(openWindow: OpenWindowAction) {
@@ -63,11 +88,19 @@ enum MainWindowCoordinator {
         openWindow(id: MainWindowScene.id)
         return true
     }
+
+    private static func stopObservingMainWindowClose() {
+        if let closeObserver {
+            NotificationCenter.default.removeObserver(closeObserver)
+            self.closeObserver = nil
+        }
+    }
 }
 
 /// Bridge: SwiftUI `openWindow` is only in the environment; AppDelegate needs a stored action for Dock reopen.
 /// Also captures the exact main `NSWindow` hosting this content (not Settings).
 private struct MainWindowRegistrar: View {
+    let authenticationSession: AuthenticationSession
     @Environment(\.openWindow) private var openWindow
 
     var body: some View {
@@ -76,6 +109,7 @@ private struct MainWindowRegistrar: View {
             .accessibilityHidden(true)
             .background(MainWindowAccessor())
             .onAppear {
+                MainWindowCoordinator.register(authenticationSession: authenticationSession)
                 MainWindowCoordinator.register(openWindow: openWindow)
             }
     }
@@ -137,12 +171,15 @@ struct CreditCard: App {
     #endif
 
     /// Shared card data store for menu bar access on macOS
-    @State private var cardDataStore = CardDataStore()
+    @State private var cardDataStore: CardDataStore
     @State private var sdk: SinghDevKit
+    @StateObject private var homeViewModel: HomeViewModel
+    @StateObject private var authenticationSession = AuthenticationSession()
     private let sdkConfiguration: SDKConfiguration
     private let privacyPolicyURL: URL?
 
     init() {
+        let cardDataStore = CardDataStore()
         let appSecrets = AppSecrets.load()
         let settings = SettingsViewModel()
         let sdkConfiguration = SDKConfiguration(
@@ -152,6 +189,10 @@ struct CreditCard: App {
             payments: appSecrets.paymentsConfiguration,
             settings: settings,
             onboarding: .default()
+        )
+        _cardDataStore = State(initialValue: cardDataStore)
+        _homeViewModel = StateObject(
+            wrappedValue: HomeViewModel(cardDataStore: cardDataStore)
         )
         self.sdkConfiguration = sdkConfiguration
         self.privacyPolicyURL = settings.privacyPolicyURL
@@ -163,7 +204,7 @@ struct CreditCard: App {
         // Single-instance main scene: openWindow focuses/recreates this window rather than spawning duplicates.
         Window("Holder", id: MainWindowScene.id) {
             rootContent
-                .background(MainWindowRegistrar())
+                .background(MainWindowRegistrar(authenticationSession: authenticationSession))
         }
         menuBarScene
         settingsScene
@@ -176,43 +217,57 @@ struct CreditCard: App {
 
     @ViewBuilder
     private var rootContent: some View {
-        HomeView(cardDataStore: cardDataStore)
-            .task {
-                try? Tips.configure([
-                    .displayFrequency(.immediate),
-                    .datastoreLocation(.applicationDefault)
-                ])
-            }
-            .environment(
-                \.whatsNew,
-                 WhatsNewEnvironment(
-                    versionStore: UserDefaultsWhatsNewVersionStore(),
-                    whatsNewCollection: self
-                 )
-            )
-            .showOnboardingIfNeeded(
-                configuration: sdkConfiguration.onboarding,
-                features: [.init(image: Image(systemName: "lock.shield"),
-                                                     title: "Secure Storage",
-                                                     content: "Keep your card details safe with state-of-the-art encryption."),
-                                               .init(image: Image(systemName: "faceid"),
-                                                     title: "Biometric Authentication",
-                                                     content: "Access your cards securely using Face ID or Touch ID."),
-                                               .init(image: Image(systemName: "square.and.arrow.up"),
-                                                     title: "Easily Shareable",
-                                                     content: "Quickly and securely share card details with trusted contacts."),
-                                               .init(image: Image(systemName: "hand.raised.slash"),
-                                                     title: "Privacy First, Open Source",
-                                                     content: "Your data stays private and secure, and the app's code is open-source for transparency.")],
-                privacyPolicyURL: privacyPolicyURL
-            )
-            .withSDK(sdk)
+        VaultProtectedView(session: authenticationSession) {
+            HomeView(model: homeViewModel)
+                .task {
+                    try? Tips.configure([
+                        .displayFrequency(.immediate),
+                        .datastoreLocation(.applicationDefault)
+                    ])
+                }
+                .environment(
+                    \.whatsNew,
+                    WhatsNewEnvironment(
+                        versionStore: UserDefaultsWhatsNewVersionStore(),
+                        whatsNewCollection: self
+                    )
+                )
+                .showOnboardingIfNeeded(
+                    configuration: sdkConfiguration.onboarding,
+                    features: [
+                        .init(
+                            image: Image(systemName: "lock.shield"),
+                            title: "Secure Storage",
+                            content: "Keep your card details encrypted and protected on your device."
+                        ),
+                        .init(
+                            image: Image(systemName: "faceid"),
+                            title: "Contextual Authentication",
+                            content: "Unlock your vault once. Security codes and sharing require a recent authentication."
+                        ),
+                        .init(
+                            image: Image(systemName: "square.and.arrow.up"),
+                            title: "Easily Shareable",
+                            content: "Authenticate before sharing card details with someone you trust."
+                        ),
+                        .init(
+                            image: Image(systemName: "hand.raised.slash"),
+                            title: "Privacy First, Open Source",
+                            content: "Your data stays private and secure, and the app's code is open-source for transparency."
+                        )
+                    ],
+                    privacyPolicyURL: privacyPolicyURL
+                )
+        }
+        .environmentObject(authenticationSession)
+        .withSDK(sdk)
     }
 
     #if os(macOS)
     var menuBarScene: some Scene {
         MenuBarExtra("Holder", systemImage: "creditcard.fill", isInserted: $keepInMenuBar) {
             MenuBarView(cardStore: cardDataStore)
+                .environmentObject(authenticationSession)
                 .withSDK(sdk)
         }
         .menuBarExtraStyle(.window)
@@ -222,6 +277,7 @@ struct CreditCard: App {
         SwiftUI.Settings {
             sdk.settingsView()
                 .sdkScreen(AppAnalyticsScreen.settings)
+                .environmentObject(authenticationSession)
                 .withSDK(sdk)
                 .presentationSizing(.fitted)
                 .frame(minWidth: 620, minHeight: 480)

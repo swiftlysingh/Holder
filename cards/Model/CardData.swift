@@ -81,8 +81,12 @@ struct CardData : Identifiable, Codable, Hashable {
 		)
 	}
 
-	func toShareString() -> String {
-		return "Name: \(self.name) \nNumber: \(number) \nExpiration: \(expiration) \nSecurity Code: \(cvv)"
+	func toShareString(includeSecurityCode: Bool) -> String {
+		var details = "Name: \(name) \nNumber: \(number) \nExpiration: \(expiration)"
+		if includeSecurityCode {
+			details += " \nSecurity Code: \(cvv)"
+		}
+		return details
 	}
 }
 
