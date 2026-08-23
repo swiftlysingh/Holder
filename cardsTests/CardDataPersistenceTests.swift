@@ -245,8 +245,8 @@ final class CardDataPersistenceTests: XCTestCase {
 		XCTAssertTrue(deletedImageIDs.isEmpty)
 	}
 
-	func testDeletingOtherCardRemovesCardWhenImageCleanupFails() async throws {
-		let card = makeCard(id: UUID(), type: .otherCard)
+	func testDeletingCardAttemptsImageCleanupRegardlessOfCurrentType() async throws {
+		let card = makeCard(id: UUID())
 		let stub = CardPayloadRetrievalStub(result: .success([try card.toData()]))
 		let imageStore = TestCardImageStore(deleteResults: [false])
 		let store = CardDataStore(

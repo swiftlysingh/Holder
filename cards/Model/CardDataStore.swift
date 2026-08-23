@@ -333,15 +333,13 @@ final class CardDataStore {
 
 	func deleteCard(with id: UUID) async -> Bool {
 		await performMutation {
-			guard let card = self.storedCard(by: id) else { return false }
+			guard self.storedCard(by: id) != nil else { return false }
 
 			let service = Bundle.main.bundleIdentifier ?? "com.myApp.defaultService"
 			guard await self.persistence.delete(service: service, account: id.uuidString) else { return false }
 
 			self.commitRemoval(of: id)
-			if card.type == .otherCard {
-				_ = await self.imageStore.deleteImage(for: id)
-			}
+			_ = await self.imageStore.deleteImage(for: id)
 			return true
 		}
 	}
