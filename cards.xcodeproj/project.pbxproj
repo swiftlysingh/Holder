@@ -1095,7 +1095,7 @@
 			repositoryURL = "https://github.com/swiftlysingh/SinghDevKit.git";
 			requirement = {
 				kind = upToNextMajorVersion;
-				minimumVersion = 2.4.0;
+				minimumVersion = 2.6.0;
 			};
 		};
 /* End XCRemoteSwiftPackageReference section */
