@@ -18,8 +18,6 @@ final class CardViewModel: ObservableObject {
 	@Published var isEditing = false
 	@Published var cardImage: PlatformImage?
 	@Published var isShowingScanner = false
-	@Published var entryMode: CardEditorEntryMode
-	@Published var lastScanPreview: CardScanResult?
 	@Published var errorMessage: String?
 	@Published var showErrorAlert = false
 	@Published private(set) var isImageMutationInProgress = false
@@ -49,7 +47,6 @@ final class CardViewModel: ObservableObject {
 		self.addUpdateCard = addUpdateCard
 		self.isAddNewFlow = addNewFlow
 		self.imageStore = imageStore
-		self.entryMode = (addNewFlow && card.type != .otherCard) ? .chooser : .form
 		let id = card.id
 		imageLoadTask = Task { [weak self, imageStore, id] in
 			let data = await imageStore.loadImageData(for: id)
@@ -128,21 +125,10 @@ final class CardViewModel: ObservableObject {
 		HapticService.trigger(.success)
 	}
 
-	func beginManualEntry() {
-		entryMode = .form
-	}
-
 	func applyScan(_ result: CardScanResult) {
 		CardScanSession.apply(result, to: &card)
-		lastScanPreview = result
 		didUseScanner = true
-		entryMode = .form
 		isShowingScanner = false
 		isEditing = true
 	}
-}
-
-enum CardEditorEntryMode {
-	case chooser
-	case form
 }

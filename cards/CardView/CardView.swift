@@ -23,6 +23,8 @@ struct CardView: View {
 	@Environment(\.analytics) private var analytics
 	#if os(iOS)
 	@Binding private var cardSheetDetent: PresentationDetent
+	@State private var scannerReturnDetent: PresentationDetent = .fraction(0.5)
+	@FocusState private var isFieldFocused: Bool
 	#endif
 	#if os(macOS)
 	@State private var copiedField: String?
@@ -78,22 +80,24 @@ struct CardView: View {
 	#if os(iOS)
 	@ViewBuilder
 	private func iOSCardContent() -> some View {
-		Group {
+		VStack(spacing: 0) {
+			if model.isAddNewFlow && model.card.type != .otherCard && !model.isShowingScanner {
+				scanCardButton
+			}
+
 			if authenticationSession.isVaultUnlocked && model.isShowingScanner {
 				CardScannerView(
 					isRescan: model.didUseScanner,
 					onCancel: {
-						model.isShowingScanner = false
-						cardSheetDetent = model.entryMode == .chooser ? .fraction(0.25) : .large
+						finishScanning()
 					},
 					onPermissionDenied: {
 						track(.cardScanPermissionDenied(engine: CardScanningEngineFactory.currentEngineID))
-						model.isShowingScanner = false
-						cardSheetDetent = model.entryMode == .chooser ? .fraction(0.25) : .large
+						finishScanning()
 					},
 					onResult: { result, metrics in
 						model.applyScan(result)
-						cardSheetDetent = .large
+						finishScanning()
 						track(
 							.cardScanCompleted(
 								engine: metrics.engine,
@@ -107,46 +111,33 @@ struct CardView: View {
 						)
 					}
 				)
-			} else if model.entryMode == .chooser {
-				scanChooserView()
-			} else {
-				getCardListView()
+				.frame(height: 360)
+				.clipped()
+				.transition(.move(edge: .top).combined(with: .opacity))
+			}
+
+			getCardListView()
+		}
+		.onChange(of: authenticationSession.isVaultUnlocked) { _, isUnlocked in
+			if !isUnlocked && model.isShowingScanner {
+				finishScanning()
 			}
 		}
-		.toolbar(model.isShowingScanner || model.entryMode == .chooser ? .hidden : .automatic, for: .navigationBar)
 	}
 
-	private func scanChooserView() -> some View {
-		VStack(spacing: 12) {
-			HStack(spacing: 12) {
-				Image(systemName: "camera.viewfinder")
-					.font(.title2)
-					.foregroundStyle(Color.accentColor)
-				VStack(alignment: .leading, spacing: 2) {
-					Text("Add a card")
-						.font(.headline)
-					Text("Scan the front, then review every field.")
-						.font(.subheadline)
-						.foregroundStyle(.secondary)
-				}
-				Spacer()
-			}
-			Button {
-				startScan(isRescan: false)
-			} label: {
-				Text("Scan Card")
-					.frame(maxWidth: .infinity)
-			}
-			.buttonStyle(.borderedProminent)
-			.controlSize(.large)
-			Button("Enter Manually") {
-				model.beginManualEntry()
-				cardSheetDetent = .large
-			}
+	private var scanCardButton: some View {
+		Button {
+			startScan(isRescan: model.didUseScanner)
+		} label: {
+			Text(model.didUseScanner ? "Scan Again" : "Scan Card")
+				.frame(maxWidth: .infinity)
 		}
+		.buttonStyle(.borderedProminent)
+		.controlSize(.large)
 		.padding(.horizontal, 20)
-		.padding(.vertical, 16)
-		.frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottom)
+		.padding(.vertical, 12)
+		.accessibilityIdentifier("scanCardButton")
+		.accessibilityHint("Opens the camera above the card details form")
 	}
 
 	private func startScan(isRescan: Bool) {
@@ -154,46 +145,18 @@ struct CardView: View {
 			track(.cardScanRescanRequested(engine: CardScanningEngineFactory.currentEngineID))
 		}
 		track(.cardScanStarted(engine: CardScanningEngineFactory.currentEngineID))
-		cardSheetDetent = .fraction(0.5)
-		model.isShowingScanner = true
+		scannerReturnDetent = cardSheetDetent
+		isFieldFocused = false
+		withAnimation {
+			cardSheetDetent = .large
+			model.isShowingScanner = true
+		}
 	}
 
-	private func scanReviewSection() -> some View {
-		Group {
-			if authenticationSession.isVaultUnlocked, let preview = model.lastScanPreview {
-				Section {
-					HStack(spacing: 12) {
-						Image(preview.network.rawValue)
-							.resizable()
-							.scaledToFit()
-							.frame(width: 36, height: 36)
-						VStack(alignment: .leading, spacing: 4) {
-							Text(preview.network.rawValue)
-								.font(.headline)
-							Text("•••• \(preview.lastFour)")
-								.font(.body.monospaced())
-							if let expiry = preview.expiry, !expiry.isEmpty {
-								Text("Expires \(expiry)")
-									.foregroundStyle(.secondary)
-							}
-							if let name = preview.cardholderName, !name.isEmpty {
-								Text(name)
-									.foregroundStyle(.secondary)
-							}
-						}
-						Spacer()
-					}
-					Button {
-						startScan(isRescan: true)
-					} label: {
-						Label("Scan Again", systemImage: "camera.on.rectangle")
-					}
-				} header: {
-					Text("Scanned card")
-				} footer: {
-					Text("Every field below stays editable. Missing scan values will not erase what you already entered.")
-				}
-			}
+	private func finishScanning() {
+		withAnimation {
+			model.isShowingScanner = false
+			cardSheetDetent = scannerReturnDetent
 		}
 	}
 	#endif
@@ -219,11 +182,13 @@ struct CardView: View {
 				.disabled(authenticationSession.isAuthenticating)
 				.accessibilityLabel("Authenticate to view security code")
 			} else {
-				TextField("", text: value)
+				TextField(heading, text: value)
+					.labelsHidden()
 					.multilineTextAlignment(.trailing)
 					.disabled(!model.isEditing)
 					.foregroundColor(model.isEditing ? .blue : .accentColor)
 					.keyboardType(keyboardType)
+					.focused($isFieldFocused)
 					.contextMenu(menuItems: {
 						Button(action: {
 							model.copyAction(with: value.wrappedValue)
@@ -286,9 +251,6 @@ struct CardView: View {
 		let hasCardImage = model.cardImage != nil
 
 		return List {
-			#if os(iOS)
-			scanReviewSection()
-			#endif
 			Section {
 				#if os(iOS)
 				let fields: [(String, Binding<String>, UIKeyboardType, Bool)] = [
@@ -475,22 +437,6 @@ struct CardView: View {
 			sensitiveShareMenu
 			editToolbarButton
 		}
-		#if os(iOS)
-		.toolbar {
-			if model.isAddNewFlow && model.card.type != .otherCard && model.entryMode == .form {
-				ToolbarItem(placement: .topBarLeading) {
-					Button {
-						startScan(isRescan: model.didUseScanner)
-					} label: {
-						Label(
-							model.didUseScanner ? "Scan Again" : "Scan Card",
-							systemImage: "camera.on.rectangle"
-						)
-					}
-				}
-			}
-		}
-		#endif
 	}
 
 	private var editToolbarButton: some View {

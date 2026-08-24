@@ -20,7 +20,7 @@ struct HomeView: View {
 	@State private var isShowingSettings = false
 	#endif
 	#if os(iOS)
-	@State private var addCardSheetDetent: PresentationDetent = .fraction(0.25)
+	@State private var addCardSheetDetent: PresentationDetent = .fraction(0.5)
 	#endif
 
 	init(model: HomeViewModel) {
@@ -63,7 +63,7 @@ struct HomeView: View {
 						Button("Add a new card") {
 							track(.cardAddStarted)
 							#if os(iOS)
-							addCardSheetDetent = .fraction(0.25)
+							addCardSheetDetent = .fraction(0.5)
 							#endif
 							model.addingType = type
 						}
@@ -159,7 +159,7 @@ struct HomeView: View {
 			}
 			#if os(iOS)
 			.presentationDetents(
-				[.fraction(0.25), .fraction(0.5), .large],
+				[.fraction(0.5), .large],
 				selection: $addCardSheetDetent
 			)
 			.presentationDragIndicator(.visible)

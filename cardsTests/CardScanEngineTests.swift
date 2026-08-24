@@ -245,26 +245,7 @@ final class CardScanSessionTests: XCTestCase {
 		XCTAssertEqual(model.card.cvv, "999")
 		XCTAssertEqual(model.card.description, "Wallet")
 		XCTAssertTrue(model.didUseScanner)
-		XCTAssertEqual(model.entryMode, .form)
 		XCTAssertFalse(model.isShowingScanner)
-	}
-
-	func testAddNewPaymentCardStartsOnChooser() {
-		let model = CardViewModel(
-			card: CardData(
-				id: UUID(),
-				number: "",
-				cvv: "",
-				expiration: "",
-				name: "",
-				description: "",
-				type: .creditCard
-			),
-			isEditing: true,
-			addNewFlow: true,
-			addUpdateCard: { _ in true }
-		)
-		XCTAssertEqual(model.entryMode, .chooser)
 	}
 
 	private func makeBlankCard() -> CardData {

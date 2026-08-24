@@ -26,7 +26,6 @@ struct CardScannerView: View {
 	var body: some View {
 		ZStack {
 			model.engine.makeCameraView()
-				.ignoresSafeArea()
 
 			VStack(spacing: 16) {
 				HStack {
