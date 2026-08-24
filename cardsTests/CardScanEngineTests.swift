@@ -332,7 +332,7 @@ final class CardScanSessionTests: XCTestCase {
 		XCTAssertFalse(model.isShowingScanner)
 	}
 
-	func testAddNewCardStartsOnFormWithoutSelectedType() {
+	func testAddNewCardStartsWithoutSelectedType() {
 		let model = CardViewModel(
 			card: CardData(
 				id: UUID(),
