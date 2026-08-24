@@ -1,6 +1,7 @@
 #if os(iOS)
 import SinghDevKit
 import SwiftUI
+import UIKit
 
 struct CardScannerView: View {
 	var isRescan: Bool
@@ -76,6 +77,9 @@ struct CardScannerView: View {
 		}
 		.onDisappear {
 			model.stop()
+		}
+		.onChange(of: model.guidance) { _, guidance in
+			UIAccessibility.post(notification: .announcement, argument: guidance)
 		}
 	}
 }

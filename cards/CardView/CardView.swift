@@ -123,6 +123,11 @@ struct CardView: View {
 				finishScanning()
 			}
 		}
+		.onDisappear {
+			guard model.isShowingScanner else { return }
+			model.isShowingScanner = false
+			cardSheetDetent = scannerReturnDetent
+		}
 	}
 
 	private var scanCardButton: some View {
