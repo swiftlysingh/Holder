@@ -8,6 +8,7 @@
 import SinghDevKit
 import SwiftUI
 
+@MainActor
 struct ArchivedCardsView: View {
 	@ObservedObject var model: HomeViewModel
 	@EnvironmentObject private var authenticationSession: AuthenticationSession
@@ -73,10 +74,12 @@ struct ArchivedCardsView: View {
 	}
 
 	private func deleteCard(_ card: CardData) {
-		let event: AppAnalyticsEvent = model.deleteArchivedCard(card)
-			? .cardDeleted(location: .archived)
-			: .cardDeleteFailed(location: .archived)
-		track(event)
+		Task { @MainActor in
+			let event: AppAnalyticsEvent = await model.cardDataStore.deleteCard(with: card.id)
+				? .cardDeleted(location: .archived)
+				: .cardDeleteFailed(location: .archived)
+			track(event)
+		}
 	}
 
 	private func authenticateAndDelete(_ card: CardData) {
@@ -90,10 +93,12 @@ struct ArchivedCardsView: View {
 	}
 
 	private func unarchiveCard(_ card: CardData) {
-		let event: AppAnalyticsEvent = model.unarchiveCard(card)
-			? .cardUnarchived
-			: .cardUnarchiveFailed
-		track(event)
+		Task { @MainActor in
+			let event: AppAnalyticsEvent = await model.cardDataStore.unarchiveCard(card)
+				? .cardUnarchived
+				: .cardUnarchiveFailed
+			track(event)
+		}
 	}
 
 	private func track(_ event: AppAnalyticsEvent) {

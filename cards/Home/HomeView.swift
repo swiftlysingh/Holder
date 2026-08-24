@@ -9,6 +9,7 @@ import SwiftUI
 import WhatsNewKit
 import SinghDevKit
 
+@MainActor
 struct HomeView: View {
 	@ObservedObject private var model: HomeViewModel
 	@EnvironmentObject private var authenticationSession: AuthenticationSession
@@ -79,7 +80,7 @@ struct HomeView: View {
 			.navigationTitle("Cards")
 			.toolbarTitleDisplayMode(.inlineLarge)
 			.task {
-				model.cardDataStore.loadCards()
+				await model.cardDataStore.loadCards()
 			}
 			#if !os(macOS)
 			.toolbar {
@@ -97,7 +98,7 @@ struct HomeView: View {
 				CardView(model: CardViewModel(
 								card: card,
 								addUpdateCard: { card in
-									model.cardDataStore.addCard(card)
+									await model.cardDataStore.updateCard(card)
 								}))
 					.id(card.id)
 			} 
@@ -115,7 +116,7 @@ struct HomeView: View {
 			CardView(model: CardViewModel(
 				card: card,
 				addUpdateCard: { card in
-					model.cardDataStore.addCard(card)
+					await model.cardDataStore.updateCard(card)
 				}))
 			.id(card.id)
 		}
@@ -134,7 +135,7 @@ struct HomeView: View {
 					addNewFlow: true,
 					addUpdateCard: { card in
 						// Keep the sheet open on failure so the entered form is preserved for retry.
-						let succeeded = model.cardDataStore.addCard(card)
+						let succeeded = await model.cardDataStore.addCard(card)
 						if succeeded {
 							model.addingType = nil
 						}
@@ -176,10 +177,12 @@ struct HomeView: View {
 	}
 
 	private func deleteCard(_ card: CardData) {
-		let event: AppAnalyticsEvent = model.cardDataStore.deleteCard(with: card.id)
-			? .cardDeleted(location: .active)
-			: .cardDeleteFailed(location: .active)
-		track(event)
+		Task { @MainActor in
+			let event: AppAnalyticsEvent = await model.cardDataStore.deleteCard(with: card.id)
+				? .cardDeleted(location: .active)
+				: .cardDeleteFailed(location: .active)
+			track(event)
+		}
 	}
 
 	private func authenticateAndDelete(_ card: CardData) {
@@ -193,10 +196,12 @@ struct HomeView: View {
 	}
 
 	private func archiveCard(_ card: CardData) {
-		let event: AppAnalyticsEvent = model.archiveCard(card)
-			? .cardArchived
-			: .cardArchiveFailed
-		track(event)
+		Task { @MainActor in
+			let event: AppAnalyticsEvent = await model.cardDataStore.archiveCard(card)
+				? .cardArchived
+				: .cardArchiveFailed
+			track(event)
+		}
 	}
 
 	private func track(_ event: AppAnalyticsEvent) {

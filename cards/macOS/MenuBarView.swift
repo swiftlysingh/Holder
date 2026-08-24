@@ -243,7 +243,9 @@ struct MenuBarView: View {
     }
 
     private func refreshCards() {
-        didCardLoadFail = !cardStore.loadCards()
+        Task {
+            didCardLoadFail = !(await cardStore.loadCards())
+        }
     }
 
     private func authenticateForSecurityCode() {

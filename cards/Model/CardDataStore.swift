@@ -7,9 +7,98 @@
 import SwiftUI
 import WidgetKit
 
-@Observable
-class CardDataStore {
+enum CardPayloadRetrievalResult: Sendable {
+	case success([Data?])
+	case empty
+	case failure
+}
 
+/// Executes synchronizable Keychain work on one serial, non-main queue.
+private final class CardKeychainPersistence: @unchecked Sendable {
+	typealias RetrievePayloads = @Sendable (String) -> CardPayloadRetrievalResult
+	typealias SavePayload = @Sendable (Data, String, String) -> Bool
+	typealias DeletePayload = @Sendable (String, String) -> Bool
+
+	private static let queue = DispatchQueue(
+		label: "com.swiftlysingh.holder.keychain",
+		qos: .userInitiated
+	)
+
+	private let retrievePayloads: RetrievePayloads
+	private let savePayload: SavePayload
+	private let deletePayload: DeletePayload
+
+	init(
+		retrievePayloads: @escaping RetrievePayloads,
+		savePayload: @escaping SavePayload,
+		deletePayload: @escaping DeletePayload
+	) {
+		self.retrievePayloads = retrievePayloads
+		self.savePayload = savePayload
+		self.deletePayload = deletePayload
+	}
+
+	func retrieve(service: String) async -> CardPayloadRetrievalResult {
+		let retrievePayloads = retrievePayloads
+		return await Self.execute {
+			retrievePayloads(service)
+		}
+	}
+
+	func save(_ payload: Data, service: String, account: String) async -> Bool {
+		let savePayload = savePayload
+		return await Self.execute {
+			savePayload(payload, service, account)
+		}
+	}
+
+	func delete(service: String, account: String) async -> Bool {
+		let deletePayload = deletePayload
+		return await Self.execute {
+			deletePayload(service, account)
+		}
+	}
+
+	private static func execute<Value: Sendable>(
+		_ operation: @escaping @Sendable () -> Value
+	) async -> Value {
+		await withCheckedContinuation { continuation in
+			queue.async {
+				continuation.resume(returning: operation())
+			}
+		}
+	}
+}
+
+/// Serializes complete card mutations, including their in-memory commits.
+private actor CardMutationGate {
+	private var isLocked = false
+	private var waiters: [CheckedContinuation<Void, Never>] = []
+
+	func acquire() async {
+		guard isLocked else {
+			isLocked = true
+			return
+		}
+
+		await withCheckedContinuation { continuation in
+			waiters.append(continuation)
+		}
+	}
+
+	func release() {
+		guard !waiters.isEmpty else {
+			isLocked = false
+			return
+		}
+
+		waiters.removeFirst().resume()
+	}
+}
+
+@MainActor
+@Observable
+final class CardDataStore {
 	var cardsByType: [CardType: [CardData]] = [:]
 	var archivedCards: [CardData] = []
 
@@ -23,7 +112,7 @@ class CardDataStore {
 		UserDefaults(suiteName: appGroupID)
 	}
 
-	private var isDebugOrSimulator = {
+	private let isDebugOrSimulator = {
 	#if DEBUG || BETA
 		return true
 	#else
@@ -38,43 +127,73 @@ class CardDataStore {
 		case failure
 	}
 
-	enum CardRetrievalResult {
-		case success([CardData])
-		case empty
-		case failure
-	}
-
 	@ObservationIgnored
-	private let retrieveCards: (String) -> CardRetrievalResult
+	private let persistence: CardKeychainPersistence
+	@ObservationIgnored
+	private let imageStore: CardImageStore
+	@ObservationIgnored
+	private let beforeApplyingLoad: () async -> Void
+	@ObservationIgnored
+	private let mutationGate = CardMutationGate()
+	private var latestLoadGeneration: UInt64 = 0
+	private var hasCompletedSuccessfulLoad = false
 
-	init(retrieveCards: ((String) -> CardRetrievalResult)? = nil) {
-		self.retrieveCards = retrieveCards ?? Self.retrieveAllCardData
-		loadCards()
+	init(
+		retrievePayloads: (@Sendable (String) -> CardPayloadRetrievalResult)? = nil,
+		savePayload: (@Sendable (Data, String, String) -> Bool)? = nil,
+		deletePayload: (@Sendable (String, String) -> Bool)? = nil,
+		imageStore: CardImageStore = ICloudDataManager.shared,
+		beforeApplyingLoad: @escaping () async -> Void = {}
+	) {
+		persistence = CardKeychainPersistence(
+			retrievePayloads: retrievePayloads ?? { Self.retrieveAllCardPayloads(service: $0) },
+			savePayload: savePayload ?? { Self.saveCardPayload($0, service: $1, account: $2) },
+			deletePayload: deletePayload ?? { Self.deleteCardPayload(service: $0, account: $1) }
+		)
+		self.imageStore = imageStore
+		self.beforeApplyingLoad = beforeApplyingLoad
 	}
 
+	/// iCloud Keychain operations can stall for seconds, so all retrieval happens
+	/// on the serial persistence queue and only the resulting state is published here.
 	@discardableResult
-	func loadCards() -> Bool {
-		switch retrieveCards(Bundle.main.bundleIdentifier ?? "com.myApp.defaultService") {
+	func loadCards() async -> Bool {
+		latestLoadGeneration &+= 1
+		let loadGeneration = latestLoadGeneration
+		let service = Bundle.main.bundleIdentifier ?? "com.myApp.defaultService"
+		switch await persistence.retrieve(service: service) {
 		case .failure:
 			// Preserve in-memory cards and widget snapshot on real Keychain/decode errors.
 			return false
 		case .empty:
-			commitRetrievedCards([])
-			return true
-		case .success(let cards):
-			commitRetrievedCards(cards)
-			return true
+			return await commitRetrievedCards([], loadGeneration: loadGeneration, service: service)
+		case .success(let payloads):
+			guard let cards = Self.decodeAllCardData(from: payloads) else {
+				print("Error decoding CardData: missing or invalid Keychain payload")
+				return false
+			}
+			if cards.count != payloads.count {
+				print("Warning: skipped \(payloads.count - cards.count) invalid Keychain card payload(s)")
+			}
+			return await commitRetrievedCards(cards, loadGeneration: loadGeneration, service: service)
 		}
 	}
 
-	private func commitRetrievedCards(_ cards: [CardData]) {
-		var retrievedCard = cards
+	private func commitRetrievedCards(
+		_ cards: [CardData],
+		loadGeneration: UInt64,
+		service: String
+	) async -> Bool {
+		await beforeApplyingLoad()
+		guard loadGeneration == latestLoadGeneration else { return true }
+
+		var retrievedCards = cards
 		let hasInitializedDebugFixtures = UserDefaults.standard.bool(forKey: debugFixturesInitializedKey)
 
 		#if DEBUG || BETA
 		if Self.shouldSeedDebugFixtures(
 			isDebugOrSimulator: isDebugOrSimulator,
-			hasStoredCards: !retrievedCard.isEmpty,
+			hasStoredCards: !retrievedCards.isEmpty,
 			hasInitializedFixtures: hasInitializedDebugFixtures
 		) {
 			let fixtures = [
@@ -119,23 +238,30 @@ class CardDataStore {
 				)
 			]
 			for fixture in fixtures {
-				if saveOrUpdateCardData(fixture) {
-					retrievedCard.append(fixture)
+				if await saveCardData(fixture, service: service) {
+					retrievedCards.append(fixture)
 				}
 			}
 		}
-		if isDebugOrSimulator && !hasInitializedDebugFixtures && !retrievedCard.isEmpty {
+		if isDebugOrSimulator && !hasInitializedDebugFixtures && !retrievedCards.isEmpty {
 			UserDefaults.standard.set(true, forKey: debugFixturesInitializedKey)
 		}
 		#endif
 
-		let partition = Self.partition(retrievedCard)
+		guard loadGeneration == latestLoadGeneration else { return true }
+		commitCards(retrievedCards)
+		return true
+	}
+
+	private func commitCards(_ cards: [CardData]) {
+		let partition = Self.partition(cards)
 		cardsByType = partition.cardsByType
 		archivedCards = partition.archivedCards
+		hasCompletedSuccessfulLoad = true
 		syncCardsToWidget()
 	}
 
-	static func cardRetrievalKind(forStatus status: OSStatus) -> CardRetrievalKind {
+	nonisolated static func cardRetrievalKind(forStatus status: OSStatus) -> CardRetrievalKind {
 		switch status {
 		case errSecSuccess:
 			return .success
@@ -149,24 +275,12 @@ class CardDataStore {
 	/// Decodes every usable Keychain payload. A non-empty batch fails only when no
 	/// records can be recovered, preserving existing in-memory state on total corruption.
 	static func decodeAllCardData(from payloads: [Data?]) -> [CardData]? {
-		var cards: [CardData] = []
-		cards.reserveCapacity(payloads.count)
-		var hadInvalidPayload = false
-		for payload in payloads {
-			guard let data = payload else {
-				hadInvalidPayload = true
-				continue
-			}
-			do {
-				cards.append(try JSONDecoder().decode(CardData.self, from: data))
-			} catch {
-				hadInvalidPayload = true
-			}
+		guard !payloads.isEmpty else { return [] }
+		let decoder = JSONDecoder()
+		let cards = payloads.compactMap { payload in
+			payload.flatMap { try? decoder.decode(CardData.self, from: $0) }
 		}
-		if cards.isEmpty && hadInvalidPayload {
-			return nil
-		}
-		return cards
+		return cards.isEmpty ? nil : cards
 	}
 
 	static func shouldSeedDebugFixtures(
@@ -186,12 +300,25 @@ class CardDataStore {
 	}
 
 	@discardableResult
-	func addCard(_ card: CardData) -> Bool {
-		guard saveOrUpdateCardData(card) else {
-			print("Failed to save card: \(card.id)")
-			return false
+	func addCard(_ card: CardData) async -> Bool {
+		await persistCard(card, requiresExistingCard: false)
+	}
+
+	@discardableResult
+	func updateCard(_ card: CardData) async -> Bool {
+		await persistCard(card, requiresExistingCard: true)
+	}
+
+	private func persistCard(_ card: CardData, requiresExistingCard: Bool) async -> Bool {
+		await performMutation {
+			guard requiresExistingCard == (self.storedCard(by: card.id) != nil) else { return false }
+			guard await self.saveCardData(card) else {
+				print("Failed to save card: \(card.id)")
+				return false
+			}
+			self.commitUpsert(card)
+			return true
 		}
-		return loadCards()
 	}
 
 	/// Finds a card by its UUID (used for deep linking from widgets)
@@ -204,61 +331,105 @@ class CardDataStore {
 		return nil
 	}
 
-	func deleteCard(with id: UUID) -> Bool {
-		let query: [String: Any] = [
-			kSecClass as String: kSecClassGenericPassword,
-			kSecAttrService as String: Bundle.main.bundleIdentifier ?? "com.myApp.defaultService",
-			kSecAttrAccount as String: id.uuidString,
-			kSecAttrSynchronizable as String: kCFBooleanTrue!
-		]
+	func deleteCard(with id: UUID) async -> Bool {
+		await performMutation {
+			guard self.storedCard(by: id) != nil else { return false }
 
-		guard SecItemDelete(query as CFDictionary) == errSecSuccess else {
-			return false
-		}
+			let service = Bundle.main.bundleIdentifier ?? "com.myApp.defaultService"
+			guard await self.persistence.delete(service: service, account: id.uuidString) else { return false }
 
-		// Drop in-memory copies before widget sync so timelines match persistence.
-		for type in CardType.allCases {
-			cardsByType[type]?.removeAll { $0.id == id }
+			self.commitRemoval(of: id)
+			_ = await self.imageStore.deleteImage(for: id)
+			return true
 		}
-		archivedCards.removeAll { $0.id == id }
-		syncCardsToWidget()
-		return true
 	}
 
 	// MARK: - Archive
 
 	@discardableResult
-	func archiveCard(_ card: CardData) -> Bool {
-		var archivedCard = card
-		archivedCard.isArchived = true
-		guard saveOrUpdateCardData(archivedCard) else {
-			print("Failed to archive card: \(card.id)")
-			return false
-		}
-		return loadCards()
+	func archiveCard(_ card: CardData) async -> Bool {
+		await updateArchiveState(for: card.id, isArchived: true)
 	}
 
 	@discardableResult
-	func unarchiveCard(_ card: CardData) -> Bool {
-		var unarchivedCard = card
-		unarchivedCard.isArchived = false
-		guard saveOrUpdateCardData(unarchivedCard) else {
-			print("Failed to unarchive card: \(card.id)")
-			return false
-		}
-		return loadCards()
+	func unarchiveCard(_ card: CardData) async -> Bool {
+		await updateArchiveState(for: card.id, isArchived: false)
 	}
-/// Returns if success
-	private func saveOrUpdateCardData(_ cardData: CardData) -> Bool {
-		let service = Bundle.main.bundleIdentifier ?? "com.myApp.defaultService"
-		let account = cardData.id.uuidString
 
-		// Convert CardData to Data
+	private func updateArchiveState(for id: UUID, isArchived: Bool) async -> Bool {
+		await performMutation {
+			guard var currentCard = self.storedCard(by: id) else { return false }
+			currentCard.isArchived = isArchived
+			guard await self.saveCardData(currentCard) else {
+				print("Failed to update archive state: \(id)")
+				return false
+			}
+			self.commitUpsert(currentCard)
+			return true
+		}
+	}
+
+	private func performMutation(
+		_ operation: @escaping @MainActor () async -> Bool
+	) async -> Bool {
+		await mutationGate.acquire()
+
+		if !hasCompletedSuccessfulLoad {
+			let didLoad = await loadCards()
+			guard didLoad && hasCompletedSuccessfulLoad else {
+				await mutationGate.release()
+				return false
+			}
+		}
+
+		latestLoadGeneration &+= 1
+		let result = await operation()
+		await mutationGate.release()
+		return result
+	}
+
+	private func storedCard(by id: UUID) -> CardData? {
+		findCard(by: id) ?? archivedCards.first { $0.id == id }
+	}
+
+	private var allStoredCards: [CardData] {
+		CardType.allCases.flatMap { cardsByType[$0] ?? [] } + archivedCards
+	}
+
+	private func commitUpsert(_ card: CardData) {
+		var cards = allStoredCards
+		if let index = cards.firstIndex(where: { $0.id == card.id }) {
+			cards[index] = card
+		} else {
+			cards.append(card)
+		}
+		commitCards(cards)
+	}
+
+	private func commitRemoval(of id: UUID) {
+		commitCards(allStoredCards.filter { $0.id != id })
+	}
+
+	private func saveCardData(
+		_ cardData: CardData,
+		service: String? = nil
+	) async -> Bool {
 		guard let cardDataEncoded = try? JSONEncoder().encode(cardData) else {
 			print("Failed to encode CardData")
 			return false
 		}
+		return await persistence.save(
+			cardDataEncoded,
+			service: service ?? Bundle.main.bundleIdentifier ?? "com.myApp.defaultService",
+			account: cardData.id.uuidString
+		)
+	}
 
+	nonisolated private static func saveCardPayload(
+		_ cardDataEncoded: Data,
+		service: String,
+		account: String
+	) -> Bool {
 		let query: [String: Any] = [
 			kSecClass as String: kSecClassGenericPassword,
 			kSecAttrService as String: service,
@@ -286,7 +457,17 @@ class CardDataStore {
 		}
 	}
 
-	private static func retrieveAllCardData(service: String) -> CardRetrievalResult {
+	nonisolated private static func deleteCardPayload(service: String, account: String) -> Bool {
+		let query: [String: Any] = [
+			kSecClass as String: kSecClassGenericPassword,
+			kSecAttrService as String: service,
+			kSecAttrAccount as String: account,
+			kSecAttrSynchronizable as String: kCFBooleanTrue!
+		]
+		return SecItemDelete(query as CFDictionary) == errSecSuccess
+	}
+
+	nonisolated private static func retrieveAllCardPayloads(service: String) -> CardPayloadRetrievalResult {
 		let query: [String: Any] = [
 			kSecClass as String: kSecClassGenericPassword,
 			kSecAttrService as String: service,
@@ -316,15 +497,7 @@ class CardDataStore {
 		}
 
 		let payloads = existingItems.map { $0[kSecValueData as String] as? Data }
-		guard let cardDataArray = Self.decodeAllCardData(from: payloads) else {
-			print("Error decoding CardData: missing or invalid Keychain payload")
-			return .failure
-		}
-		if cardDataArray.count != payloads.count {
-			print("Warning: skipped \(payloads.count - cardDataArray.count) invalid Keychain card payload(s)")
-		}
-
-		return .success(cardDataArray)
+		return .success(payloads)
 	}
 
 	// MARK: - Widget Sync

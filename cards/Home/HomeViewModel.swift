@@ -7,15 +7,16 @@
 
 import SwiftUI
 
-class HomeViewModel: ObservableObject {
+@MainActor
+final class HomeViewModel: ObservableObject {
 
 	@Published var addingType: CardType?
 	@Published var selectedCard: CardData?
 	@Bindable var cardDataStore: CardDataStore
 	private var deepLinkTask: Task<Void, Never>?
 
-	init(cardDataStore: CardDataStore = CardDataStore()) {
-		self.cardDataStore = cardDataStore
+	init(cardDataStore: CardDataStore? = nil) {
+		self.cardDataStore = cardDataStore ?? CardDataStore()
 	}
 
 	deinit {
@@ -24,28 +25,6 @@ class HomeViewModel: ObservableObject {
 
 	var appName: String? {
 		Bundle.main.object(forInfoDictionaryKey: "CFBundleDisplayName") as? String
-	}
-
-	func deleteCard(at offsets: IndexSet, inSection cardType: CardType) {
-		let cardIDs = offsets.compactMap { cardDataStore.cardsByType[cardType]?[$0].id }
-		for id in cardIDs where !cardDataStore.deleteCard(with: id) {
-			print("Error deleting")
-		}
-	}
-
-	@discardableResult
-	func archiveCard(_ card: CardData) -> Bool {
-		cardDataStore.archiveCard(card)
-	}
-
-	@discardableResult
-	func unarchiveCard(_ card: CardData) -> Bool {
-		cardDataStore.unarchiveCard(card)
-	}
-
-	@discardableResult
-	func deleteArchivedCard(_ card: CardData) -> Bool {
-		cardDataStore.deleteCard(with: card.id)
 	}
 
 	/// Handles deep link URL from widget (holder://card/{uuid})
@@ -64,7 +43,7 @@ class HomeViewModel: ObservableObject {
 
 			// Ensure cards are loaded before trying to find the card
 			if cardDataStore.cardsByType.values.allSatisfy({ $0.isEmpty }) {
-				cardDataStore.loadCards()
+				await cardDataStore.loadCards()
 			}
 
 			// Retry finding the card with exponential backoff instead of fixed delay
