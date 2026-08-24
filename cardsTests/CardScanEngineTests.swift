@@ -2,6 +2,10 @@ import CoreGraphics
 import XCTest
 @testable import Holder
 
+#if os(iOS)
+import SwiftUI
+#endif
+
 final class CardCandidateEngineTests: XCTestCase {
 	func testReconstructsSplitVisaPAN() {
 		let items = [
@@ -97,6 +101,15 @@ final class CardCandidateEngineTests: XCTestCase {
 		XCTAssertNil(CardholderNameParser.normalizedName("VISA"))
 	}
 
+	func testCardholderNamePrefersLowerVisionText() {
+		let items = [
+			OCRTextItem(text: "ACME FINANCIAL", boundingBox: CGRect(x: 0.1, y: 0.72, width: 0.4, height: 0.06)),
+			OCRTextItem(text: "JANE DOE", boundingBox: CGRect(x: 0.1, y: 0.14, width: 0.3, height: 0.06))
+		]
+
+		XCTAssertEqual(CardholderNameParser.parse(from: items, panDigits: nil), "JANE DOE")
+	}
+
 	func testTemporalVotingRequiresRepeatedPAN() {
 		var voter = TemporalPANVoter(windowSize: 8, requiredVotes: 2)
 		XCTAssertNil(voter.record("4111111111111111"))
@@ -122,6 +135,56 @@ final class CardCandidateEngineTests: XCTestCase {
 
 @MainActor
 final class CardScanSessionTests: XCTestCase {
+	func testScanAttemptDoesNotCarryMetadataAcrossPANs() {
+		var attempt = CardScanAttempt()
+		attempt.record(CardFrameObservation(
+			pan: "4111111111111111",
+			expiry: "12/30",
+			cardholderName: "JANE DOE"
+		))
+
+		attempt.record(CardFrameObservation(
+			pan: "5555555555554444",
+			expiry: nil,
+			cardholderName: nil
+		))
+
+		XCTAssertEqual(attempt.latestObservation.pan, "5555555555554444")
+		XCTAssertNil(attempt.latestObservation.expiry)
+		XCTAssertNil(attempt.latestObservation.cardholderName)
+	}
+
+	func testScanAttemptMergesMetadataOnlyFramesForTheCurrentPAN() {
+		var attempt = CardScanAttempt()
+		attempt.record(CardFrameObservation(
+			pan: "4111111111111111",
+			expiry: nil,
+			cardholderName: nil
+		))
+		attempt.record(CardFrameObservation(
+			pan: nil,
+			expiry: "12/30",
+			cardholderName: "JANE DOE"
+		))
+
+		XCTAssertEqual(attempt.latestObservation.pan, "4111111111111111")
+		XCTAssertEqual(attempt.latestObservation.expiry, "12/30")
+		XCTAssertEqual(attempt.latestObservation.cardholderName, "JANE DOE")
+	}
+
+	func testScanAttemptResetDropsMetadataFromFailedCandidate() {
+		var attempt = CardScanAttempt()
+		attempt.record(CardFrameObservation(
+			pan: "4111111111111111",
+			expiry: "12/30",
+			cardholderName: "JANE DOE"
+		))
+
+		attempt.reset()
+
+		XCTAssertEqual(attempt.latestObservation, CardFrameObservation())
+	}
+
 	func testApplyScanFillsPANAndNetwork() {
 		var card = makeBlankCard()
 		let result = CardScanResult(
@@ -216,6 +279,131 @@ final class CardScanSessionTests: XCTestCase {
 		)
 	}
 }
+
+#if os(iOS)
+@MainActor
+final class CardScannerViewModelTests: XCTestCase {
+	func testFailedUpdateStopsBeforeAlertAndIgnoresBufferedResult() async {
+		await assertTerminalUpdateStops(.failed("The camera is unavailable."))
+	}
+
+	func testUnsupportedUpdateStopsBeforeAlertAndIgnoresBufferedResult() async {
+		await assertTerminalUpdateStops(.unsupported("Card scanning is unavailable."))
+	}
+
+	func testRetryableFailureClearsCandidateAndContinuesScanning() async {
+		let engine = TerminalUpdateCardScanningEngine(updates: [
+			.candidate(lastFour: "1111", network: .visa),
+			.retryableFailure("Could not confirm the card number. Try again."),
+			.verified(CardScanResult(
+				pan: "5555555555554444",
+				expiry: nil,
+				cardholderName: nil,
+				network: .master
+			))
+		])
+		let model = CardScannerViewModel(isRescan: false, engine: engine)
+		var receivedResult = false
+
+		await model.consumeUpdates(
+			onPermissionDenied: { XCTFail("Unexpected permission callback") },
+			onResult: { _, _ in receivedResult = true }
+		)
+
+		XCTAssertTrue(engine.didStop)
+		XCTAssertFalse(model.showsMessage)
+		XCTAssertNil(model.candidateLastFour)
+		XCTAssertNil(model.candidateNetwork)
+		XCTAssertTrue(receivedResult)
+	}
+
+	func testStopBeforeConsumingDoesNotStartTheEngineStream() async {
+		let engine = StreamStartTrackingCardScanningEngine()
+		let model = CardScannerViewModel(isRescan: false, engine: engine)
+		model.stop()
+
+		await model.consumeUpdates(
+			onPermissionDenied: { XCTFail("Unexpected permission callback") },
+			onResult: { _, _ in XCTFail("Unexpected scan result") }
+		)
+
+		XCTAssertTrue(engine.didStop)
+		XCTAssertFalse(engine.didStartStream)
+	}
+
+	private func assertTerminalUpdateStops(_ terminalUpdate: CardScanUpdate) async {
+		let engine = TerminalUpdateCardScanningEngine(updates: [
+			terminalUpdate,
+			.verified(CardScanResult(
+				pan: "4111111111111111",
+				expiry: "12/30",
+				cardholderName: "JANE DOE",
+				network: .visa
+			))
+		])
+		let model = CardScannerViewModel(isRescan: false, engine: engine)
+		var receivedResult = false
+
+		await model.consumeUpdates(
+			onPermissionDenied: { XCTFail("Unexpected permission callback") },
+			onResult: { _, _ in receivedResult = true }
+		)
+
+		XCTAssertTrue(engine.didStop)
+		XCTAssertTrue(model.showsMessage)
+		XCTAssertFalse(receivedResult)
+	}
+}
+
+@MainActor
+private final class TerminalUpdateCardScanningEngine: CardScanningEngine {
+	let engineID = "terminal-update-spy"
+	private let updates: [CardScanUpdate]
+	private(set) var didStop = false
+
+	init(updates: [CardScanUpdate]) {
+		self.updates = updates
+	}
+
+	func makeCameraView() -> AnyView { AnyView(EmptyView()) }
+
+	func scanUpdates() -> AsyncStream<CardScanUpdate> {
+		let streamUpdates = updates
+		AsyncStream { continuation in
+			for update in streamUpdates {
+				continuation.yield(update)
+			}
+			continuation.finish()
+		}
+	}
+
+	func verifyCurrentCandidate() async -> CardScanResult? { nil }
+
+	func stop() {
+		didStop = true
+	}
+}
+
+@MainActor
+private final class StreamStartTrackingCardScanningEngine: CardScanningEngine {
+	let engineID = "stream-start-tracker"
+	private(set) var didStartStream = false
+	private(set) var didStop = false
+
+	func makeCameraView() -> AnyView { AnyView(EmptyView()) }
+
+	func scanUpdates() -> AsyncStream<CardScanUpdate> {
+		didStartStream = true
+		return AsyncStream { $0.finish() }
+	}
+
+	func verifyCurrentCandidate() async -> CardScanResult? { nil }
+
+	func stop() {
+		didStop = true
+	}
+}
+#endif
 
 final class CardScanAnalyticsTests: XCTestCase {
 	func testScanEventsNeverIncludeSensitiveCardFields() {

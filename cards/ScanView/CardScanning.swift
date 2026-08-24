@@ -36,6 +36,7 @@ enum CardScanUpdate: Sendable {
 	case unsupported(String)
 	case scanning(guidance: String)
 	case candidate(lastFour: String, network: CardNetwork)
+	case retryableFailure(String)
 	case verified(CardScanResult)
 	case failed(String)
 }

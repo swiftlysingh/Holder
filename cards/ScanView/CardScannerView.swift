@@ -104,15 +104,24 @@ final class CardScannerViewModel: ObservableObject {
 		onPermissionDenied: @escaping () -> Void,
 		onResult: @escaping (CardScanResult, CardScanMetrics) -> Void
 	) async {
+		guard !stopped else { return }
+
 		for await update in engine.scanUpdates() {
 			guard !stopped else { return }
 			switch update {
 			case .permissionDenied:
+				stop()
 				onPermissionDenied()
 				return
 			case .unsupported(let text), .failed(let text):
+				stop()
 				message = text
 				showsMessage = true
+				return
+			case .retryableFailure(let text):
+				candidateLastFour = nil
+				candidateNetwork = nil
+				guidance = text
 			case .scanning(let text):
 				guidance = text
 			case .candidate(let lastFour, let network):
@@ -123,7 +132,9 @@ final class CardScannerViewModel: ObservableObject {
 				candidateNetwork = network
 				guidance = "Hold steady…"
 			case .verified(let result):
-				onResult(result, metrics(for: result))
+				let metrics = metrics(for: result)
+				stop()
+				onResult(result, metrics)
 				return
 			}
 		}

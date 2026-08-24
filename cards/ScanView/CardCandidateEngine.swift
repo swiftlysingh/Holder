@@ -212,8 +212,9 @@ enum CardholderNameParser {
 		guard !candidates.isEmpty else { return nil }
 
 		if candidates.allSatisfy({ $0.box != nil }) {
+			// Vision coordinates use a lower-left origin, so cardholder text lower on the card wins.
 			return candidates
-				.sorted { ($0.box?.minY ?? 0) > ($1.box?.minY ?? 0) }
+				.sorted { ($0.box?.minY ?? 0) < ($1.box?.minY ?? 0) }
 				.first?
 				.name
 		}

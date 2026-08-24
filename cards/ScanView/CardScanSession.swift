@@ -7,6 +7,30 @@
 
 import Foundation
 
+struct CardScanAttempt {
+	private(set) var latestObservation = CardFrameObservation()
+
+	mutating func record(_ observation: CardFrameObservation) {
+		guard observation.pan != nil || observation.expiry != nil || observation.cardholderName != nil else {
+			return
+		}
+		if let pan = observation.pan, pan != latestObservation.pan {
+			latestObservation = observation
+			return
+		}
+
+		latestObservation = CardFrameObservation(
+			pan: observation.pan ?? latestObservation.pan,
+			expiry: observation.expiry ?? latestObservation.expiry,
+			cardholderName: observation.cardholderName ?? latestObservation.cardholderName
+		)
+	}
+
+	mutating func reset() {
+		latestObservation = CardFrameObservation()
+	}
+}
+
 enum CardScanSession {
 	static func apply(_ result: CardScanResult, to card: inout CardData) {
 		card.number = CardPAN.formatted(result.pan)

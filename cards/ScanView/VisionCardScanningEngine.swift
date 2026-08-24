@@ -16,7 +16,7 @@ final class VisionCardScanningEngine: NSObject, CardScanningEngine {
 	private var continuation: AsyncStream<CardScanUpdate>.Continuation?
 	private var voter = TemporalPANVoter()
 	private var stablePAN: String?
-	private var latestObservation = CardFrameObservation()
+	private var attempt = CardScanAttempt()
 	private var isStopping = false
 	private var isVerifying = false
 	private var didStart = false
@@ -33,6 +33,10 @@ final class VisionCardScanningEngine: NSObject, CardScanningEngine {
 
 	func scanUpdates() -> AsyncStream<CardScanUpdate> {
 		AsyncStream { continuation in
+			guard !self.isStopping else {
+				continuation.finish()
+				return
+			}
 			self.continuation = continuation
 			continuation.yield(.scanning(guidance: "Fit the whole card in the frame"))
 			self.startIfNeeded()
@@ -50,8 +54,8 @@ final class VisionCardScanningEngine: NSObject, CardScanningEngine {
 
 		return CardScanSession.result(from: CardFrameObservation(
 			pan: pan,
-			expiry: latestObservation.expiry,
-			cardholderName: latestObservation.cardholderName
+			expiry: attempt.latestObservation.expiry,
+			cardholderName: attempt.latestObservation.cardholderName
 		))
 	}
 
@@ -94,10 +98,17 @@ final class VisionCardScanningEngine: NSObject, CardScanningEngine {
 		guard CardPAN.validatedDigits(livePAN) != nil else { return nil }
 		return CardScanResult(
 			pan: livePAN,
-			expiry: still.expiry ?? latestObservation.expiry,
-			cardholderName: still.cardholderName ?? latestObservation.cardholderName,
+			expiry: still.expiry ?? attempt.latestObservation.expiry,
+			cardholderName: still.cardholderName ?? attempt.latestObservation.cardholderName,
 			network: CardPAN.network(for: livePAN)
 		)
+	}
+
+	private func resetFailedCandidate() {
+		isVerifying = false
+		stablePAN = nil
+		voter.reset()
+		attempt.reset()
 	}
 }
 
@@ -114,13 +125,7 @@ extension VisionCardScanningEngine: VisionScannerHostDelegate {
 		guard !isStopping, !isVerifying else { return }
 
 		let observation = CardCandidateEngine.observe(items)
-		if observation.pan != nil || observation.expiry != nil || observation.cardholderName != nil {
-			latestObservation = CardFrameObservation(
-				pan: observation.pan ?? latestObservation.pan,
-				expiry: observation.expiry ?? latestObservation.expiry,
-				cardholderName: observation.cardholderName ?? latestObservation.cardholderName
-			)
-		}
+		attempt.record(observation)
 
 		guard let pan = observation.pan else { return }
 
@@ -141,10 +146,8 @@ extension VisionCardScanningEngine: VisionScannerHostDelegate {
 			if let result {
 				self.continuation?.yield(.verified(result))
 			} else {
-				self.continuation?.yield(.failed("Could not confirm the card number. Try again."))
-				self.isVerifying = false
-				self.stablePAN = nil
-				self.voter.reset()
+				self.resetFailedCandidate()
+				self.continuation?.yield(.retryableFailure("Could not confirm the card number. Try again."))
 			}
 		}
 	}
