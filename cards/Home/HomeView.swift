@@ -20,7 +20,8 @@ struct HomeView: View {
 	@State private var isShowingSettings = false
 	#endif
 	#if os(iOS)
-	@State private var addCardSheetDetent: PresentationDetent = .fraction(0.5)
+	@State private var addCardSheetDetent: PresentationDetent = .height(240)
+	@Namespace private var addCardTransition
 	#endif
 
 	init(model: HomeViewModel) {
@@ -52,19 +53,19 @@ struct HomeView: View {
 			.task {
 				await model.cardDataStore.loadCards()
 			}
+			#if os(iOS)
+			.safeAreaInset(edge: .bottom, alignment: .trailing, spacing: 0) {
+				floatingAddCardButton
+					.padding(.trailing, 16)
+					.padding(.bottom, 8)
+			}
+			#else
 			.toolbar {
 				ToolbarItem {
-					Button {
-						track(.cardAddStarted)
-						#if os(iOS)
-						addCardSheetDetent = .fraction(0.5)
-						#endif
-						model.isAddingCard = true
-					} label: {
-						Label("Add Card", systemImage: "plus")
-					}
+					addCardButton
 				}
 			}
+			#endif
 			#if !os(macOS)
 			.toolbar {
 				ToolbarItem(placement: .topBarTrailing) {
@@ -125,12 +126,18 @@ struct HomeView: View {
 				}
 			)
 			#if os(iOS)
-			CardView(
-				model: cardViewModel,
-				cardSheetDetent: $addCardSheetDetent
-			)
+			Group {
+				if #available(iOS 18.0, *) {
+					addCardSheetContent(cardViewModel)
+						.navigationTransition(
+							.zoom(sourceID: "add-card", in: addCardTransition)
+						)
+				} else {
+					addCardSheetContent(cardViewModel)
+				}
+			}
 			.presentationDetents(
-				[.fraction(0.5), .large],
+				[.height(240), .fraction(0.5), .height(430), .large],
 				selection: $addCardSheetDetent
 			)
 			.presentationDragIndicator(.visible)
@@ -171,7 +178,6 @@ struct HomeView: View {
 		#endif
 		.sdkScreen(AppAnalyticsScreen.home)
 	}
-
 	private func cardSection(for type: CardType) -> some View {
 		Section(header: Text("\(type.rawValue)s")) {
 			ForEach(model.cardDataStore.cardsByType[type] ?? [], id: \.id) { card in
@@ -203,6 +209,51 @@ struct HomeView: View {
 					}
 			}
 		}
+	}
+
+	private var addCardButton: some View {
+		Button(action: beginAddingCard) {
+			Label("Add Card", systemImage: "plus")
+		}
+	}
+
+	#if os(iOS)
+	@ViewBuilder
+	private var floatingAddCardButton: some View {
+		let button = addCardButton
+			.labelStyle(.iconOnly)
+			.buttonBorderShape(.circle)
+			.controlSize(.large)
+			.tint(.accentColor)
+
+		if #available(iOS 26.0, *) {
+			button
+				.buttonStyle(.glassProminent)
+				.matchedTransitionSource(id: "add-card", in: addCardTransition)
+		} else if #available(iOS 18.0, *) {
+			button
+				.buttonStyle(.borderedProminent)
+				.matchedTransitionSource(id: "add-card", in: addCardTransition)
+		} else {
+			button
+				.buttonStyle(.borderedProminent)
+		}
+	}
+
+	private func addCardSheetContent(_ cardViewModel: CardViewModel) -> some View {
+		CardView(
+			model: cardViewModel,
+			cardSheetDetent: $addCardSheetDetent
+		)
+	}
+	#endif
+
+	private func beginAddingCard() {
+		track(.cardAddStarted)
+		#if os(iOS)
+		addCardSheetDetent = .fraction(0.5)
+		#endif
+		model.isAddingCard = true
 	}
 
 	private func deleteCard(_ card: CardData) {
