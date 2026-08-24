@@ -69,6 +69,9 @@ struct CardScannerView: View {
 		} message: {
 			Text(model.message)
 		}
+		.onAppear {
+			UIAccessibility.post(notification: .announcement, argument: model.guidance)
+		}
 		.task {
 			await model.consumeUpdates(
 				onPermissionDenied: onPermissionDenied,

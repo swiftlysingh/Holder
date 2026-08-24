@@ -117,6 +117,7 @@ struct CardView: View {
 			}
 
 			getCardListView()
+				.disabled(model.isShowingScanner)
 		}
 		.onChange(of: authenticationSession.isVaultUnlocked) { _, isUnlocked in
 			if !isUnlocked && model.isShowingScanner {
