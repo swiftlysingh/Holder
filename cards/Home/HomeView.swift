@@ -31,43 +31,7 @@ struct HomeView: View {
 		NavigationSplitView {
 			List(selection: $model.selectedCard) {
 				ForEach(CardType.allCases) { type in
-					Section(header: Text(type.rawValue)){
-						ForEach(model.cardDataStore.cardsByType[type] ?? [], id: \.id) { card in
-							getRowforCards(with: card)
-								.swipeActions(edge: .trailing, allowsFullSwipe: false) {
-									Button(role: .destructive) {
-										cardPendingDeletion = card
-									} label: {
-										Label("Delete", systemImage: "trash")
-									}
-									Button {
-										archiveCard(card)
-									} label: {
-										Label("Archive", systemImage: "archivebox")
-									}
-									.tint(.orange)
-								}
-								.contextMenu {
-									Button {
-										archiveCard(card)
-									} label: {
-										Label("Archive", systemImage: "archivebox")
-									}
-									Button(role: .destructive) {
-										cardPendingDeletion = card
-									} label: {
-										Label("Delete", systemImage: "trash")
-									}
-								}
-						}
-						Button("Add a new card") {
-							track(.cardAddStarted)
-							#if os(iOS)
-							addCardSheetDetent = .fraction(0.5)
-							#endif
-							model.addingType = type
-						}
-					}
+					cardSection(for: type)
 				}
 				// Archived Cards Link
 				if !model.cardDataStore.archivedCards.isEmpty {
@@ -152,17 +116,15 @@ struct HomeView: View {
 				model: cardViewModel,
 				cardSheetDetent: $addCardSheetDetent
 			)
-			#else
-			NavigationView {
-				CardView(model: cardViewModel)
-			}
-			#endif
-			#if os(iOS)
 			.presentationDetents(
 				[.fraction(0.5), .large],
 				selection: $addCardSheetDetent
 			)
 			.presentationDragIndicator(.visible)
+			#else
+			NavigationView {
+				CardView(model: cardViewModel)
+			}
 			#endif
 		}
 		.confirmationDialog(
@@ -195,6 +157,46 @@ struct HomeView: View {
 		}
 		#endif
 		.sdkScreen(AppAnalyticsScreen.home)
+	}
+
+	private func cardSection(for type: CardType) -> some View {
+		Section(header: Text("\(type.rawValue)s")) {
+			ForEach(model.cardDataStore.cardsByType[type] ?? [], id: \.id) { card in
+				getRowforCards(with: card)
+					.swipeActions(edge: .trailing, allowsFullSwipe: false) {
+						Button(role: .destructive) {
+							cardPendingDeletion = card
+						} label: {
+							Label("Delete", systemImage: "trash")
+						}
+						Button {
+							archiveCard(card)
+						} label: {
+							Label("Archive", systemImage: "archivebox")
+						}
+						.tint(.orange)
+					}
+					.contextMenu {
+						Button {
+							archiveCard(card)
+						} label: {
+							Label("Archive", systemImage: "archivebox")
+						}
+						Button(role: .destructive) {
+							cardPendingDeletion = card
+						} label: {
+							Label("Delete", systemImage: "trash")
+						}
+					}
+			}
+			Button("Add a new \(type.rawValue)") {
+				track(.cardAddStarted)
+				#if os(iOS)
+				addCardSheetDetent = .fraction(0.5)
+				#endif
+				model.addingType = type
+			}
+		}
 	}
 
 	private func deleteCard(_ card: CardData) {

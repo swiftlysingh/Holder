@@ -83,7 +83,7 @@ struct CardView: View {
 	@ViewBuilder
 	private func iOSCardContent() -> some View {
 		VStack(spacing: 0) {
-			if model.isAddNewFlow {
+			if model.isAddNewFlow && !model.isShowingScanner {
 				addCardHeader
 			}
 
@@ -126,7 +126,7 @@ struct CardView: View {
 				.disabled(model.isShowingScanner)
 		}
 		.safeAreaInset(edge: .bottom, spacing: 0) {
-			if model.isAddNewFlow {
+			if model.isAddNewFlow && !model.isShowingScanner {
 				addCardActionButton
 			}
 		}
@@ -148,6 +148,8 @@ struct CardView: View {
 				isFieldFocused = false
 				dismiss()
 			}
+			.frame(minHeight: 46)
+			.contentShape(Rectangle())
 			.accessibilityIdentifier("cancelAddCardButton")
 
 			Spacer()
@@ -182,7 +184,7 @@ struct CardView: View {
 				if model.isSaving {
 					ProgressView()
 				} else {
-					Text("Add Card")
+					Text("Done")
 				}
 			}
 			.frame(maxWidth: .infinity)
@@ -194,7 +196,7 @@ struct CardView: View {
 		.padding(.vertical, 12)
 		.background(.bar)
 		.accessibilityIdentifier("addCardButton")
-		.accessibilityLabel("Add Card")
+		.accessibilityLabel("Done")
 	}
 
 	private func startScan(isRescan: Bool) {
