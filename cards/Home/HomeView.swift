@@ -15,6 +15,7 @@ struct HomeView: View {
 	@EnvironmentObject private var authenticationSession: AuthenticationSession
 	@Environment(\.analytics) private var analytics
 	@Environment(\.sdk) private var sdk
+	@Environment(\.accessibilityReduceTransparency) private var reduceTransparency
 	@State private var cardPendingDeletion: CardData?
 	#if !os(macOS)
 	@State private var isShowingSettings = false
@@ -30,53 +31,58 @@ struct HomeView: View {
 
 	var body: some View {
 		NavigationSplitView {
-			List(selection: $model.selectedCard) {
-				ForEach(CardType.allCases) { type in
-					let cards = model.cardDataStore.cardsByType[type] ?? []
-					Section(header: sectionHeader(for: type, count: cards.count)) {
-						ForEach(cards, id: \.id) { card in
-							getRowforCards(with: card)
-								.swipeActions(edge: .trailing, allowsFullSwipe: false) {
-									Button(role: .destructive) {
-										cardPendingDeletion = card
-									} label: {
-										Label("Delete", systemImage: "trash")
+			ZStack(alignment: .top) {
+				homeBackground
+
+				List(selection: $model.selectedCard) {
+					ForEach(CardType.allCases) { type in
+						let cards = model.cardDataStore.cardsByType[type] ?? []
+						Section(header: sectionHeader(for: type, count: cards.count)) {
+							ForEach(cards, id: \.id) { card in
+								getRowforCards(with: card)
+									.swipeActions(edge: .trailing, allowsFullSwipe: false) {
+										Button(role: .destructive) {
+											cardPendingDeletion = card
+										} label: {
+											Label("Delete", systemImage: "trash")
+										}
+										Button {
+											archiveCard(card)
+										} label: {
+											Label("Archive", systemImage: "archivebox")
+										}
+										.tint(.orange)
 									}
-									Button {
-										archiveCard(card)
-									} label: {
-										Label("Archive", systemImage: "archivebox")
+									.contextMenu {
+										Button {
+											archiveCard(card)
+										} label: {
+											Label("Archive", systemImage: "archivebox")
+										}
+										Button(role: .destructive) {
+											cardPendingDeletion = card
+										} label: {
+											Label("Delete", systemImage: "trash")
+										}
 									}
-									.tint(.orange)
-								}
-								.contextMenu {
-									Button {
-										archiveCard(card)
-									} label: {
-										Label("Archive", systemImage: "archivebox")
-									}
-									Button(role: .destructive) {
-										cardPendingDeletion = card
-									} label: {
-										Label("Delete", systemImage: "trash")
-									}
-								}
+							}
 						}
 					}
-				}
-				// Archived Cards Link
-				if !model.cardDataStore.archivedCards.isEmpty {
-					Section {
-						NavigationLink {
-							ArchivedCardsView(model: model)
-						} label: {
-							HStack {
-								Image(systemName: "archivebox")
-								Text("View Archived Cards (\(model.cardDataStore.archivedCards.count))")
+					// Archived Cards Link
+					if !model.cardDataStore.archivedCards.isEmpty {
+						Section {
+							NavigationLink {
+								ArchivedCardsView(model: model)
+							} label: {
+								HStack {
+									Image(systemName: "archivebox")
+									Text("View Archived Cards (\(model.cardDataStore.archivedCards.count))")
+								}
 							}
 						}
 					}
 				}
+				.scrollContentBackground(.hidden)
 			}
 			.navigationTitle("Cards")
 			.toolbarTitleDisplayMode(.inlineLarge)
@@ -207,6 +213,34 @@ struct HomeView: View {
 		}
 		#endif
 		.sdkScreen(AppAnalyticsScreen.home)
+	}
+
+	private var homeBackground: some View {
+		ZStack(alignment: .top) {
+			groupedBackground
+			RadialGradient(
+				colors: [
+					Color.accentColor.opacity(reduceTransparency ? 0.09 : 0.27),
+					Color.accentColor.opacity(reduceTransparency ? 0.04 : 0.11),
+					.clear
+				],
+				center: .top,
+				startRadius: 0,
+				endRadius: 340
+			)
+			.frame(height: 340)
+			.blur(radius: reduceTransparency ? 0 : 34)
+			.allowsHitTesting(false)
+		}
+		.ignoresSafeArea()
+	}
+
+	private var groupedBackground: Color {
+		#if os(macOS)
+		Color(nsColor: .windowBackgroundColor)
+		#else
+		Color(uiColor: .systemGroupedBackground)
+		#endif
 	}
 
 	private var addCardButton: some View {
