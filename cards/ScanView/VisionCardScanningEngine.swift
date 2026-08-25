@@ -163,6 +163,9 @@ private protocol VisionScannerHostDelegate: AnyObject {
 private final class VisionScannerHostViewController: UIViewController {
 	weak var delegate: VisionScannerHostDelegate?
 	private var scanner: DataScannerViewController?
+	#if targetEnvironment(simulator)
+	private var simulatorScanner: SimulatorVisionScannerViewController?
+	#endif
 	private var overlay: ScannerOverlayView?
 
 	override func viewDidLoad() {
@@ -176,6 +179,25 @@ private final class VisionScannerHostViewController: UIViewController {
 	}
 
 	func startScanning() {
+		#if targetEnvironment(simulator)
+		guard simulatorScanner == nil else { return }
+
+		let controller = SimulatorVisionScannerViewController()
+		controller.delegate = delegate
+		addChild(controller)
+		controller.view.translatesAutoresizingMaskIntoConstraints = false
+		view.addSubview(controller.view)
+		NSLayoutConstraint.activate([
+			controller.view.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+			controller.view.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+			controller.view.topAnchor.constraint(equalTo: view.topAnchor),
+			controller.view.bottomAnchor.constraint(equalTo: view.bottomAnchor)
+		])
+		controller.didMove(toParent: self)
+		simulatorScanner = controller
+		installOverlay()
+		controller.startScanning()
+		#else
 		guard scanner == nil else { return }
 
 		guard DataScannerViewController.isSupported, DataScannerViewController.isAvailable else {
@@ -204,7 +226,34 @@ private final class VisionScannerHostViewController: UIViewController {
 		])
 		controller.didMove(toParent: self)
 		scanner = controller
+		installOverlay()
 
+		do {
+			try controller.startScanning()
+		} catch {
+			delegate?.scannerHostDidFail("Unable to start the camera.")
+		}
+		#endif
+	}
+
+	func stopScanning() {
+		#if targetEnvironment(simulator)
+		simulatorScanner?.stopScanning()
+		#else
+		scanner?.stopScanning()
+		#endif
+	}
+
+	func captureStill() async -> UIImage? {
+		#if targetEnvironment(simulator)
+		return simulatorScanner?.captureStill()
+		#else
+		return try? await scanner?.capturePhoto()
+		#endif
+	}
+
+	private func installOverlay() {
+		guard overlay == nil else { return }
 		let overlay = ScannerOverlayView()
 		overlay.translatesAutoresizingMaskIntoConstraints = false
 		overlay.isUserInteractionEnabled = false
@@ -216,22 +265,148 @@ private final class VisionScannerHostViewController: UIViewController {
 			overlay.bottomAnchor.constraint(equalTo: view.bottomAnchor)
 		])
 		self.overlay = overlay
+	}
+}
 
-		do {
-			try controller.startScanning()
-		} catch {
-			delegate?.scannerHostDidFail("Unable to start the camera.")
+#if targetEnvironment(simulator)
+/// VisionKit's live scanner is unavailable on Simulator. This native fallback keeps
+/// simulator camera fixtures useful without changing the on-device scanner path.
+private final class SimulatorVisionScannerViewController: UIViewController, AVCaptureVideoDataOutputSampleBufferDelegate {
+	weak var delegate: VisionScannerHostDelegate?
+
+	private let captureSession = AVCaptureSession()
+	private let captureQueue = DispatchQueue(label: "com.swiftlysingh.cards.simulator-scanner")
+	private let videoOutput = AVCaptureVideoDataOutput()
+	private let imageContext = CIContext(options: nil)
+	private let imageLock = NSLock()
+	private var latestImage: UIImage?
+	private var previewLayer: AVCaptureVideoPreviewLayer?
+	private var lastRecognitionTime: CFTimeInterval = 0
+	private var didStart = false
+	private var isStopping = false
+
+	override func viewDidLoad() {
+		super.viewDidLoad()
+		view.backgroundColor = .black
+
+		let previewLayer = AVCaptureVideoPreviewLayer(session: captureSession)
+		previewLayer.videoGravity = .resizeAspectFill
+		view.layer.addSublayer(previewLayer)
+		self.previewLayer = previewLayer
+	}
+
+	override func viewDidLayoutSubviews() {
+		super.viewDidLayoutSubviews()
+		previewLayer?.frame = view.bounds
+	}
+
+	func startScanning() {
+		guard !didStart else { return }
+		didStart = true
+		captureQueue.async { [weak self] in
+			self?.configureAndStart()
 		}
 	}
 
 	func stopScanning() {
-		scanner?.stopScanning()
+		captureQueue.async { [weak self] in
+			guard let self else { return }
+			self.isStopping = true
+			self.videoOutput.setSampleBufferDelegate(nil, queue: nil)
+			if self.captureSession.isRunning {
+				self.captureSession.stopRunning()
+			}
+		}
 	}
 
-	func captureStill() async -> UIImage? {
-		return try? await scanner?.capturePhoto()
+	func captureStill() -> UIImage? {
+		imageLock.lock()
+		defer { imageLock.unlock() }
+		return latestImage
+	}
+
+	private func configureAndStart() {
+		guard !isStopping else { return }
+		guard let device = AVCaptureDevice.default(for: .video),
+			  let input = try? AVCaptureDeviceInput(device: device) else {
+			failUnsupported()
+			return
+		}
+
+		captureSession.beginConfiguration()
+		captureSession.sessionPreset = .hd1920x1080
+
+		guard captureSession.canAddInput(input), captureSession.canAddOutput(videoOutput) else {
+			captureSession.commitConfiguration()
+			failUnsupported()
+			return
+		}
+
+		captureSession.addInput(input)
+		videoOutput.alwaysDiscardsLateVideoFrames = true
+		videoOutput.videoSettings = [
+			kCVPixelBufferPixelFormatTypeKey as String: kCVPixelFormatType_32BGRA
+		]
+		videoOutput.setSampleBufferDelegate(self, queue: captureQueue)
+		captureSession.addOutput(videoOutput)
+		captureSession.commitConfiguration()
+
+		guard !isStopping else { return }
+		captureSession.startRunning()
+	}
+
+	func captureOutput(
+		_ output: AVCaptureOutput,
+		didOutput sampleBuffer: CMSampleBuffer,
+		from connection: AVCaptureConnection
+	) {
+		guard !isStopping else { return }
+		let now = CACurrentMediaTime()
+		guard now - lastRecognitionTime >= 0.25 else { return }
+		lastRecognitionTime = now
+
+		guard let pixelBuffer = CMSampleBufferGetImageBuffer(sampleBuffer) else { return }
+		let image = CIImage(cvPixelBuffer: pixelBuffer)
+		guard let cgImage = imageContext.createCGImage(image, from: image.extent) else { return }
+
+		imageLock.lock()
+		latestImage = UIImage(cgImage: cgImage)
+		imageLock.unlock()
+
+		let request = VNRecognizeTextRequest()
+		request.recognitionLevel = .fast
+		request.usesLanguageCorrection = false
+		request.minimumTextHeight = 0.015
+
+		do {
+			try VNImageRequestHandler(cgImage: cgImage, orientation: .up, options: [:]).perform([request])
+		} catch {
+			return
+		}
+
+		let items = (request.results ?? []).compactMap { observation -> OCRTextItem? in
+			let candidates = observation.topCandidates(5).map(\.string)
+			guard let text = candidates.first, !text.isEmpty else { return nil }
+			return OCRTextItem(
+				text: text,
+				candidates: candidates,
+				boundingBox: observation.boundingBox
+			)
+		}
+		guard !items.isEmpty else { return }
+
+		DispatchQueue.main.async { [weak self] in
+			self?.delegate?.scannerHostDidRecognize(items)
+		}
+	}
+
+	private func failUnsupported() {
+		DispatchQueue.main.async { [weak self] in
+			self?.delegate?.scannerHostDidFailUnsupported()
+		}
 	}
 }
+#endif
 
 extension VisionScannerHostViewController: DataScannerViewControllerDelegate {
 	func dataScanner(_ dataScanner: DataScannerViewController, didAdd addedItems: [RecognizedItem], allItems: [RecognizedItem]) {
