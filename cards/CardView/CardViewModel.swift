@@ -44,7 +44,7 @@ final class CardViewModel: ObservableObject {
 	var addUpdateCard: CardUpdateAction
 	var canFinishEditing: Bool {
 		guard let selectedCardType else { return false }
-		return selectedCardType == .otherCard || !card.number.isEmpty
+		return selectedCardType == .other || !card.number.isEmpty
 	}
 
 	init(

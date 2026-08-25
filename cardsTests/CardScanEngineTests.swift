@@ -308,13 +308,13 @@ final class CardScanSessionTests: XCTestCase {
 				expiration: "08/29",
 				name: "KEPT NAME",
 				description: "Wallet",
-				type: .creditCard
+				type: .credit
 			),
 			isEditing: true,
 			addNewFlow: true,
 			addUpdateCard: { _ in true }
 		)
-		model.selectedCardType = .debitCard
+		model.selectedCardType = .debit
 
 		model.applyScan(
 			CardScanResult(pan: "378282246310005", expiry: nil, cardholderName: nil, network: .amex)
@@ -326,8 +326,8 @@ final class CardScanSessionTests: XCTestCase {
 		XCTAssertEqual(model.card.name, "KEPT NAME")
 		XCTAssertEqual(model.card.cvv, "999")
 		XCTAssertEqual(model.card.description, "Wallet")
-		XCTAssertEqual(model.selectedCardType, .debitCard)
-		XCTAssertEqual(model.card.type, .debitCard)
+		XCTAssertEqual(model.selectedCardType, .debit)
+		XCTAssertEqual(model.card.type, .debit)
 		XCTAssertTrue(model.didUseScanner)
 		XCTAssertFalse(model.isShowingScanner)
 	}
@@ -341,7 +341,7 @@ final class CardScanSessionTests: XCTestCase {
 				expiration: "",
 				name: "",
 				description: "",
-				type: .creditCard
+				type: .credit
 			),
 			isEditing: true,
 			addNewFlow: true,
@@ -372,10 +372,10 @@ final class CardScanSessionTests: XCTestCase {
 		XCTAssertEqual(model.card.network, .visa)
 		XCTAssertFalse(model.canFinishEditing)
 
-		model.selectedCardType = .creditCard
+		model.selectedCardType = .credit
 
 		XCTAssertTrue(model.canFinishEditing)
-		XCTAssertEqual(model.card.type, .creditCard)
+		XCTAssertEqual(model.card.type, .credit)
 	}
 	private func makeBlankCard() -> CardData {
 		CardData(
@@ -385,7 +385,7 @@ final class CardScanSessionTests: XCTestCase {
 			expiration: "",
 			name: "",
 			description: "",
-			type: .creditCard
+			type: .credit
 		)
 	}
 }

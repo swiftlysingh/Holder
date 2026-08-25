@@ -94,7 +94,7 @@ final class CardViewModelTests: XCTestCase {
 				expiration: "12/30",
 				name: "Test Card",
 				description: "",
-				type: .creditCard
+				type: .credit
 			),
 			isEditing: true,
 			addUpdateCard: { _ in await saver.save() },

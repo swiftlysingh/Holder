@@ -148,7 +148,7 @@ struct HomeView: View {
 						expiration: "",
 						name: "",
 						description: "",
-						type: .creditCard
+						type: .credit
 				   ),
 				isEditing: true,
 				addNewFlow: true,
