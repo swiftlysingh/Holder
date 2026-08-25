@@ -32,7 +32,37 @@ struct HomeView: View {
 		NavigationSplitView {
 			List(selection: $model.selectedCard) {
 				ForEach(CardType.allCases) { type in
-					cardSection(for: type)
+					let cards = model.cardDataStore.cardsByType[type] ?? []
+					Section(header: sectionHeader(for: type, count: cards.count)) {
+						ForEach(cards, id: \.id) { card in
+							getRowforCards(with: card)
+								.swipeActions(edge: .trailing, allowsFullSwipe: false) {
+									Button(role: .destructive) {
+										cardPendingDeletion = card
+									} label: {
+										Label("Delete", systemImage: "trash")
+									}
+									Button {
+										archiveCard(card)
+									} label: {
+										Label("Archive", systemImage: "archivebox")
+									}
+									.tint(.orange)
+								}
+								.contextMenu {
+									Button {
+										archiveCard(card)
+									} label: {
+										Label("Archive", systemImage: "archivebox")
+									}
+									Button(role: .destructive) {
+										cardPendingDeletion = card
+									} label: {
+										Label("Delete", systemImage: "trash")
+									}
+								}
+						}
+					}
 				}
 				// Archived Cards Link
 				if !model.cardDataStore.archivedCards.isEmpty {
@@ -179,39 +209,6 @@ struct HomeView: View {
 		.sdkScreen(AppAnalyticsScreen.home)
 	}
 
-	private func cardSection(for type: CardType) -> some View {
-		Section(header: Text("\(type.rawValue)s")) {
-			ForEach(model.cardDataStore.cardsByType[type] ?? [], id: \.id) { card in
-				getRowforCards(with: card)
-					.swipeActions(edge: .trailing, allowsFullSwipe: false) {
-						Button(role: .destructive) {
-							cardPendingDeletion = card
-						} label: {
-							Label("Delete", systemImage: "trash")
-						}
-						Button {
-							archiveCard(card)
-						} label: {
-							Label("Archive", systemImage: "archivebox")
-						}
-						.tint(.orange)
-					}
-					.contextMenu {
-						Button {
-							archiveCard(card)
-						} label: {
-							Label("Archive", systemImage: "archivebox")
-						}
-						Button(role: .destructive) {
-							cardPendingDeletion = card
-						} label: {
-							Label("Delete", systemImage: "trash")
-						}
-					}
-			}
-		}
-	}
-
 	private var addCardButton: some View {
 		Button(action: beginAddingCard) {
 			Label("Add Card", systemImage: "plus")
@@ -292,22 +289,81 @@ struct HomeView: View {
 	}
 
 	private func getRowforCards(with card: CardData) -> some View {
-		NavigationLink(value: card){
-			HStack{
-				Image(card.network.rawValue)
-					.resizable()
-					.scaledToFit()
-					.frame(width: 36,height: 36)
+		NavigationLink(value: card) {
+			HStack(spacing: 12) {
+				cardArtwork(for: card)
 
-				VStack(alignment: .leading){
-					if card.description != "" {
-						Text(card.description)
-					} else {
-						Text(card.name)
-					}
+				VStack(alignment: .leading, spacing: 3) {
+					Text(card.description.isEmpty ? card.name : card.description)
+						.font(.subheadline.weight(.medium))
+						.foregroundStyle(.primary)
+						.lineLimit(2)
+
 					Text(card.number.maskedCardNumber())
+						.font(.footnote)
+						.foregroundStyle(.secondary)
+						.monospacedDigit()
 				}
 			}
+			.padding(.vertical, 2)
+		}
+	}
+
+	private func sectionHeader(for type: CardType, count: Int) -> some View {
+		HStack {
+			Text("\(type.rawValue)s")
+				.font(.subheadline.weight(.semibold))
+				.foregroundStyle(.primary)
+			Spacer()
+			Text("\(count) card\(count == 1 ? "" : "s")")
+				.font(.caption2.weight(.medium))
+				.foregroundStyle(.secondary)
+				.padding(.horizontal, 8)
+				.padding(.vertical, 4)
+				.background(.quaternary, in: Capsule())
+		}
+		.textCase(nil)
+	}
+
+	private func cardArtwork(for card: CardData) -> some View {
+		Image(cardArtworkName(for: card.network))
+			.resizable()
+			.scaledToFill()
+			.frame(width: 56, height: 38)
+			.clipped()
+			.clipShape(RoundedRectangle(cornerRadius: 6, style: .continuous))
+			.overlay {
+				RoundedRectangle(cornerRadius: 6, style: .continuous)
+					.stroke(.white.opacity(0.1), lineWidth: 0.5)
+			}
+			.accessibilityElement(children: .ignore)
+			.accessibilityLabel(Text(card.network == .other ? "Card" : cardNetworkLabel(for: card.network)))
+	}
+
+	private func cardNetworkLabel(for network: CardNetwork) -> String {
+		network == .rupay ? "RuPay" : network.rawValue
+	}
+
+	private func cardArtworkName(for network: CardNetwork) -> String {
+		switch network {
+		case .visa:
+			return "CardArtworkVisa"
+		case .master:
+			return "CardArtworkMastercard"
+		case .amex:
+			return "CardArtworkAmex"
+		case .diners:
+			return "CardArtworkDiners"
+		case .rupay:
+			return "CardArtworkRuPay"
+		case .discover:
+			return "CardArtworkDiscover"
+		case .jcb:
+			return "CardArtworkJCB"
+		case .unionPay:
+			return "CardArtworkUnionPay"
+		case .other:
+			return "CardArtworkOther"
 		}
 	}
 }
