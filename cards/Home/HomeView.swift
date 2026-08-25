@@ -295,7 +295,7 @@ struct HomeView: View {
 
 				VStack(alignment: .leading, spacing: 3) {
 					Text(card.description.isEmpty ? card.name : card.description)
-						.font(.subheadline.weight(.medium))
+						.font(.body.weight(.semibold))
 						.foregroundStyle(.primary)
 						.lineLimit(2)
 
