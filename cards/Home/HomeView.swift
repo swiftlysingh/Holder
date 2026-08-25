@@ -28,7 +28,7 @@ struct HomeView: View {
 		NavigationSplitView {
 			List(selection: $model.selectedCard) {
 				ForEach(CardType.allCases) { type in
-					Section(header: Text("\(type.rawValue)s")){
+					Section(header: Text(type.rawValue)){
 						ForEach(model.cardDataStore.cardsByType[type] ?? [], id: \.id) { card in
 							getRowforCards(with: card)
 								.swipeActions(edge: .trailing, allowsFullSwipe: false) {
@@ -57,7 +57,7 @@ struct HomeView: View {
 									}
 								}
 						}
-						Button("Add a new \(type.rawValue)") {
+						Button("Add a new card") {
 							track(.cardAddStarted)
 							model.addingType = type
 						}

@@ -133,10 +133,10 @@ struct MediumCardWidget: Widget {
     MediumCardEntry(
         date: .now,
         cards: [
-            WidgetCardData(id: UUID(), displayName: "Axis Visa", lastFourDigits: "3456", cardType: "Credit Card", network: "Visa"),
-            WidgetCardData(id: UUID(), displayName: "SBI MasterCard", lastFourDigits: "7890", cardType: "Credit Card", network: "Mastercard"),
-            WidgetCardData(id: UUID(), displayName: "HDFC Platinum", lastFourDigits: "1234", cardType: "Debit Card", network: "Visa"),
-            WidgetCardData(id: UUID(), displayName: "Kotak PVR", lastFourDigits: "5678", cardType: "Debit Card", network: "Rupay")
+            WidgetCardData(id: UUID(), displayName: "Axis Visa", lastFourDigits: "3456", cardType: "Credit", network: "Visa"),
+            WidgetCardData(id: UUID(), displayName: "SBI MasterCard", lastFourDigits: "7890", cardType: "Credit", network: "Mastercard"),
+            WidgetCardData(id: UUID(), displayName: "HDFC Platinum", lastFourDigits: "1234", cardType: "Debit", network: "Visa"),
+            WidgetCardData(id: UUID(), displayName: "Kotak PVR", lastFourDigits: "5678", cardType: "Debit", network: "Rupay")
         ],
         configuration: SelectMultipleCardsIntent()
     )

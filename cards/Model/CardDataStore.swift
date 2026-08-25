@@ -204,7 +204,7 @@ final class CardDataStore {
 					expiration: "09/29",
 					name: "M. C. Lovin",
 					description: "Everyday Card",
-					type: .creditCard,
+					type: .credit,
 					network: "4242424242424242".getCardNetwork()
 				),
 				CardData(
@@ -214,7 +214,7 @@ final class CardDataStore {
 					expiration: "04/30",
 					name: "M. C. Lovin",
 					description: "Rewards Card",
-					type: .creditCard,
+					type: .credit,
 					network: "5555555555554444".getCardNetwork()
 				),
 				CardData(
@@ -224,7 +224,7 @@ final class CardDataStore {
 					expiration: "11/29",
 					name: "M. C. Lovin",
 					description: "Travel Debit",
-					type: .debitCard,
+					type: .debit,
 					network: "4000056655665556".getCardNetwork()
 				),
 				CardData(
@@ -234,7 +234,7 @@ final class CardDataStore {
 					expiration: "06/31",
 					name: "M. C. Lovin",
 					description: "Health ID",
-					type: .otherCard
+					type: .other
 				)
 			]
 			for fixture in fixtures {
