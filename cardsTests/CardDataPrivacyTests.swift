@@ -17,7 +17,7 @@ final class CardDataPrivacyTests: XCTestCase {
             expiration: "12/30",
             name: "Test Card",
             description: "",
-            type: .creditCard
+            type: .credit
         )
 
         let standardShare = card.toShareString(includeSecurityCode: false)

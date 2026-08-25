@@ -108,7 +108,7 @@ struct SmallCardWidget: Widget {
             id: UUID(),
             displayName: "Axis Visa",
             lastFourDigits: "3456",
-            cardType: "Credit Card",
+            cardType: "Credit",
             network: "Visa"
         ),
         configuration: SelectCardIntent()

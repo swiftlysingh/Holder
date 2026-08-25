@@ -95,14 +95,30 @@ enum CardType: String, CaseIterable, Identifiable, Codable {
 		return self
 	}
 
-	case creditCard = "Credit Card"
-	case debitCard = "Debit Card"
-	case otherCard = "Other Card"
+	case credit = "Credit"
+	case debit = "Debit"
+	case other = "Other"
 
 	static func < (lhs: CardType, rhs: CardType) -> Bool {
-		// credit card
-		// debit card
 		return lhs.rawValue < rhs.rawValue
+	}
+
+	init(from decoder: Decoder) throws {
+		let raw = try decoder.singleValueContainer().decode(String.self)
+		switch raw {
+		// Legacy values persisted before the "Card" suffix was dropped
+		case "Credit Card": self = .credit
+		case "Debit Card": self = .debit
+		case "Other Card": self = .other
+		default:
+			guard let type = CardType(rawValue: raw) else {
+				throw DecodingError.dataCorrupted(DecodingError.Context(
+					codingPath: decoder.codingPath,
+					debugDescription: "Unknown card type: \(raw)"
+				))
+			}
+			self = type
+		}
 	}
 
 }

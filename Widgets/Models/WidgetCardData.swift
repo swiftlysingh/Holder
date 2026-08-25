@@ -24,9 +24,9 @@ struct WidgetCardData: Codable, Identifiable, Hashable {
 enum WidgetCardType: String, CaseIterable, Identifiable, Codable {
     var id: Self { self }
 
-    case creditCard = "Credit Card"
-    case debitCard = "Debit Card"
-    case otherCard = "Other Card"
+    case credit = "Credit"
+    case debit = "Debit"
+    case other = "Other"
 }
 
 /// Card network enum (mirrored from main app)

@@ -351,7 +351,7 @@ struct MenuBarCardRow: View {
 
     @ViewBuilder
     private var networkImage: some View {
-        if card.type != .otherCard && card.network != .other {
+        if card.type != .other && card.network != .other {
             Image(card.network.rawValue)
                 .renderingMode(.original)
                 .resizable()

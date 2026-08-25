@@ -23,7 +23,7 @@ final class CardDataPersistenceTests: XCTestCase {
 			"expiration": "12/30",
 			"name": "Legacy Card",
 			"description": "",
-			"type": CardType.creditCard.rawValue
+			"type": CardType.credit.rawValue
 		])
 
 		let card = try JSONDecoder().decode(CardData.self, from: data)
@@ -35,8 +35,8 @@ final class CardDataPersistenceTests: XCTestCase {
 
 	func testPartitionSeparatesActiveAndArchivedCards() {
 		let creditCard = makeCard(id: UUID())
-		let debitCard = makeCard(id: UUID(), type: .debitCard)
-		let archivedCard = makeCard(id: UUID(), type: .otherCard, isArchived: true)
+		let debitCard = makeCard(id: UUID(), type: .debit)
+		let archivedCard = makeCard(id: UUID(), type: .other, isArchived: true)
 
 		let partition = CardDataStore.partition([creditCard, debitCard, archivedCard])
 		let activeCards = CardType.allCases.flatMap { partition.cardsByType[$0] ?? [] }
@@ -140,7 +140,7 @@ final class CardDataPersistenceTests: XCTestCase {
 
 	func testSuccessfulSaveDoesNotDependOnFollowingReload() async throws {
 		let existingCard = makeCard(id: UUID())
-		let newCard = makeCard(id: UUID(), type: .debitCard)
+		let newCard = makeCard(id: UUID(), type: .debit)
 		let stub = CardPayloadRetrievalStub(result: .success([try existingCard.toData()]))
 		let store = CardDataStore(
 			retrievePayloads: { _ in stub.result },
@@ -225,7 +225,7 @@ final class CardDataPersistenceTests: XCTestCase {
 	}
 
 	func testDeletingOtherCardKeepsImageWhenKeychainDeleteFails() async throws {
-		let card = makeCard(id: UUID(), type: .otherCard)
+		let card = makeCard(id: UUID(), type: .other)
 		let payload = try card.toData()
 		let stub = CardPayloadRetrievalStub(result: .success([payload]))
 		let imageStore = TestCardImageStore(deleteResults: [])
@@ -319,7 +319,7 @@ final class CardDataPersistenceTests: XCTestCase {
 
 	private func makeCard(
 		id: UUID,
-		type: CardType = .creditCard,
+		type: CardType = .credit,
 		isArchived: Bool = false
 	) -> CardData {
 		CardData(

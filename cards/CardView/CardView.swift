@@ -209,7 +209,7 @@ struct CardView: View {
 				#endif
 
 				Group {
-				  if model.card.type != .otherCard {
+				  if model.card.type != .other {
 					Picker("Card Network", selection: $model.card.network) {
 					  ForEach(CardNetwork.allCases) { pref in
 						Text(pref.rawValue)
@@ -229,7 +229,7 @@ struct CardView: View {
 				}
 			}
 
-			if let image = model.cardImage, model.card.type == .otherCard {
+			if let image = model.cardImage, model.card.type == .other {
 				Section {
 					#if os(iOS)
 					Image(uiImage: image)
@@ -244,7 +244,7 @@ struct CardView: View {
 			}
 
 			#if os(iOS)
-			if model.isEditing && model.card.type == .otherCard {
+			if model.isEditing && model.card.type == .other {
 				Section {
 					PhotosPicker(selection: $model.selectedItem, matching: .images) {
 						VStack(alignment: .leading) {
@@ -284,7 +284,7 @@ struct CardView: View {
 				}
 			}
 			#else
-			if model.isEditing && model.card.type == .otherCard {
+			if model.isEditing && model.card.type == .other {
 				Section {
 					Button {
 						selectImageFile()
@@ -384,7 +384,7 @@ struct CardView: View {
 
 	private func saveCardIfNeeded() async {
 		guard !model.isEditing,
-			  model.card.type == .otherCard || !model.card.number.isEmpty else {
+			  model.card.type == .other || !model.card.number.isEmpty else {
 			return
 		}
 
@@ -476,12 +476,12 @@ struct CardView: View {
 		ScrollView {
 			VStack(spacing: 24) {
 				// Visual Card Preview (only for credit/debit cards)
-				if model.card.type != .otherCard && !model.isEditing {
+				if model.card.type != .other && !model.isEditing {
 					macOSCardPreview()
 				}
 
 				// Card Image for Other Cards
-				if let image = model.cardImage, model.card.type == .otherCard {
+				if let image = model.cardImage, model.card.type == .other {
 					Image(nsImage: image)
 						.resizable()
 						.scaledToFit()
@@ -675,7 +675,7 @@ struct CardView: View {
 				}
 
 				// Pickers
-				if model.card.type != .otherCard {
+				if model.card.type != .other {
 					Divider()
 					HStack {
 						Text("Network")
@@ -716,7 +716,7 @@ struct CardView: View {
 		.frame(maxWidth: 400)
 
 		// Image section for Other Cards
-		if model.isEditing && model.card.type == .otherCard {
+		if model.isEditing && model.card.type == .other {
 			GroupBox {
 				VStack(spacing: 12) {
 					Button {
