@@ -178,6 +178,7 @@ struct HomeView: View {
 		#endif
 		.sdkScreen(AppAnalyticsScreen.home)
 	}
+
 	private func cardSection(for type: CardType) -> some View {
 		Section(header: Text("\(type.rawValue)s")) {
 			ForEach(model.cardDataStore.cardsByType[type] ?? [], id: \.id) { card in
@@ -251,7 +252,7 @@ struct HomeView: View {
 	private func beginAddingCard() {
 		track(.cardAddStarted)
 		#if os(iOS)
-		addCardSheetDetent = .fraction(0.5)
+		addCardSheetDetent = .height(240)
 		#endif
 		model.isAddingCard = true
 	}
