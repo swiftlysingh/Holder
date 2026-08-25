@@ -95,17 +95,14 @@ struct CardView: View {
 					},
 					onPermissionDenied: {
 						track(.cardScanPermissionDenied(engine: CardScanningEngineFactory.currentEngineID))
-						showManualEntry()
+						showCardForm()
 					},
 					onManualEntry: {
-						showManualEntry()
+						showCardForm()
 					},
 					onResult: { result, metrics in
 						model.applyScan(result)
-						withAnimation {
-							isShowingCardForm = true
-							cardSheetDetent = .fraction(0.5)
-						}
+						showCardForm()
 						track(
 							.cardScanCompleted(
 								engine: metrics.engine,
@@ -120,7 +117,6 @@ struct CardView: View {
 					}
 				)
 				.frame(maxWidth: .infinity, maxHeight: .infinity)
-				.ignoresSafeArea()
 				.clipped()
 			}
 
@@ -129,6 +125,10 @@ struct CardView: View {
 					.disabled(model.isShowingScanner)
 			}
 		}
+		.ignoresSafeArea(
+			.container,
+			edges: model.isShowingScanner ? .all : []
+		)
 		.safeAreaInset(edge: .bottom, spacing: 0) {
 			if model.isAddNewFlow && isShowingCardForm && !model.isShowingScanner {
 				addCardActionButton
@@ -192,7 +192,7 @@ struct CardView: View {
 		}
 	}
 
-	private func showManualEntry() {
+	private func showCardForm() {
 		isFieldFocused = false
 		withAnimation {
 			isShowingCardForm = true
