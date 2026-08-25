@@ -21,6 +21,7 @@ final class CardViewModel: ObservableObject {
 	@Published var errorMessage: String?
 	@Published var showErrorAlert = false
 	@Published private(set) var isImageMutationInProgress = false
+	@Published private(set) var isSaving = false
 	private var imageLoadTask: Task<Void, Never>?
 	private var imageMutationTask: Task<Void, Never>?
 	private let imageStore: CardImageStore
@@ -34,6 +35,9 @@ final class CardViewModel: ObservableObject {
 
 	var isAddNewFlow : Bool
 	var addUpdateCard: CardUpdateAction
+	var canFinishEditing: Bool {
+		card.type == .otherCard || !card.number.isEmpty
+	}
 
 	init(
 		card: CardData,
@@ -123,6 +127,19 @@ final class CardViewModel: ObservableObject {
 		}
 		PasteboardService.copy(value)
 		HapticService.trigger(.success)
+	}
+
+	func saveCard() async -> Bool? {
+		guard isEditing, canFinishEditing, !isSaving else { return nil }
+
+		isSaving = true
+		defer { isSaving = false }
+
+		let succeeded = await addUpdateCard(card)
+		if succeeded {
+			isEditing = false
+		}
+		return succeeded
 	}
 
 	func applyScan(_ result: CardScanResult) {

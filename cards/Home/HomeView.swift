@@ -147,16 +147,16 @@ struct HomeView: View {
 					return succeeded
 				}
 			)
+			#if os(iOS)
+			CardView(
+				model: cardViewModel,
+				cardSheetDetent: $addCardSheetDetent
+			)
+			#else
 			NavigationView {
-				#if os(iOS)
-				CardView(
-					model: cardViewModel,
-					cardSheetDetent: $addCardSheetDetent
-				)
-				#else
 				CardView(model: cardViewModel)
-				#endif
 			}
+			#endif
 			#if os(iOS)
 			.presentationDetents(
 				[.fraction(0.5), .large],

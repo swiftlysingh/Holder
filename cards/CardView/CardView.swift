@@ -21,6 +21,7 @@ struct CardView: View {
 	@StateObject private var model: CardViewModel
 	@EnvironmentObject private var authenticationSession: AuthenticationSession
 	@Environment(\.analytics) private var analytics
+	@Environment(\.dismiss) private var dismiss
 	#if os(iOS)
 	@Binding private var cardSheetDetent: PresentationDetent
 	@State private var scannerReturnDetent: PresentationDetent = .fraction(0.5)
@@ -75,12 +76,17 @@ struct CardView: View {
 				? AppAnalyticsScreen.cardEditor
 				: AppAnalyticsScreen.cardDetails
 		)
+		.disabled(model.isSaving)
 	}
 
 	#if os(iOS)
 	@ViewBuilder
 	private func iOSCardContent() -> some View {
 		VStack(spacing: 0) {
+			if model.isAddNewFlow {
+				addCardHeader
+			}
+
 			if model.isAddNewFlow && model.card.type != .otherCard && !model.isShowingScanner {
 				scanCardButton
 			}
@@ -119,6 +125,11 @@ struct CardView: View {
 			getCardListView()
 				.disabled(model.isShowingScanner)
 		}
+		.safeAreaInset(edge: .bottom, spacing: 0) {
+			if model.isAddNewFlow {
+				addCardActionButton
+			}
+		}
 		.onChange(of: authenticationSession.isVaultUnlocked) { _, isUnlocked in
 			if !isUnlocked && model.isShowingScanner {
 				finishScanning()
@@ -131,6 +142,20 @@ struct CardView: View {
 		}
 	}
 
+	private var addCardHeader: some View {
+		HStack {
+			Button("Cancel", role: .cancel) {
+				isFieldFocused = false
+				dismiss()
+			}
+			.accessibilityIdentifier("cancelAddCardButton")
+
+			Spacer()
+		}
+		.frame(minHeight: 44)
+		.padding(.horizontal, 20)
+	}
+
 	private var scanCardButton: some View {
 		Button {
 			startScan(isRescan: model.didUseScanner)
@@ -141,9 +166,35 @@ struct CardView: View {
 		.buttonStyle(.borderedProminent)
 		.controlSize(.large)
 		.padding(.horizontal, 20)
-		.padding(.vertical, 12)
+		.padding(.top, 2)
+		.padding(.bottom, 4)
 		.accessibilityIdentifier("scanCardButton")
 		.accessibilityHint("Opens the camera above the card details form")
+	}
+
+	private var addCardActionButton: some View {
+		Button {
+			Task { @MainActor in
+				await saveCardIfNeeded()
+			}
+		} label: {
+			Group {
+				if model.isSaving {
+					ProgressView()
+				} else {
+					Text("Add Card")
+				}
+			}
+			.frame(maxWidth: .infinity)
+		}
+		.buttonStyle(.borderedProminent)
+		.controlSize(.large)
+		.disabled(!model.canFinishEditing || model.isShowingScanner || model.isSaving)
+		.padding(.horizontal, 20)
+		.padding(.vertical, 12)
+		.background(.bar)
+		.accessibilityIdentifier("addCardButton")
+		.accessibilityLabel("Add Card")
 	}
 
 	private func startScan(isRescan: Bool) {
@@ -439,9 +490,14 @@ struct CardView: View {
 				Text("An unknown error occurred")
 			}
 		}
+		.if(model.isAddNewFlow, transform: { view in
+			view.contentMargins(.top, 0, for: .scrollContent)
+		})
 		.toolbar {
-			sensitiveShareMenu
-			editToolbarButton
+			if !model.isAddNewFlow {
+				sensitiveShareMenu
+				editToolbarButton
+			}
 		}
 	}
 
@@ -454,17 +510,13 @@ struct CardView: View {
 			}
 		}
 		.accessibilityLabel(model.isEditing ? "Done" : "Edit")
+		.disabled(model.isEditing && (!model.canFinishEditing || model.isSaving))
 	}
 
 	private func saveCardIfNeeded() async {
-		guard !model.isEditing,
-			  model.card.type == .other || !model.card.number.isEmpty else {
-			return
-		}
-
 		let operation: AppAnalyticsEvent.SaveOperation = model.isAddNewFlow ? .create : .update
 		let inputMethod: AppAnalyticsEvent.InputMethod = model.didUseScanner ? .scanner : .manual
-		let succeeded = await model.addUpdateCard(model.card)
+		guard let succeeded = await model.saveCard() else { return }
 		let event: AppAnalyticsEvent = succeeded
 			? .cardSaveCompleted(
 				operation: operation,
@@ -478,12 +530,12 @@ struct CardView: View {
 	}
 
 	private func toggleEditing() {
-		let isFinishingEdit = model.isEditing
-		model.isEditing.toggle()
-		if isFinishingEdit {
+		if model.isEditing {
 			Task { @MainActor in
 				await saveCardIfNeeded()
 			}
+		} else {
+			model.isEditing = true
 		}
 	}
 
