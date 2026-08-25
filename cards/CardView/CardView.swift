@@ -21,10 +21,10 @@ struct CardView: View {
 	@StateObject private var model: CardViewModel
 	@EnvironmentObject private var authenticationSession: AuthenticationSession
 	@Environment(\.analytics) private var analytics
-	@Environment(\.dismiss) private var dismiss
 	#if os(iOS)
 	@Binding private var cardSheetDetent: PresentationDetent
 	@State private var scannerReturnDetent: PresentationDetent = .fraction(0.5)
+	@State private var isShowingCardForm = false
 	@FocusState private var isFieldFocused: Bool
 	#endif
 	#if os(macOS)
@@ -103,6 +103,8 @@ struct CardView: View {
 					},
 					onResult: { result, metrics in
 						model.applyScan(result)
+						isShowingCardForm = true
+						scannerReturnDetent = .fraction(0.5)
 						finishScanning()
 						track(
 							.cardScanCompleted(
@@ -117,16 +119,25 @@ struct CardView: View {
 						)
 					}
 				)
-				.frame(height: 360)
+				.frame(height: isShowingCardForm ? 360 : nil)
+				.frame(maxHeight: isShowingCardForm ? nil : .infinity)
+				.ignoresSafeArea(
+					.container,
+					edges: isShowingCardForm ? [] : [.top, .bottom]
+				)
 				.clipped()
 				.transition(.move(edge: .top).combined(with: .opacity))
 			}
 
-			getCardListView()
-				.disabled(model.isShowingScanner)
+			if !model.isAddNewFlow || isShowingCardForm {
+				getCardListView()
+					.disabled(model.isShowingScanner)
+			} else if !model.isShowingScanner {
+				manualEntryButton
+			}
 		}
 		.safeAreaInset(edge: .bottom, spacing: 0) {
-			if model.isAddNewFlow && !model.isShowingScanner {
+			if model.isAddNewFlow && isShowingCardForm && !model.isShowingScanner {
 				addCardActionButton
 			}
 		}
@@ -143,19 +154,30 @@ struct CardView: View {
 	}
 
 	private var addCardHeader: some View {
-		HStack {
-			Button("Cancel", role: .cancel) {
-				isFieldFocused = false
-				dismiss()
-			}
-			.frame(minHeight: 46)
-			.contentShape(Rectangle())
-			.accessibilityIdentifier("cancelAddCardButton")
+		Text("Add a Card")
+			.font(.title2.weight(.semibold))
+			.frame(maxWidth: .infinity, alignment: .leading)
+			.padding(.horizontal, 20)
+			.padding(.top, 24)
+			.padding(.bottom, 16)
+			.accessibilityAddTraits(.isHeader)
+	}
 
-			Spacer()
+	private var manualEntryButton: some View {
+		Button {
+			withAnimation {
+				isShowingCardForm = true
+				cardSheetDetent = .fraction(0.5)
+			}
+		} label: {
+			Text("Enter Manually")
+				.frame(maxWidth: .infinity, minHeight: 46)
+				.contentShape(Rectangle())
 		}
-		.frame(minHeight: 44)
+		.buttonStyle(.plain)
+		.foregroundStyle(.tint)
 		.padding(.horizontal, 20)
+		.accessibilityIdentifier("manualCardEntryButton")
 	}
 
 	private var scanCardButton: some View {
@@ -171,7 +193,7 @@ struct CardView: View {
 		.padding(.top, 2)
 		.padding(.bottom, 4)
 		.accessibilityIdentifier("scanCardButton")
-		.accessibilityHint("Opens the camera above the card details form")
+		.accessibilityHint("Opens the camera to scan card details")
 	}
 
 	private var addCardActionButton: some View {
@@ -184,7 +206,7 @@ struct CardView: View {
 				if model.isSaving {
 					ProgressView()
 				} else {
-					Text("Done")
+					Text("Add Card")
 				}
 			}
 			.frame(maxWidth: .infinity)
@@ -196,7 +218,7 @@ struct CardView: View {
 		.padding(.vertical, 12)
 		.background(.bar)
 		.accessibilityIdentifier("addCardButton")
-		.accessibilityLabel("Done")
+		.accessibilityLabel("Add Card")
 	}
 
 	private func startScan(isRescan: Bool) {
