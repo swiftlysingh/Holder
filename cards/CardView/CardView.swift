@@ -58,7 +58,36 @@ struct CardView: View {
 				? AppAnalyticsScreen.cardEditor
 				: AppAnalyticsScreen.cardDetails
 		)
+		#if os(iOS)
+		.fullScreenCover(isPresented: $model.isShowingScanner) {
+			cardScannerCover
+		}
+		#endif
 	}
+
+	#if os(iOS)
+	private var cardScannerCover: some View {
+		SharkCardScanViewRepresentable(
+			noPermissionAction: {
+				track(.cardScanPermissionDenied)
+			},
+			successHandler: { response in
+				let number = response.number
+				let name = response.holder ?? ""
+				let expiration = response.expiry ?? ""
+				DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+					model.applyScannedCard(
+						number: number,
+						name: name,
+						expiration: expiration
+					)
+					track(.cardScanCompleted)
+				}
+			}
+		)
+		.sdkScreen(AppAnalyticsScreen.cardScanner)
+	}
+	#endif
 
 	#if os(iOS)
 	fileprivate func itemView(
@@ -347,24 +376,6 @@ struct CardView: View {
 					.if(!model.isAddNewFlow, transform: { view in
 						view.hidden()
 					})
-					.fullScreenCover(isPresented: $model.isShowingScanner) {
-						SharkCardScanViewRepresentable(
-							noPermissionAction: {
-								track(.cardScanPermissionDenied)
-							},
-							successHandler: { response in
-								DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
-									model.card.number = response.number
-									model.card.name = response.holder ?? ""
-									model.card.expiration = response.expiry ?? ""
-									model.markScannerCompleted()
-									track(.cardScanCompleted)
-									model.isShowingScanner = false
-								}
-							}
-						)
-						.sdkScreen(AppAnalyticsScreen.cardScanner)
-					}
 				}
 			}
 		}

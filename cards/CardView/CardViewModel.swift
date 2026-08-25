@@ -128,4 +128,14 @@ final class CardViewModel: ObservableObject {
 	func markScannerCompleted() {
 		didUseScanner = true
 	}
+
+	/// Dismisses the scanner before writing card fields so SwiftUI does not tear
+	/// down a presented cover by removing its presenting toolbar item.
+	func applyScannedCard(number: String, name: String, expiration: String) {
+		isShowingScanner = false
+		card.number = number
+		card.name = name
+		card.expiration = expiration
+		markScannerCompleted()
+	}
 }

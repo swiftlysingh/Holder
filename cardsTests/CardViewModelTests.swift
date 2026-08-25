@@ -9,6 +9,23 @@ import UIKit
 
 @MainActor
 final class CardViewModelTests: XCTestCase {
+	func testApplyScannedCardDismissesScannerBeforeFillingFields() {
+		let model = makeModel(imageStore: ImmediateCardImageStore(), addNewFlow: true)
+		model.isShowingScanner = true
+
+		model.applyScannedCard(
+			number: "4111111111111111",
+			name: "Ada Lovelace",
+			expiration: "12/30"
+		)
+
+		XCTAssertFalse(model.isShowingScanner)
+		XCTAssertEqual(model.card.number, "4111111111111111")
+		XCTAssertEqual(model.card.name, "Ada Lovelace")
+		XCTAssertEqual(model.card.expiration, "12/30")
+		XCTAssertTrue(model.didUseScanner)
+	}
+
 	func testInitDoesNotWaitForCardImageLoad() async {
 		let imageStore = GatedCardImageStore()
 		let model = makeModel(imageStore: imageStore)
@@ -84,17 +101,21 @@ final class CardViewModelTests: XCTestCase {
 		XCTAssertFalse(resolver.didResolveOnMainThread)
 	}
 
-	private func makeModel(imageStore: CardImageStore) -> CardViewModel {
+	private func makeModel(
+		imageStore: CardImageStore,
+		addNewFlow: Bool = false
+	) -> CardViewModel {
 		CardViewModel(
 			card: CardData(
 				id: UUID(),
-				number: "4111111111111111",
+				number: addNewFlow ? "" : "4111111111111111",
 				cvv: "123",
 				expiration: "12/30",
 				name: "Test Card",
 				description: "",
 				type: .creditCard
 			),
+			addNewFlow: addNewFlow,
 			addUpdateCard: { _ in true },
 			imageStore: imageStore
 		)
@@ -125,6 +146,12 @@ final class CardViewModelTests: XCTestCase {
 		return try XCTUnwrap(image.pngData())
 		#endif
 	}
+}
+
+private final class ImmediateCardImageStore: CardImageStore {
+	func loadImageData(for uuid: UUID) async -> Data? { nil }
+	func saveImageData(_ data: Data, for uuid: UUID) async -> Bool { false }
+	func deleteImage(for uuid: UUID) async -> Bool { true }
 }
 
 private actor GatedCardImageStore: CardImageStore {
