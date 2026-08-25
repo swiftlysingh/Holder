@@ -7,19 +7,23 @@ struct CardScannerView: View {
 	var isRescan: Bool
 	var onCancel: () -> Void
 	var onPermissionDenied: () -> Void
+	var onManualEntry: (() -> Void)?
 	var onResult: (CardScanResult, CardScanMetrics) -> Void
 
 	@StateObject private var model: CardScannerViewModel
+	@State private var showsManualEntry = false
 
 	init(
 		isRescan: Bool,
 		onCancel: @escaping () -> Void,
 		onPermissionDenied: @escaping () -> Void,
+		onManualEntry: (() -> Void)? = nil,
 		onResult: @escaping (CardScanResult, CardScanMetrics) -> Void
 	) {
 		self.isRescan = isRescan
 		self.onCancel = onCancel
 		self.onPermissionDenied = onPermissionDenied
+		self.onManualEntry = onManualEntry
 		self.onResult = onResult
 		_model = StateObject(wrappedValue: CardScannerViewModel(isRescan: isRescan))
 	}
@@ -66,8 +70,23 @@ struct CardScannerView: View {
 						.multilineTextAlignment(.center)
 						.foregroundStyle(.white)
 						.padding(.horizontal, 24)
+
+					if showsManualEntry, let onManualEntry {
+						Button {
+							model.stop()
+							onManualEntry()
+						} label: {
+							Text("Having trouble? Enter manually")
+								.frame(minHeight: 44)
+								.contentShape(Rectangle())
+						}
+						.buttonStyle(.plain)
+						.foregroundStyle(.white)
+						.accessibilityIdentifier("manualCardEntryButton")
+						.transition(.move(edge: .bottom).combined(with: .opacity))
+					}
 				}
-				.padding(.bottom, 48)
+				.padding(.bottom, 24)
 			}
 		}
 		.background(Color.black)
@@ -88,6 +107,17 @@ struct CardScannerView: View {
 				onPermissionDenied: onPermissionDenied,
 				onResult: onResult
 			)
+		}
+		.task {
+			guard onManualEntry != nil else { return }
+			do {
+				try await Task.sleep(for: .seconds(3))
+			} catch {
+				return
+			}
+			withAnimation {
+				showsManualEntry = true
+			}
 		}
 		.onDisappear {
 			model.stop()

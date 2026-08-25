@@ -22,8 +22,8 @@ struct CardView: View {
 	@EnvironmentObject private var authenticationSession: AuthenticationSession
 	@Environment(\.analytics) private var analytics
 	#if os(iOS)
+	@Environment(\.dismiss) private var dismiss
 	@Binding private var cardSheetDetent: PresentationDetent
-	@State private var scannerReturnDetent: PresentationDetent = .fraction(0.5)
 	@State private var isShowingCardForm = false
 	@FocusState private var isFieldFocused: Bool
 	#endif
@@ -83,29 +83,29 @@ struct CardView: View {
 	@ViewBuilder
 	private func iOSCardContent() -> some View {
 		VStack(spacing: 0) {
-			if model.isAddNewFlow && !model.isShowingScanner {
+			if model.isAddNewFlow && isShowingCardForm && !model.isShowingScanner {
 				addCardHeader
-			}
-
-			if model.isAddNewFlow && model.selectedCardType != .otherCard && !model.isShowingScanner {
-				scanCardButton
 			}
 
 			if authenticationSession.isVaultUnlocked && model.isShowingScanner {
 				CardScannerView(
 					isRescan: model.didUseScanner,
 					onCancel: {
-						finishScanning()
+						dismiss()
 					},
 					onPermissionDenied: {
 						track(.cardScanPermissionDenied(engine: CardScanningEngineFactory.currentEngineID))
-						finishScanning()
+						showManualEntry()
+					},
+					onManualEntry: {
+						showManualEntry()
 					},
 					onResult: { result, metrics in
 						model.applyScan(result)
-						isShowingCardForm = true
-						scannerReturnDetent = .fraction(0.5)
-						finishScanning()
+						withAnimation {
+							isShowingCardForm = true
+							cardSheetDetent = .fraction(0.5)
+						}
 						track(
 							.cardScanCompleted(
 								engine: metrics.engine,
@@ -119,21 +119,14 @@ struct CardView: View {
 						)
 					}
 				)
-				.frame(height: isShowingCardForm ? 360 : nil)
-				.frame(maxHeight: isShowingCardForm ? nil : .infinity)
-				.ignoresSafeArea(
-					.container,
-					edges: isShowingCardForm ? [] : [.top, .bottom]
-				)
+				.frame(maxWidth: .infinity, maxHeight: .infinity)
+				.ignoresSafeArea()
 				.clipped()
-				.transition(.move(edge: .top).combined(with: .opacity))
 			}
 
 			if !model.isAddNewFlow || isShowingCardForm {
 				getCardListView()
 					.disabled(model.isShowingScanner)
-			} else if !model.isShowingScanner {
-				manualEntryButton
 			}
 		}
 		.safeAreaInset(edge: .bottom, spacing: 0) {
@@ -141,15 +134,17 @@ struct CardView: View {
 				addCardActionButton
 			}
 		}
+		.onAppear {
+			guard model.isAddNewFlow, !isShowingCardForm, !model.isShowingScanner else { return }
+			startScan()
+		}
 		.onChange(of: authenticationSession.isVaultUnlocked) { _, isUnlocked in
 			if !isUnlocked && model.isShowingScanner {
-				finishScanning()
+				dismiss()
 			}
 		}
 		.onDisappear {
-			guard model.isShowingScanner else { return }
 			model.isShowingScanner = false
-			cardSheetDetent = scannerReturnDetent
 		}
 	}
 
@@ -161,39 +156,6 @@ struct CardView: View {
 			.padding(.top, 24)
 			.padding(.bottom, 16)
 			.accessibilityAddTraits(.isHeader)
-	}
-
-	private var manualEntryButton: some View {
-		Button {
-			withAnimation {
-				isShowingCardForm = true
-				cardSheetDetent = .fraction(0.5)
-			}
-		} label: {
-			Text("Enter Manually")
-				.frame(maxWidth: .infinity, minHeight: 46)
-				.contentShape(Rectangle())
-		}
-		.buttonStyle(.plain)
-		.foregroundStyle(.tint)
-		.padding(.horizontal, 20)
-		.accessibilityIdentifier("manualCardEntryButton")
-	}
-
-	private var scanCardButton: some View {
-		Button {
-			startScan(isRescan: model.didUseScanner)
-		} label: {
-			Text(model.didUseScanner ? "Scan Again" : "Scan Card")
-				.frame(maxWidth: .infinity)
-		}
-		.buttonStyle(.borderedProminent)
-		.controlSize(.large)
-		.padding(.horizontal, 20)
-		.padding(.top, 2)
-		.padding(.bottom, 4)
-		.accessibilityIdentifier("scanCardButton")
-		.accessibilityHint("Opens the camera to scan card details")
 	}
 
 	private var addCardActionButton: some View {
@@ -221,23 +183,21 @@ struct CardView: View {
 		.accessibilityLabel("Add Card")
 	}
 
-	private func startScan(isRescan: Bool) {
-		if isRescan {
-			track(.cardScanRescanRequested(engine: CardScanningEngineFactory.currentEngineID))
-		}
+	private func startScan() {
 		track(.cardScanStarted(engine: CardScanningEngineFactory.currentEngineID))
-		scannerReturnDetent = cardSheetDetent
 		isFieldFocused = false
 		withAnimation {
-			cardSheetDetent = .large
+			cardSheetDetent = .height(430)
 			model.isShowingScanner = true
 		}
 	}
 
-	private func finishScanning() {
+	private func showManualEntry() {
+		isFieldFocused = false
 		withAnimation {
+			isShowingCardForm = true
 			model.isShowingScanner = false
-			cardSheetDetent = scannerReturnDetent
+			cardSheetDetent = .fraction(0.5)
 		}
 	}
 	#endif

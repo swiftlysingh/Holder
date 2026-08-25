@@ -20,7 +20,7 @@ struct HomeView: View {
 	@State private var isShowingSettings = false
 	#endif
 	#if os(iOS)
-	@State private var addCardSheetDetent: PresentationDetent = .height(240)
+	@State private var addCardSheetDetent: PresentationDetent = .height(430)
 	@Namespace private var addCardTransition
 	#endif
 
@@ -137,7 +137,7 @@ struct HomeView: View {
 				}
 			}
 			.presentationDetents(
-				[.height(240), .fraction(0.5), .height(430), .large],
+				[.fraction(0.5), .height(430), .large],
 				selection: $addCardSheetDetent
 			)
 			.presentationDragIndicator(.visible)
@@ -252,7 +252,7 @@ struct HomeView: View {
 	private func beginAddingCard() {
 		track(.cardAddStarted)
 		#if os(iOS)
-		addCardSheetDetent = .height(240)
+		addCardSheetDetent = .height(430)
 		#endif
 		model.isAddingCard = true
 	}
