@@ -23,7 +23,7 @@ final class CardDataPersistenceTests: XCTestCase {
 			"expiration": "12/30",
 			"name": "Legacy Card",
 			"description": "",
-			"type": CardType.credit.rawValue
+			"type": "Credit Card"
 		])
 
 		let card = try JSONDecoder().decode(CardData.self, from: data)
