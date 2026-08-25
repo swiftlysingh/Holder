@@ -350,7 +350,7 @@ private final class TerminalUpdateCardScanningEngine: CardScanningEngine {
 
 	func scanUpdates() -> AsyncStream<CardScanUpdate> {
 		let streamUpdates = updates
-		AsyncStream { continuation in
+		return AsyncStream { continuation in
 			for update in streamUpdates {
 				continuation.yield(update)
 			}
