@@ -180,6 +180,8 @@ struct HomeView: View {
 				selection: $addCardSheetDetent
 			)
 			.presentationDragIndicator(.visible)
+			.preferredColorScheme(.dark)
+			.background(Color.appBackground)
 			#else
 			NavigationView {
 				CardView(model: cardViewModel)
@@ -213,6 +215,8 @@ struct HomeView: View {
 						}
 					}
 			}
+			.preferredColorScheme(.dark)
+			.background(Color.appBackground)
 		}
 		#endif
 		.sdkScreen(AppAnalyticsScreen.home)
