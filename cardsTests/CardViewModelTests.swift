@@ -84,6 +84,46 @@ final class CardViewModelTests: XCTestCase {
 		XCTAssertFalse(resolver.didResolveOnMainThread)
 	}
 
+	func testSaveCardPreventsReentryAndOnlyLeavesEditingAfterSuccess() async {
+		let saver = GatedCardSaveAction()
+		let model = CardViewModel(
+			card: CardData(
+				id: UUID(),
+				number: "4111111111111111",
+				cvv: "123",
+				expiration: "12/30",
+				name: "Test Card",
+				description: "",
+				type: .credit
+			),
+			isEditing: true,
+			addUpdateCard: { _ in await saver.save() },
+			imageStore: EmptyCardImageStore()
+		)
+
+		let firstSave = Task { @MainActor in await model.saveCard() }
+		await saver.waitUntilFirstSaveStarts()
+
+		XCTAssertTrue(model.isSaving)
+		XCTAssertTrue(model.isEditing)
+		let ignoredSave = await model.saveCard()
+		XCTAssertNil(ignoredSave)
+		let firstSaveCount = await saver.callCount
+		XCTAssertEqual(firstSaveCount, 1)
+
+		await saver.finishFirst(with: false)
+		let failedSave = await firstSave.value
+		XCTAssertEqual(failedSave, false)
+		XCTAssertFalse(model.isSaving)
+		XCTAssertTrue(model.isEditing)
+
+		let successfulSave = await model.saveCard()
+		XCTAssertEqual(successfulSave, true)
+		XCTAssertFalse(model.isEditing)
+		let finalSaveCount = await saver.callCount
+		XCTAssertEqual(finalSaveCount, 2)
+	}
+
 	private func makeModel(imageStore: CardImageStore) -> CardViewModel {
 		CardViewModel(
 			card: CardData(
@@ -155,6 +195,43 @@ private actor GatedCardImageStore: CardImageStore {
 	func saveImageData(_ data: Data, for uuid: UUID) async -> Bool { false }
 
 	func deleteImage(for uuid: UUID) async -> Bool { true }
+}
+
+private actor EmptyCardImageStore: CardImageStore {
+	func loadImageData(for uuid: UUID) async -> Data? { nil }
+	func saveImageData(_ data: Data, for uuid: UUID) async -> Bool { true }
+	func deleteImage(for uuid: UUID) async -> Bool { true }
+}
+
+private actor GatedCardSaveAction {
+	private var firstSaveContinuation: CheckedContinuation<Bool, Never>?
+	private var firstSaveStartedContinuation: CheckedContinuation<Void, Never>?
+	private var didStartFirstSave = false
+	private(set) var callCount = 0
+
+	func save() async -> Bool {
+		callCount += 1
+		guard callCount == 1 else { return true }
+
+		didStartFirstSave = true
+		let started = firstSaveStartedContinuation
+		firstSaveStartedContinuation = nil
+		started?.resume()
+
+		return await withCheckedContinuation { continuation in
+			firstSaveContinuation = continuation
+		}
+	}
+
+	func waitUntilFirstSaveStarts() async {
+		if didStartFirstSave { return }
+		await withCheckedContinuation { firstSaveStartedContinuation = $0 }
+	}
+
+	func finishFirst(with result: Bool) {
+		firstSaveContinuation?.resume(returning: result)
+		firstSaveContinuation = nil
+	}
 }
 
 private final class SequentialDirectoryResolver: @unchecked Sendable {

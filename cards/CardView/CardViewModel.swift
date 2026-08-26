@@ -18,9 +18,17 @@ final class CardViewModel: ObservableObject {
 	@Published var isEditing = false
 	@Published var cardImage: PlatformImage?
 	@Published var isShowingScanner = false
+	@Published var selectedCardType: CardType? {
+		didSet {
+			if let selectedCardType {
+				card.type = selectedCardType
+			}
+		}
+	}
 	@Published var errorMessage: String?
 	@Published var showErrorAlert = false
 	@Published private(set) var isImageMutationInProgress = false
+	@Published private(set) var isSaving = false
 	private var imageLoadTask: Task<Void, Never>?
 	private var imageMutationTask: Task<Void, Never>?
 	private let imageStore: CardImageStore
@@ -34,6 +42,10 @@ final class CardViewModel: ObservableObject {
 
 	var isAddNewFlow : Bool
 	var addUpdateCard: CardUpdateAction
+	var canFinishEditing: Bool {
+		guard let selectedCardType else { return false }
+		return selectedCardType == .other || !card.number.isEmpty
+	}
 
 	init(
 		card: CardData,
@@ -47,6 +59,7 @@ final class CardViewModel: ObservableObject {
 		self.addUpdateCard = addUpdateCard
 		self.isAddNewFlow = addNewFlow
 		self.imageStore = imageStore
+		self.selectedCardType = addNewFlow ? nil : card.type
 		let id = card.id
 		imageLoadTask = Task { [weak self, imageStore, id] in
 			let data = await imageStore.loadImageData(for: id)
@@ -125,7 +138,23 @@ final class CardViewModel: ObservableObject {
 		HapticService.trigger(.success)
 	}
 
-	func markScannerCompleted() {
+	func saveCard() async -> Bool? {
+		guard isEditing, canFinishEditing, !isSaving else { return nil }
+
+		isSaving = true
+		defer { isSaving = false }
+
+		let succeeded = await addUpdateCard(card)
+		if succeeded {
+			isEditing = false
+		}
+		return succeeded
+	}
+
+	func applyScan(_ result: CardScanResult) {
+		CardScanSession.apply(result, to: &card)
 		didUseScanner = true
+		isShowingScanner = false
+		isEditing = true
 	}
 }

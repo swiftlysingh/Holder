@@ -1,0 +1,620 @@
+#if os(iOS)
+import AVFoundation
+import CoreImage
+import CoreImage.CIFilterBuiltins
+import SwiftUI
+import Vision
+import VisionKit
+
+/// Live pass: DataScannerViewController (.balanced) over the whole card.
+/// Once a PAN is stable, capture a still and run .accurate Vision verification.
+@MainActor
+final class VisionCardScanningEngine: NSObject, CardScanningEngine {
+	let engineID = CardScanningEngineID.vision
+
+	private let host = VisionScannerHostViewController()
+	private var continuation: AsyncStream<CardScanUpdate>.Continuation?
+	private var voter = TemporalPANVoter()
+	private var stablePAN: String?
+	private var attempt = CardScanAttempt()
+	private var isStopping = false
+	private var isVerifying = false
+	private var didStart = false
+	private var verificationTask: Task<Void, Never>?
+	var isTorchAvailable: Bool { host.isTorchAvailable }
+
+	override init() {
+		super.init()
+		host.delegate = self
+	}
+
+	func makeCameraView() -> AnyView {
+		AnyView(VisionScannerRepresentable(host: host))
+	}
+
+	func scanUpdates() -> AsyncStream<CardScanUpdate> {
+		AsyncStream { continuation in
+			guard !self.isStopping else {
+				continuation.finish()
+				return
+			}
+			self.continuation = continuation
+			continuation.yield(.scanning(guidance: "Fit the whole card in the frame"))
+			self.startIfNeeded()
+		}
+	}
+
+	func verifyCurrentCandidate() async -> CardScanResult? {
+		guard let pan = stablePAN else { return nil }
+
+		if let image = await host.captureStill() {
+			if let verified = await VisionStillVerifier.recognize(in: image) {
+				return merge(still: verified, livePAN: pan)
+			}
+		}
+
+		return CardScanSession.result(from: CardFrameObservation(
+			pan: pan,
+			expiry: attempt.latestObservation.expiry,
+			cardholderName: nil
+		))
+	}
+
+	@discardableResult
+	func setTorchEnabled(_ isEnabled: Bool) -> Bool {
+		host.setTorchEnabled(isEnabled)
+	}
+
+	func stop() {
+		isStopping = true
+		verificationTask?.cancel()
+		verificationTask = nil
+		host.stopScanning()
+		continuation?.finish()
+		continuation = nil
+	}
+
+	private func startIfNeeded() {
+		guard !didStart else { return }
+		didStart = true
+
+		switch AVCaptureDevice.authorizationStatus(for: .video) {
+		case .authorized:
+			host.startScanning()
+		case .notDetermined:
+			AVCaptureDevice.requestAccess(for: .video) { [weak self] granted in
+				Task { @MainActor in
+					guard let self, !self.isStopping else { return }
+					if granted {
+						self.host.startScanning()
+					} else {
+						self.continuation?.yield(.permissionDenied)
+					}
+				}
+			}
+		case .denied, .restricted:
+			continuation?.yield(.permissionDenied)
+		@unknown default:
+			continuation?.yield(.permissionDenied)
+		}
+	}
+
+	private func merge(still: CardFrameObservation, livePAN: String) -> CardScanResult? {
+		guard still.pan == nil || still.pan == livePAN else { return nil }
+		guard CardPAN.validatedDigits(livePAN) != nil else { return nil }
+		return CardScanResult(
+			pan: livePAN,
+			expiry: still.expiry ?? attempt.latestObservation.expiry,
+			// A missing name is safer than carrying forward a bad live OCR guess.
+			cardholderName: still.cardholderName,
+			network: CardPAN.network(for: livePAN)
+		)
+	}
+
+	private func resetFailedCandidate() {
+		isVerifying = false
+		stablePAN = nil
+		voter.reset()
+		attempt.reset()
+	}
+}
+
+extension VisionCardScanningEngine: VisionScannerHostDelegate {
+	func scannerHostDidFailUnsupported() {
+		continuation?.yield(.unsupported("Card scanning needs a device camera. Enter the card manually, or try on an iPhone."))
+	}
+
+	func scannerHostDidFail(_ message: String) {
+		continuation?.yield(.failed(message))
+	}
+
+	func scannerHostDidRecognize(_ items: [OCRTextItem]) {
+		guard !isStopping, !isVerifying else { return }
+
+		let observation = CardCandidateEngine.observe(items)
+		attempt.record(observation)
+
+		guard let pan = observation.pan else { return }
+
+		if stablePAN == nil {
+			continuation?.yield(.candidate(lastFour: CardScanSession.lastFour(of: pan), network: CardPAN.network(for: pan)))
+		}
+
+		guard let winner = voter.record(pan) else { return }
+		stablePAN = winner
+		isVerifying = true
+		continuation?.yield(.scanning(guidance: "Card number found. Checking the photo…"))
+
+		verificationTask = Task { [weak self] in
+			guard let self, !Task.isCancelled, !self.isStopping else { return }
+			let result = await self.verifyCurrentCandidate()
+			guard !Task.isCancelled, !self.isStopping else { return }
+			self.verificationTask = nil
+			if let result {
+				self.continuation?.yield(.verified(result))
+			} else {
+				self.resetFailedCandidate()
+				self.continuation?.yield(.retryableFailure("Could not confirm the card number. Try again."))
+			}
+		}
+	}
+}
+
+@MainActor
+private protocol VisionScannerHostDelegate: AnyObject {
+	func scannerHostDidFailUnsupported()
+	func scannerHostDidFail(_ message: String)
+	func scannerHostDidRecognize(_ items: [OCRTextItem])
+}
+
+private final class VisionScannerHostViewController: UIViewController {
+	weak var delegate: VisionScannerHostDelegate?
+	private var scanner: DataScannerViewController?
+	#if targetEnvironment(simulator)
+	private var simulatorScanner: SimulatorVisionScannerViewController?
+	#endif
+	private var overlay: ScannerOverlayView?
+
+	override func viewDidLoad() {
+		super.viewDidLoad()
+		view.backgroundColor = .black
+	}
+
+	override func viewDidLayoutSubviews() {
+		super.viewDidLayoutSubviews()
+		scanner?.regionOfInterest = ScannerOverlayView.guideFrame(in: view.bounds)
+	}
+
+	func startScanning() {
+		#if targetEnvironment(simulator)
+		guard simulatorScanner == nil else { return }
+
+		let controller = SimulatorVisionScannerViewController()
+		controller.delegate = delegate
+		addChild(controller)
+		controller.view.translatesAutoresizingMaskIntoConstraints = false
+		view.addSubview(controller.view)
+		NSLayoutConstraint.activate([
+			controller.view.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+			controller.view.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+			controller.view.topAnchor.constraint(equalTo: view.topAnchor),
+			controller.view.bottomAnchor.constraint(equalTo: view.bottomAnchor)
+		])
+		controller.didMove(toParent: self)
+		simulatorScanner = controller
+		installOverlay()
+		controller.startScanning()
+		#else
+		guard scanner == nil else { return }
+
+		guard DataScannerViewController.isSupported, DataScannerViewController.isAvailable else {
+			delegate?.scannerHostDidFailUnsupported()
+			return
+		}
+
+		let controller = DataScannerViewController(
+			recognizedDataTypes: [.text()],
+			qualityLevel: .balanced,
+			recognizesMultipleItems: true,
+			isHighFrameRateTrackingEnabled: true,
+			isPinchToZoomEnabled: true,
+			isGuidanceEnabled: false,
+			isHighlightingEnabled: true
+		)
+		controller.delegate = self
+		addChild(controller)
+		controller.view.translatesAutoresizingMaskIntoConstraints = false
+		view.addSubview(controller.view)
+		NSLayoutConstraint.activate([
+			controller.view.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+			controller.view.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+			controller.view.topAnchor.constraint(equalTo: view.topAnchor),
+			controller.view.bottomAnchor.constraint(equalTo: view.bottomAnchor)
+		])
+		controller.didMove(toParent: self)
+		scanner = controller
+		installOverlay()
+
+		do {
+			try controller.startScanning()
+		} catch {
+			delegate?.scannerHostDidFail("Unable to start the camera.")
+		}
+		#endif
+	}
+
+	func stopScanning() {
+		#if targetEnvironment(simulator)
+		simulatorScanner?.stopScanning()
+		#else
+		setTorchEnabled(false)
+		scanner?.stopScanning()
+		#endif
+	}
+
+	func captureStill() async -> UIImage? {
+		#if targetEnvironment(simulator)
+		return simulatorScanner?.captureStill()
+		#else
+		return try? await scanner?.capturePhoto()
+		#endif
+	}
+
+	var isTorchAvailable: Bool {
+		#if targetEnvironment(simulator)
+		return false
+		#else
+		return torchDevice?.hasTorch == true && torchDevice?.isTorchAvailable == true
+		#endif
+	}
+
+	@discardableResult
+	func setTorchEnabled(_ isEnabled: Bool) -> Bool {
+		#if targetEnvironment(simulator)
+		return false
+		#else
+		guard let torchDevice,
+			  torchDevice.hasTorch,
+			  torchDevice.isTorchModeSupported(isEnabled ? .on : .off),
+			  !isEnabled || torchDevice.isTorchAvailable else {
+			return false
+		}
+
+		do {
+			try torchDevice.lockForConfiguration()
+			defer { torchDevice.unlockForConfiguration() }
+			torchDevice.torchMode = isEnabled ? .on : .off
+			return torchDevice.torchMode == (isEnabled ? .on : .off)
+		} catch {
+			return false
+		}
+		#endif
+	}
+
+	#if !targetEnvironment(simulator)
+	private lazy var torchDevice = AVCaptureDevice.default(
+		.builtInWideAngleCamera,
+		for: .video,
+		position: .back
+	)
+	#endif
+
+	private func installOverlay() {
+		guard overlay == nil else { return }
+		let overlay = ScannerOverlayView()
+		overlay.translatesAutoresizingMaskIntoConstraints = false
+		overlay.isUserInteractionEnabled = false
+		view.addSubview(overlay)
+		NSLayoutConstraint.activate([
+			overlay.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+			overlay.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+			overlay.topAnchor.constraint(equalTo: view.topAnchor),
+			overlay.bottomAnchor.constraint(equalTo: view.bottomAnchor)
+		])
+		self.overlay = overlay
+	}
+}
+
+#if targetEnvironment(simulator)
+/// VisionKit's live scanner is unavailable on Simulator. This native fallback keeps
+/// simulator camera fixtures useful without changing the on-device scanner path.
+private final class SimulatorVisionScannerViewController: UIViewController, AVCaptureVideoDataOutputSampleBufferDelegate {
+	weak var delegate: VisionScannerHostDelegate?
+
+	private let captureSession = AVCaptureSession()
+	private let captureQueue = DispatchQueue(label: "com.swiftlysingh.cards.simulator-scanner")
+	private let videoOutput = AVCaptureVideoDataOutput()
+	private let imageContext = CIContext(options: nil)
+	private let imageLock = NSLock()
+	private var latestImage: UIImage?
+	private var previewLayer: AVCaptureVideoPreviewLayer?
+	private var lastRecognitionTime: CFTimeInterval = 0
+	private var didStart = false
+	private var isStopping = false
+
+	override func viewDidLoad() {
+		super.viewDidLoad()
+		view.backgroundColor = .black
+
+		let previewLayer = AVCaptureVideoPreviewLayer(session: captureSession)
+		previewLayer.videoGravity = .resizeAspectFill
+		view.layer.addSublayer(previewLayer)
+		self.previewLayer = previewLayer
+	}
+
+	override func viewDidLayoutSubviews() {
+		super.viewDidLayoutSubviews()
+		previewLayer?.frame = view.bounds
+	}
+
+	func startScanning() {
+		guard !didStart else { return }
+		didStart = true
+		captureQueue.async { [weak self] in
+			self?.configureAndStart()
+		}
+	}
+
+	func stopScanning() {
+		captureQueue.async { [weak self] in
+			guard let self else { return }
+			self.isStopping = true
+			self.videoOutput.setSampleBufferDelegate(nil, queue: nil)
+			if self.captureSession.isRunning {
+				self.captureSession.stopRunning()
+			}
+		}
+	}
+
+	func captureStill() -> UIImage? {
+		imageLock.lock()
+		defer { imageLock.unlock() }
+		return latestImage
+	}
+
+	private func configureAndStart() {
+		guard !isStopping else { return }
+		guard let device = AVCaptureDevice.default(for: .video),
+			  let input = try? AVCaptureDeviceInput(device: device) else {
+			failUnsupported()
+			return
+		}
+
+		captureSession.beginConfiguration()
+		captureSession.sessionPreset = .hd1920x1080
+
+		guard captureSession.canAddInput(input), captureSession.canAddOutput(videoOutput) else {
+			captureSession.commitConfiguration()
+			failUnsupported()
+			return
+		}
+
+		captureSession.addInput(input)
+		videoOutput.alwaysDiscardsLateVideoFrames = true
+		videoOutput.videoSettings = [
+			kCVPixelBufferPixelFormatTypeKey as String: kCVPixelFormatType_32BGRA
+		]
+		videoOutput.setSampleBufferDelegate(self, queue: captureQueue)
+		captureSession.addOutput(videoOutput)
+		captureSession.commitConfiguration()
+
+		guard !isStopping else { return }
+		captureSession.startRunning()
+	}
+
+	func captureOutput(
+		_ output: AVCaptureOutput,
+		didOutput sampleBuffer: CMSampleBuffer,
+		from connection: AVCaptureConnection
+	) {
+		guard !isStopping else { return }
+		let now = CACurrentMediaTime()
+		guard now - lastRecognitionTime >= 0.25 else { return }
+		lastRecognitionTime = now
+
+		guard let pixelBuffer = CMSampleBufferGetImageBuffer(sampleBuffer) else { return }
+		let image = CIImage(cvPixelBuffer: pixelBuffer)
+		guard let cgImage = imageContext.createCGImage(image, from: image.extent) else { return }
+
+		imageLock.lock()
+		latestImage = UIImage(cgImage: cgImage)
+		imageLock.unlock()
+
+		let request = VNRecognizeTextRequest()
+		request.recognitionLevel = .fast
+		request.usesLanguageCorrection = false
+		request.minimumTextHeight = 0.015
+
+		do {
+			try VNImageRequestHandler(cgImage: cgImage, orientation: .up, options: [:]).perform([request])
+		} catch {
+			return
+		}
+
+		let items = (request.results ?? []).compactMap { observation -> OCRTextItem? in
+			let candidates = observation.topCandidates(5).map(\.string)
+			guard let text = candidates.first, !text.isEmpty else { return nil }
+			return OCRTextItem(
+				text: text,
+				candidates: candidates,
+				boundingBox: observation.boundingBox
+			)
+		}
+		guard !items.isEmpty else { return }
+
+		DispatchQueue.main.async { [weak self] in
+			self?.delegate?.scannerHostDidRecognize(items)
+		}
+	}
+
+	private func failUnsupported() {
+		DispatchQueue.main.async { [weak self] in
+			self?.delegate?.scannerHostDidFailUnsupported()
+		}
+	}
+}
+#endif
+
+extension VisionScannerHostViewController: DataScannerViewControllerDelegate {
+	func dataScanner(_ dataScanner: DataScannerViewController, didAdd addedItems: [RecognizedItem], allItems: [RecognizedItem]) {
+		emit(allItems)
+	}
+
+	func dataScanner(_ dataScanner: DataScannerViewController, didUpdate updatedItems: [RecognizedItem], allItems: [RecognizedItem]) {
+		emit(allItems)
+	}
+
+	func dataScanner(_ dataScanner: DataScannerViewController, becameUnavailableWithError error: DataScannerViewController.ScanningUnavailable) {
+		delegate?.scannerHostDidFail("The camera is unavailable.")
+	}
+
+	private func emit(_ items: [RecognizedItem]) {
+		let ocrItems: [OCRTextItem] = items.compactMap { item in
+			guard case .text(let text) = item else { return nil }
+			let candidates = text.observation.topCandidates(5).map(\.string)
+			return OCRTextItem(
+				text: text.transcript,
+				candidates: candidates,
+				boundingBox: text.observation.boundingBox
+			)
+		}
+		guard !ocrItems.isEmpty else { return }
+		delegate?.scannerHostDidRecognize(ocrItems)
+	}
+}
+
+private struct VisionScannerRepresentable: UIViewControllerRepresentable {
+	let host: VisionScannerHostViewController
+
+	func makeUIViewController(context: Context) -> VisionScannerHostViewController {
+		host
+	}
+
+	func updateUIViewController(_ uiViewController: VisionScannerHostViewController, context: Context) {}
+}
+
+private final class ScannerOverlayView: UIView {
+	static func guideFrame(in bounds: CGRect) -> CGRect {
+		let cardAspect: CGFloat = 1.586
+		let maxWidth = bounds.width * 0.86
+		let width = min(maxWidth, bounds.height * 0.42 * cardAspect)
+		let height = width / cardAspect
+		return CGRect(
+			x: (bounds.width - width) / 2,
+			y: (bounds.height - height) / 2,
+			width: width,
+			height: height
+		)
+	}
+
+	override init(frame: CGRect) {
+		super.init(frame: frame)
+		backgroundColor = .clear
+		isOpaque = false
+	}
+
+	required init?(coder: NSCoder) {
+		super.init(coder: coder)
+		backgroundColor = .clear
+		isOpaque = false
+	}
+
+	override func layoutSubviews() {
+		super.layoutSubviews()
+		setNeedsDisplay()
+	}
+
+	override func draw(_ rect: CGRect) {
+		guard let context = UIGraphicsGetCurrentContext() else { return }
+		UIColor.black.withAlphaComponent(0.45).setFill()
+		context.fill(bounds)
+
+		let guide = Self.guideFrame(in: bounds)
+		let path = UIBezierPath(roundedRect: guide, cornerRadius: 16)
+		context.setBlendMode(.clear)
+		path.fill()
+		context.setBlendMode(.normal)
+
+		UIColor.white.withAlphaComponent(0.9).setStroke()
+		path.lineWidth = 2
+		path.stroke()
+	}
+}
+
+enum VisionStillVerifier {
+	static func recognize(in image: UIImage) async -> CardFrameObservation? {
+		guard let cgImage = image.cgImage else { return nil }
+
+		let prepared = perspectiveCorrected(cgImage) ?? cgImage
+		let items = await recognizeText(in: prepared, level: .accurate)
+		guard !items.isEmpty else { return nil }
+		return CardCandidateEngine.observe(items)
+	}
+
+	private static func perspectiveCorrected(_ cgImage: CGImage) -> CGImage? {
+		let request = VNDetectRectanglesRequest()
+		request.maximumObservations = 4
+		request.minimumConfidence = 0.6
+		request.minimumAspectRatio = 0.45
+		request.maximumAspectRatio = 2.0
+		let handler = VNImageRequestHandler(cgImage: cgImage, options: [:])
+		do {
+			try handler.perform([request])
+		} catch {
+			return nil
+		}
+
+		guard let rectangle = (request.results ?? []).max(by: { lhs, rhs in
+			lhs.boundingBox.width * lhs.boundingBox.height < rhs.boundingBox.width * rhs.boundingBox.height
+		}) else {
+			return nil
+		}
+
+		return flattened(cgImage, observation: rectangle)
+	}
+
+	private static func flattened(_ cgImage: CGImage, observation: VNRectangleObservation) -> CGImage? {
+		let ciImage = CIImage(cgImage: cgImage)
+		let size = CGSize(width: cgImage.width, height: cgImage.height)
+		func point(_ vn: CGPoint) -> CGPoint {
+			CGPoint(x: vn.x * size.width, y: vn.y * size.height)
+		}
+
+		let filter = CIFilter.perspectiveCorrection()
+		filter.inputImage = ciImage
+		filter.topLeft = point(observation.topLeft)
+		filter.topRight = point(observation.topRight)
+		filter.bottomLeft = point(observation.bottomLeft)
+		filter.bottomRight = point(observation.bottomRight)
+
+		guard let output = filter.outputImage else { return nil }
+		let context = CIContext(options: nil)
+		return context.createCGImage(output, from: output.extent)
+	}
+
+	private static func recognizeText(in cgImage: CGImage, level: VNRequestTextRecognitionLevel) async -> [OCRTextItem] {
+		await withCheckedContinuation { continuation in
+			let request = VNRecognizeTextRequest { request, _ in
+				let observations = (request.results as? [VNRecognizedTextObservation]) ?? []
+				let items = observations.map { observation in
+					let candidates = observation.topCandidates(5).map(\.string)
+					return OCRTextItem(
+						text: candidates.first ?? "",
+						candidates: candidates,
+						boundingBox: observation.boundingBox
+					)
+				}
+				continuation.resume(returning: items)
+			}
+			request.recognitionLevel = level
+			request.usesLanguageCorrection = false
+			let handler = VNImageRequestHandler(cgImage: cgImage, options: [:])
+			do {
+				try handler.perform([request])
+			} catch {
+				continuation.resume(returning: [])
+			}
+		}
+	}
+}
+#endif

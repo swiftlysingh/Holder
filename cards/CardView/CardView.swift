@@ -21,13 +21,29 @@ struct CardView: View {
 	@StateObject private var model: CardViewModel
 	@EnvironmentObject private var authenticationSession: AuthenticationSession
 	@Environment(\.analytics) private var analytics
+	#if os(iOS)
+	@Environment(\.dismiss) private var dismiss
+	@Binding private var cardSheetDetent: PresentationDetent
+	@State private var isShowingCardForm = false
+	@FocusState private var isFieldFocused: Bool
+	#endif
 	#if os(macOS)
 	@State private var copiedField: String?
 	#endif
 
+	#if os(iOS)
+	init(
+		model: CardViewModel,
+		cardSheetDetent: Binding<PresentationDetent> = .constant(.large)
+	) {
+		_model = StateObject(wrappedValue: model)
+		_cardSheetDetent = cardSheetDetent
+	}
+	#else
 	init(model: CardViewModel) {
 		_model = StateObject(wrappedValue: model)
 	}
+	#endif
 
 	private var isCVVLocked: Bool {
 		!model.isAddNewFlow
@@ -49,6 +65,8 @@ struct CardView: View {
 		Group {
 			#if os(macOS)
 			macOSCardView()
+			#elseif os(iOS)
+			iOSCardContent()
 			#else
 			getCardListView()
 			#endif
@@ -58,7 +76,131 @@ struct CardView: View {
 				? AppAnalyticsScreen.cardEditor
 				: AppAnalyticsScreen.cardDetails
 		)
+		.disabled(model.isSaving)
 	}
+
+	#if os(iOS)
+	@ViewBuilder
+	private func iOSCardContent() -> some View {
+		VStack(spacing: 0) {
+			if model.isAddNewFlow && isShowingCardForm && !model.isShowingScanner {
+				addCardHeader
+			}
+
+			if authenticationSession.isVaultUnlocked && model.isShowingScanner {
+				CardScannerView(
+					isRescan: model.didUseScanner,
+					onCancel: {
+						dismiss()
+					},
+					onPermissionDenied: {
+						track(.cardScanPermissionDenied(engine: CardScanningEngineFactory.currentEngineID))
+						showCardForm()
+					},
+					onManualEntry: {
+						showCardForm()
+					},
+					onResult: { result, metrics in
+						model.applyScan(result)
+						showCardForm()
+						track(
+							.cardScanCompleted(
+								engine: metrics.engine,
+								panSuccess: metrics.panSuccess,
+								expirySuccess: metrics.expirySuccess,
+								holderSuccess: metrics.holderSuccess,
+								timeToPanMs: metrics.timeToPANMs,
+								timeToCompleteMs: metrics.timeToCompleteMs,
+								rescan: metrics.wasRescan
+							)
+						)
+					}
+				)
+				.frame(maxWidth: .infinity, maxHeight: .infinity)
+				.clipped()
+			}
+
+			if !model.isAddNewFlow || isShowingCardForm {
+				getCardListView()
+					.disabled(model.isShowingScanner)
+			}
+		}
+		.ignoresSafeArea(
+			.container,
+			edges: model.isShowingScanner ? .all : []
+		)
+		.safeAreaInset(edge: .bottom, spacing: 0) {
+			if model.isAddNewFlow && isShowingCardForm && !model.isShowingScanner {
+				addCardActionButton
+			}
+		}
+		.onAppear {
+			guard model.isAddNewFlow, !isShowingCardForm, !model.isShowingScanner else { return }
+			startScan()
+		}
+		.onChange(of: authenticationSession.isVaultUnlocked) { _, isUnlocked in
+			if !isUnlocked && model.isShowingScanner {
+				dismiss()
+			}
+		}
+		.onDisappear {
+			model.isShowingScanner = false
+		}
+	}
+
+	private var addCardHeader: some View {
+		Text("Add a Card")
+			.font(.title2.weight(.semibold))
+			.frame(maxWidth: .infinity, alignment: .leading)
+			.padding(.horizontal, 20)
+			.padding(.top, 24)
+			.padding(.bottom, 16)
+			.accessibilityAddTraits(.isHeader)
+	}
+
+	private var addCardActionButton: some View {
+		Button {
+			Task { @MainActor in
+				await saveCardIfNeeded()
+			}
+		} label: {
+			Group {
+				if model.isSaving {
+					ProgressView()
+				} else {
+					Text("Add Card")
+				}
+			}
+			.frame(maxWidth: .infinity)
+		}
+		.buttonStyle(.borderedProminent)
+		.controlSize(.large)
+		.disabled(!model.canFinishEditing || model.isShowingScanner || model.isSaving)
+		.padding(.horizontal, 20)
+		.padding(.vertical, 12)
+		.background(.bar)
+		.accessibilityIdentifier("addCardButton")
+		.accessibilityLabel("Add Card")
+	}
+
+	private func startScan() {
+		track(.cardScanStarted(engine: CardScanningEngineFactory.currentEngineID))
+		isFieldFocused = false
+		withAnimation {
+			cardSheetDetent = .height(430)
+			model.isShowingScanner = true
+		}
+	}
+
+	private func showCardForm() {
+		isFieldFocused = false
+		withAnimation {
+			isShowingCardForm = true
+			model.isShowingScanner = false
+			cardSheetDetent = .fraction(0.5)
+		}
+	}
+	#endif
 
 	#if os(iOS)
 	fileprivate func itemView(
@@ -81,11 +223,13 @@ struct CardView: View {
 				.disabled(authenticationSession.isAuthenticating)
 				.accessibilityLabel("Authenticate to view security code")
 			} else {
-				TextField("", text: value)
+				TextField(heading, text: value)
+					.labelsHidden()
 					.multilineTextAlignment(.trailing)
 					.disabled(!model.isEditing)
 					.foregroundColor(model.isEditing ? .blue : .accentColor)
 					.keyboardType(keyboardType)
+					.focused($isFieldFocused)
 					.contextMenu(menuItems: {
 						Button(action: {
 							model.copyAction(with: value.wrappedValue)
@@ -209,7 +353,7 @@ struct CardView: View {
 				#endif
 
 				Group {
-				  if model.card.type != .other {
+				  if model.selectedCardType != .other {
 					Picker("Card Network", selection: $model.card.network) {
 					  ForEach(CardNetwork.allCases) { pref in
 						Text(pref.rawValue)
@@ -219,9 +363,12 @@ struct CardView: View {
 					.disabled(!model.isEditing)
 					.bold()
 				  }
-					Picker("Card Type", selection: $model.card.type) {
+					Picker("Card Type", selection: $model.selectedCardType) {
+						if model.isAddNewFlow {
+							Text("Select Card Type").tag(nil as CardType?)
+						}
 						ForEach(CardType.allCases) { pref in
-							Text(pref.rawValue)
+							Text(pref.rawValue).tag(pref as CardType?)
 						}
 					}
 					.disabled(!model.isEditing)
@@ -229,7 +376,7 @@ struct CardView: View {
 				}
 			}
 
-			if let image = model.cardImage, model.card.type == .other {
+			if let image = model.cardImage, model.selectedCardType == .other {
 				Section {
 					#if os(iOS)
 					Image(uiImage: image)
@@ -244,7 +391,7 @@ struct CardView: View {
 			}
 
 			#if os(iOS)
-			if model.isEditing && model.card.type == .other {
+			if model.isEditing && model.selectedCardType == .other {
 				Section {
 					PhotosPicker(selection: $model.selectedItem, matching: .images) {
 						VStack(alignment: .leading) {
@@ -284,7 +431,7 @@ struct CardView: View {
 				}
 			}
 			#else
-			if model.isEditing && model.card.type == .other {
+			if model.isEditing && model.selectedCardType == .other {
 				Section {
 					Button {
 						selectImageFile()
@@ -330,47 +477,16 @@ struct CardView: View {
 				Text("An unknown error occurred")
 			}
 		}
+		.if(model.isAddNewFlow, transform: { view in
+			view.contentMargins(.top, 0, for: .scrollContent)
+		})
 		.toolbar {
-			sensitiveShareMenu
-			editToolbarButton
-		}
-		#if os(iOS)
-		.toolbar {
-			if model.card.number.isEmpty {
-				ToolbarItem(placement: .topBarLeading) {
-					Button(action: {
-						track(.cardScanStarted)
-						model.isShowingScanner = true
-					}, label: {
-						Image(systemName: "camera.on.rectangle")
-					})
-					.if(!model.isAddNewFlow, transform: { view in
-						view.hidden()
-					})
-					.fullScreenCover(isPresented: $model.isShowingScanner) {
-						SharkCardScanViewRepresentable(
-							noPermissionAction: {
-								track(.cardScanPermissionDenied)
-							},
-							successHandler: { response in
-								DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
-									model.card.number = response.number
-									model.card.name = response.holder ?? ""
-									model.card.expiration = response.expiry ?? ""
-									model.markScannerCompleted()
-									track(.cardScanCompleted)
-									model.isShowingScanner = false
-								}
-							}
-						)
-						.sdkScreen(AppAnalyticsScreen.cardScanner)
-					}
-				}
+			if !model.isAddNewFlow {
+				sensitiveShareMenu
+				editToolbarButton
 			}
 		}
-		#endif
 	}
-
 	private var editToolbarButton: some View {
 		Button(action: toggleEditing) {
 			if model.isEditing {
@@ -380,17 +496,13 @@ struct CardView: View {
 			}
 		}
 		.accessibilityLabel(model.isEditing ? "Done" : "Edit")
+		.disabled(model.isEditing && (!model.canFinishEditing || model.isSaving))
 	}
 
 	private func saveCardIfNeeded() async {
-		guard !model.isEditing,
-			  model.card.type == .other || !model.card.number.isEmpty else {
-			return
-		}
-
 		let operation: AppAnalyticsEvent.SaveOperation = model.isAddNewFlow ? .create : .update
 		let inputMethod: AppAnalyticsEvent.InputMethod = model.didUseScanner ? .scanner : .manual
-		let succeeded = await model.addUpdateCard(model.card)
+		guard let succeeded = await model.saveCard() else { return }
 		let event: AppAnalyticsEvent = succeeded
 			? .cardSaveCompleted(
 				operation: operation,
@@ -404,12 +516,12 @@ struct CardView: View {
 	}
 
 	private func toggleEditing() {
-		let isFinishingEdit = model.isEditing
-		model.isEditing.toggle()
-		if isFinishingEdit {
+		if model.isEditing {
 			Task { @MainActor in
 				await saveCardIfNeeded()
 			}
+		} else {
+			model.isEditing = true
 		}
 	}
 
@@ -476,12 +588,12 @@ struct CardView: View {
 		ScrollView {
 			VStack(spacing: 24) {
 				// Visual Card Preview (only for credit/debit cards)
-				if model.card.type != .other && !model.isEditing {
+				if model.selectedCardType != .other && !model.isEditing {
 					macOSCardPreview()
 				}
 
 				// Card Image for Other Cards
-				if let image = model.cardImage, model.card.type == .other {
+				if let image = model.cardImage, model.selectedCardType == .other {
 					Image(nsImage: image)
 						.resizable()
 						.scaledToFit()
@@ -535,7 +647,7 @@ struct CardView: View {
 							.foregroundStyle(.white.opacity(0.9))
 					}
 					Spacer()
-					Text(model.card.type.rawValue)
+					Text(model.selectedCardType?.rawValue ?? "Card")
 						.font(.caption)
 						.fontWeight(.medium)
 						.foregroundStyle(.white.opacity(0.8))
@@ -675,7 +787,7 @@ struct CardView: View {
 				}
 
 				// Pickers
-				if model.card.type != .other {
+				if model.selectedCardType != .other {
 					Divider()
 					HStack {
 						Text("Network")
@@ -698,9 +810,12 @@ struct CardView: View {
 					Text("Type")
 						.foregroundStyle(.secondary)
 					Spacer()
-					Picker("", selection: $model.card.type) {
+					Picker("", selection: $model.selectedCardType) {
+						if model.isAddNewFlow {
+							Text("Select Card Type").tag(nil as CardType?)
+						}
 						ForEach(CardType.allCases) { type in
-							Text(type.rawValue).tag(type)
+							Text(type.rawValue).tag(type as CardType?)
 						}
 					}
 					.labelsHidden()
@@ -716,7 +831,7 @@ struct CardView: View {
 		.frame(maxWidth: 400)
 
 		// Image section for Other Cards
-		if model.isEditing && model.card.type == .other {
+		if model.isEditing && model.selectedCardType == .other {
 			GroupBox {
 				VStack(spacing: 12) {
 					Button {

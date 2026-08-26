@@ -2,24 +2,6 @@
   "originHash" : "d69c62cd0ece5c2cdd02759550ecd9cad8c84039c489a83b6bfa4842e2e5ec10",
   "pins" : [
     {
-      "identity" : "ios-card-scan",
-      "kind" : "remoteSourceControl",
-      "location" : "https://github.com/swiftlysingh/ios-card-scan.git",
-      "state" : {
-        "branch" : "master",
-        "revision" : "e6c909ed064296c549596616eb09fdcd3e956a4a"
-      }
-    },
-    {
-      "identity" : "ios-shark-utils",
-      "kind" : "remoteSourceControl",
-      "location" : "https://github.com/gymshark/ios-shark-utils.git",
-      "state" : {
-        "revision" : "377455779103d45f537ae202b2dbb8575575dc92",
-        "version" : "1.0.5"
-      }
-    },
-    {
       "identity" : "posthog-ios",
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/PostHog/posthog-ios.git",
