@@ -124,8 +124,11 @@ struct HomeView: View {
 			} 
 			else {
 				Text("Tap on a Card to view details")
+					.frame(maxWidth: .infinity, maxHeight: .infinity)
+					.background(Color.appBackground)
 			}
 		}
+		.background(Color.appBackground)
 		.whatsNewSheet()
 		.onOpenURL { url in
 			model.handleDeepLink(url, onOpenedFromWidget: {
@@ -236,11 +239,7 @@ struct HomeView: View {
 	}
 
 	private var groupedBackground: Color {
-		#if os(macOS)
-		Color(nsColor: .windowBackgroundColor)
-		#else
-		Color(uiColor: .systemGroupedBackground)
-		#endif
+		Color.appBackground
 	}
 
 	private var addCardButton: some View {

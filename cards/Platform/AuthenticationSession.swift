@@ -393,10 +393,6 @@ struct VaultProtectedView<Content: View>: View {
     }
 
     private var platformBackground: Color {
-        #if os(macOS)
-        Color(nsColor: .windowBackgroundColor)
-        #else
-        Color(uiColor: .systemBackground)
-        #endif
+        Color.appBackground
     }
 }

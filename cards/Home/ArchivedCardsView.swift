@@ -54,6 +54,8 @@ struct ArchivedCardsView: View {
 				}
 			}
 		}
+		.scrollContentBackground(.hidden)
+		.background(Color.appBackground)
 		.navigationTitle("Archived Cards")
 		.toolbarTitleDisplayMode(.inlineLarge)
 		.confirmationDialog(
