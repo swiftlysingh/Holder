@@ -1,0 +1,37 @@
+project:
+  name: "Holder 2.3 iPad German App Store screenshots"
+  output_dir: "../output/de-DE"
+  device: "iPad Pro 13 - Portrait"
+  output_size: "iPadPro12_9"
+  parallel_workers: 3
+
+screenshots:
+  01_cards_together:
+    template: "templates/01_cards_together.html"
+    frame: false
+    variables:
+      headline: "Ihre Karten. Ein privater Ort."
+      subtitle: "Kredit- und Debitkarten, Ausweise und mehr."
+    assets:
+      app_screenshot: "../captures/en-US/ipad-home.png"
+      app_icon: "../../../cards/Assets.xcassets/AppIcon.appiconset/1024.png"
+
+  02_scan_card:
+    template: "templates/02_scan_card.html"
+    frame: false
+    variables:
+      headline: "Scannen statt Tippen."
+      subtitle: "Nummer, Name und Ablaufdatum werden vorausgefüllt."
+    assets:
+      app_screenshot: "../captures/en-US/ipad-scanner-fixture.png"
+      app_icon: "../../../cards/Assets.xcassets/AppIcon.appiconset/1024.png"
+
+  03_private_details:
+    template: "../templates/03_private_details.html"
+    frame: false
+    variables:
+      headline: "Privat von Anfang an."
+      subtitle: "Im Schlüsselbund. Mit Face ID geschützt."
+    assets:
+      app_screenshot: "../captures/en-US/ipad-card-details.png"
+      app_icon: "../../../cards/Assets.xcassets/AppIcon.appiconset/1024.png"
