@@ -5,7 +5,7 @@ This is the reproducible iPad-only Koubou configuration for the App Store
 size (`iPadPro12_9`) to `../output/iPad_Pro_13_-_Portrait/`.
 
 The shared iPhone `config.yaml` and base templates stay unchanged. This folder
-contains only the two iPad-specific layout copies needed for the wider canvas:
+contains the three iPad-specific layout copies needed for the wider canvas:
 
 - `01_cards_together` moves the device panel down so the subtitle stays clear.
 - `02_scan_card` uses a centered, portrait-shaped panel. Its source is the
@@ -14,6 +14,8 @@ contains only the two iPad-specific layout copies needed for the wider canvas:
   controls, and copy are unchanged; the fixture only replaces the simulator's
   unavailable camera content. The seeded fictional vault remains visible behind
   the sheet, and the approved iPhone `scanner-sheet.png` is never reused here.
+- `03_private_details` uses a smaller tablet corner radius so the complete iPad
+  status bar remains visible instead of clipping the leading time digit.
 
 The iPad sources are real captures from an iPad Pro 13-inch simulator:
 `../captures/en-US/ipad-home.png`, `../captures/en-US/ipad-scanner-fixture.png`,

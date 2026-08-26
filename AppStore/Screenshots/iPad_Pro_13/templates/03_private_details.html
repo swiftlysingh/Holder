@@ -10,19 +10,8 @@
       color: #edf8f1;
       font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", sans-serif;
       background:
-        radial-gradient(circle at 84% 34%, rgba(183, 243, 207, .15), transparent 28%),
-        linear-gradient(160deg, #12493e 0%, #103b32 50%, #121c19 100%);
-    }
-    body::after {
-      content: "";
-      position: absolute;
-      width: 39vw;
-      height: 39vw;
-      right: -16vw;
-      top: 19vh;
-      border: 1px solid rgba(183, 243, 207, .18);
-      border-radius: 50%;
-      box-shadow: 0 0 0 9vw rgba(183, 243, 207, .025), 0 0 0 19vw rgba(183, 243, 207, .02);
+        radial-gradient(circle at 88% 36%, rgba(183, 243, 207, .17), transparent 27%),
+        linear-gradient(165deg, #12493e 0%, #103b32 52%, #121c19 100%);
     }
     .brand {
       position: absolute;
@@ -60,7 +49,7 @@
     p {
       margin: 2.2vh 0 0;
       color: #a7c0b8;
-      font-size: 4.45vw;
+      font-size: 4.35vw;
       line-height: 1.22;
     }
     .screen {
@@ -68,21 +57,21 @@
       z-index: 3;
       left: 7vw;
       right: 7vw;
-      bottom: 0;
-      height: 61vh;
-      padding: 1.05vw 1.05vw 0;
+      bottom: 4.6vh;
+      height: 57vh;
+      padding: 1.05vw;
       overflow: hidden;
-      border: 1px solid rgba(255, 255, 255, .18);
-      border-radius: 3.6vw 3.6vw 0 0;
+      border: 1px solid rgba(255, 255, 255, .16);
+      border-radius: 3.6vw;
       background: #121c19;
-      box-shadow: 0 5vh 15vw rgba(0, 0, 0, .38);
+      box-shadow: 0 4vh 13vw rgba(0, 0, 0, .42);
     }
     .screen img {
       width: 100%;
       height: 100%;
       object-fit: cover;
       object-position: center top;
-      border-radius: 3vw 3vw 0 0;
+      border-radius: 3vw;
     }
   </style>
 </head>
@@ -93,7 +82,7 @@
     <p data-kou-id="subtitle" data-kou-role="supporting">{{subtitle}}</p>
   </div>
   <div class="screen" data-kou-id="device" data-kou-role="device">
-    <img src="{{app_screenshot}}" alt="Holder card list">
+    <img src="{{app_screenshot}}" alt="Private card details in Holder">
   </div>
 </body>
 </html>
