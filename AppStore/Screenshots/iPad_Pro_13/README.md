@@ -46,3 +46,9 @@ asc screenshots validate \
   --device-type IPAD_PRO_3GEN_129 \
   --output table
 ```
+
+The pending 2.3 iOS record also contains an empty legacy
+`APP_IPAD_PRO_129` screenshot set. App Store Connect treats that empty set as a
+submission blocker. The same reviewed 2048 x 2732 PNGs validate for both slots,
+so upload them to `APP_IPAD_PRO_3GEN_129` and `APP_IPAD_PRO_129` after approval.
+Do not regenerate or stretch a second iPad set.
