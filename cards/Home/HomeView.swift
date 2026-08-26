@@ -330,7 +330,18 @@ struct HomeView: View {
 	private var onboardingAudience: Binding<HolderOnboardingAudience?> {
 		Binding(
 			get: {
-				hasAttemptedInitialCardLoad ? appFlow.onboardingAudience : nil
+				#if os(macOS)
+				appFlow.visibleOnboardingAudience(
+					hasAttemptedInitialCardLoad: hasAttemptedInitialCardLoad,
+					isAddingCard: model.isAddingCard
+				)
+				#else
+				appFlow.visibleOnboardingAudience(
+					hasAttemptedInitialCardLoad: hasAttemptedInitialCardLoad,
+					isAddingCard: model.isAddingCard,
+					isShowingSettings: isShowingSettings
+				)
+				#endif
 			},
 			set: { appFlow.onboardingAudience = $0 }
 		)

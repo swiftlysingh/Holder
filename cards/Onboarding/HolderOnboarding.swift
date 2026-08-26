@@ -76,6 +76,17 @@ final class HolderAppFlow: ObservableObject {
 		isOnboardingReplayPending = false
 		onboardingAudience = .replay
 	}
+
+	func visibleOnboardingAudience(
+		hasAttemptedInitialCardLoad: Bool,
+		isAddingCard: Bool,
+		isShowingSettings: Bool = false
+	) -> HolderOnboardingAudience? {
+		guard hasAttemptedInitialCardLoad, !isAddingCard, !isShowingSettings else {
+			return nil
+		}
+		return onboardingAudience
+	}
 }
 
 struct HolderOnboardingReplayAction {
