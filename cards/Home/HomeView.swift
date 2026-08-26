@@ -6,17 +6,21 @@
 //
 
 import SwiftUI
-import WhatsNewKit
 import SinghDevKit
 
 @MainActor
 struct HomeView: View {
 	@ObservedObject private var model: HomeViewModel
+	@ObservedObject private var appFlow: HolderAppFlow
 	@EnvironmentObject private var authenticationSession: AuthenticationSession
 	@Environment(\.analytics) private var analytics
 	@Environment(\.sdk) private var sdk
 	@Environment(\.accessibilityReduceTransparency) private var reduceTransparency
+	private let privacyPolicyURL: URL?
 	@State private var cardPendingDeletion: CardData?
+	@State private var hasAttemptedInitialCardLoad = false
+	@State private var initialCardLoadSucceeded = false
+	@State private var pendingOnboardingAddMode: CardEditorStartMode?
 	#if !os(macOS)
 	@State private var isShowingSettings = false
 	#endif
@@ -25,8 +29,14 @@ struct HomeView: View {
 	@Namespace private var addCardTransition
 	#endif
 
-	init(model: HomeViewModel) {
+	init(
+		model: HomeViewModel,
+		appFlow: HolderAppFlow,
+		privacyPolicyURL: URL?
+	) {
 		self.model = model
+		self.appFlow = appFlow
+		self.privacyPolicyURL = privacyPolicyURL
 	}
 
 	var body: some View {
@@ -87,7 +97,8 @@ struct HomeView: View {
 			.navigationTitle("Cards")
 			.toolbarTitleDisplayMode(.inlineLarge)
 			.task {
-				await model.cardDataStore.loadCards()
+				defer { hasAttemptedInitialCardLoad = true }
+				initialCardLoadSucceeded = await model.cardDataStore.loadCards()
 			}
 			#if os(iOS)
 			.safeAreaInset(edge: .bottom, alignment: .trailing, spacing: 0) {
@@ -126,7 +137,6 @@ struct HomeView: View {
 				Text("Tap on a Card to view details")
 			}
 		}
-		.whatsNewSheet()
 		.onOpenURL { url in
 			model.handleDeepLink(url, onOpenedFromWidget: {
 				track(.cardOpenedFromWidget)
@@ -152,10 +162,12 @@ struct HomeView: View {
 				   ),
 				isEditing: true,
 				addNewFlow: true,
+				startMode: model.addCardStartMode,
 				addUpdateCard: { card in
 					// Keep the sheet open on failure so the entered form is preserved for retry.
 					let succeeded = await model.cardDataStore.addCard(card)
 					if succeeded {
+						model.selectedCard = model.cardDataStore.findCard(by: card.id) ?? card
 						model.isAddingCard = false
 					}
 					return succeeded
@@ -198,10 +210,17 @@ struct HomeView: View {
 			Text("This cannot be undone.")
 		}
 		#if !os(macOS)
-		.sheet(isPresented: $isShowingSettings) {
+		.sheet(isPresented: $isShowingSettings, onDismiss: presentPendingOnboardingReplayIfPossible) {
 			NavigationStack {
 				sdk.settingsView()
 					.sdkScreen(AppAnalyticsScreen.settings)
+					.environment(
+						\.holderOnboardingReplayAction,
+						HolderOnboardingReplayAction {
+							appFlow.requestOnboardingReplay()
+							isShowingSettings = false
+						}
+					)
 					.toolbar {
 						ToolbarItem(placement: .confirmationAction) {
 							Button("Done") {
@@ -212,6 +231,32 @@ struct HomeView: View {
 			}
 		}
 		#endif
+		#if os(macOS)
+		.onAppear(perform: presentPendingOnboardingReplayIfPossible)
+		.onChange(of: appFlow.isOnboardingReplayPending) {
+			presentPendingOnboardingReplayIfPossible()
+		}
+		.onChange(of: model.isAddingCard) {
+			presentPendingOnboardingReplayIfPossible()
+		}
+		#endif
+		.onboardingPresentation(
+			audience: onboardingAudience,
+			hasStoredCards: initialCardLoadSucceeded ? hasStoredCards : nil,
+			privacyPolicyURL: privacyPolicyURL,
+			onPresented: { audience in
+				track(.onboardingShown(audience: audience))
+			},
+			onSkip: { audience in
+				finishOnboarding(audience, outcome: .skipped)
+			},
+			onStartAddingCard: { audience, mode in
+				pendingOnboardingAddMode = mode
+				let outcome: AppAnalyticsEvent.OnboardingOutcome = mode == .scanner ? .scanner : .manual
+				finishOnboarding(audience, outcome: outcome)
+			},
+			onDismiss: onboardingDidDismiss
+		)
 		.sdkScreen(AppAnalyticsScreen.home)
 	}
 
@@ -244,7 +289,9 @@ struct HomeView: View {
 	}
 
 	private var addCardButton: some View {
-		Button(action: beginAddingCard) {
+		Button {
+			beginAddingCard(with: .scanner, source: .home)
+		} label: {
 			Label("Add Card", systemImage: "plus")
 		}
 	}
@@ -280,12 +327,55 @@ struct HomeView: View {
 	}
 	#endif
 
-	private func beginAddingCard() {
-		track(.cardAddStarted)
+	private var onboardingAudience: Binding<HolderOnboardingAudience?> {
+		Binding(
+			get: {
+				hasAttemptedInitialCardLoad ? appFlow.onboardingAudience : nil
+			},
+			set: { appFlow.onboardingAudience = $0 }
+		)
+	}
+
+	private var hasStoredCards: Bool {
+		model.cardDataStore.cardsByType.values.contains { !$0.isEmpty }
+			|| !model.cardDataStore.archivedCards.isEmpty
+	}
+
+	private func beginAddingCard(
+		with mode: CardEditorStartMode,
+		source: AppAnalyticsEvent.CardAddSource
+	) {
+		track(.cardAddStarted(source: source))
+		model.addCardStartMode = mode
 		#if os(iOS)
-		addCardSheetDetent = .height(430)
+		addCardSheetDetent = mode == .scanner ? .height(430) : .fraction(0.5)
 		#endif
 		model.isAddingCard = true
+	}
+
+	private func finishOnboarding(
+		_ audience: HolderOnboardingAudience,
+		outcome: AppAnalyticsEvent.OnboardingOutcome
+	) {
+		track(.onboardingCompleted(audience: audience, outcome: outcome))
+		appFlow.completeOnboarding(for: audience)
+	}
+
+	private func presentPendingOnboardingAddCard() {
+		guard let mode = pendingOnboardingAddMode else { return }
+		pendingOnboardingAddMode = nil
+		beginAddingCard(with: mode, source: .onboarding)
+	}
+
+	private func onboardingDidDismiss() {
+		presentPendingOnboardingAddCard()
+		#if os(macOS)
+		presentPendingOnboardingReplayIfPossible()
+		#endif
+	}
+
+	private func presentPendingOnboardingReplayIfPossible() {
+		appFlow.presentPendingOnboardingReplay(canPresent: !model.isAddingCard)
 	}
 
 	private func deleteCard(_ card: CardData) {

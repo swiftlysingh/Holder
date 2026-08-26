@@ -8,6 +8,10 @@
 
 import SwiftUI
 
+#if os(iOS)
+import VisionKit
+#endif
+
 /// Recognized payment-card fields. PAN is required; expiry and name are best-effort.
 struct CardScanResult: Equatable, Sendable {
 	var pan: String
@@ -65,6 +69,20 @@ enum CardScanningEngineID {
 
 enum CardScanningEngineFactory {
 	static var currentEngineID: String { CardScanningEngineID.vision }
+
+	@MainActor
+	static var isScanningAvailable: Bool {
+		#if os(iOS)
+		#if DEBUG
+		if ProcessInfo.processInfo.arguments.contains("-holderShowScannerOnboarding") {
+			return true
+		}
+		#endif
+		return DataScannerViewController.isSupported && DataScannerViewController.isAvailable
+		#else
+		return false
+		#endif
+	}
 
 	@MainActor
 	static func make() -> any CardScanningEngine {

@@ -14,6 +14,7 @@
 		AA2100152F41000100000015 /* VisionCardScanningEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA2100052F41000100000005 /* VisionCardScanningEngine.swift */; };
 		AA1000052F30000100000005 /* AppAnalyticsEvent.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA1000012F30000100000001 /* AppAnalyticsEvent.swift */; };
 		AA1000062F30000100000006 /* AppAnalyticsScreen.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA1000022F30000100000002 /* AppAnalyticsScreen.swift */; };
+		AB2300022F50000100000002 /* HolderOnboarding.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB2300012F50000100000001 /* HolderOnboarding.swift */; };
 		AA0000062F0BC0000000002A /* PlatformTypes.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000012F0BC0000000001A /* PlatformTypes.swift */; };
 		AA0000072F0BC0000000002B /* PasteboardService.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000022F0BC0000000001B /* PasteboardService.swift */; };
 		AA0000082F0BC0000000002C /* HapticService.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000032F0BC0000000001C /* HapticService.swift */; };
@@ -34,7 +35,6 @@
 		EE8ADF002F1100010000A1C0 /* ArchivedCardsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE8ADF012F1100010000A1C1 /* ArchivedCardsView.swift */; };
 		EE8ADF0B2F11A0A1C5000002 /* SinghDevKit in Frameworks */ = {isa = PBXBuildFile; productRef = EE8ADF0A2F11A0A1C5000001 /* SinghDevKit */; };
 		EE960C4F2B4AC00B00B67805 /* CardDataStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE960C4E2B4AC00B00B67805 /* CardDataStore.swift */; };
-		EEABD0D12B6D8AD600FF34E6 /* WhatsNewKit in Frameworks */ = {isa = PBXBuildFile; productRef = EEABD0D02B6D8AD600FF34E6 /* WhatsNewKit */; };
 		EEBB52EA2B238D6600035B92 /* CreditCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = EEBB52E92B238D6600035B92 /* CreditCard.swift */; };
 		EEBB52EC2B238D6600035B92 /* HomeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = EEBB52EB2B238D6600035B92 /* HomeView.swift */; };
 		EEBB52EE2B238D6800035B92 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = EEBB52ED2B238D6800035B92 /* Assets.xcassets */; };
@@ -83,6 +83,7 @@
 		AA2100052F41000100000005 /* VisionCardScanningEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VisionCardScanningEngine.swift; sourceTree = "<group>"; };
 		AA1000012F30000100000001 /* AppAnalyticsEvent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppAnalyticsEvent.swift; sourceTree = "<group>"; };
 		AA1000022F30000100000002 /* AppAnalyticsScreen.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppAnalyticsScreen.swift; sourceTree = "<group>"; };
+		AB2300012F50000100000001 /* HolderOnboarding.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HolderOnboarding.swift; sourceTree = "<group>"; };
 		CD2900012F21000100000001 /* cardsTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = cardsTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		AA0000012F0BC0000000001A /* PlatformTypes.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlatformTypes.swift; sourceTree = "<group>"; };
 		AA0000022F0BC0000000001B /* PasteboardService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PasteboardService.swift; sourceTree = "<group>"; };
@@ -143,7 +144,6 @@
 			buildActionMask = 2147483647;
 			files = (
 				EE8ADF0B2F11A0A1C5000002 /* SinghDevKit in Frameworks */,
-				EEABD0D12B6D8AD600FF34E6 /* WhatsNewKit in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -159,6 +159,14 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		AB2300032F50000100000003 /* Onboarding */ = {
+			isa = PBXGroup;
+			children = (
+				AB2300012F50000100000001 /* HolderOnboarding.swift */,
+			);
+			path = Onboarding;
+			sourceTree = "<group>";
+		};
 		AA1000032F30000100000003 /* Analytics */ = {
 			isa = PBXGroup;
 			children = (
@@ -263,6 +271,7 @@
 				EE7AF3E82B4C3A1300F2F7C0 /* Info.plist */,
 				EEBB52E92B238D6600035B92 /* CreditCard.swift */,
 				AA1000032F30000100000003 /* Analytics */,
+				AB2300032F50000100000003 /* Onboarding */,
 				EE1D3E8D2B66AE2A009733A5 /* Home */,
 				EE1D3E932B66B133009733A5 /* CardView */,
 				EEBED8C92B6D7F8A00BEBE87 /* ScanView */,
@@ -351,7 +360,6 @@
 			);
 			name = cards;
 			packageProductDependencies = (
-				EEABD0D02B6D8AD600FF34E6 /* WhatsNewKit */,
 				EE8ADF0A2F11A0A1C5000001 /* SinghDevKit */,
 			);
 			productName = "credit-card";
@@ -412,7 +420,6 @@
 			);
 			mainGroup = EEBB52DD2B238D6600035B92;
 			packageReferences = (
-				EEABD0CF2B6D8AD600FF34E6 /* XCRemoteSwiftPackageReference "WhatsNewKit" */,
 				FF9212BC2BE57A50005DF48E /* XCRemoteSwiftPackageReference "SinghDevKit" */,
 			);
 			productRefGroup = EEBB52E72B238D6600035B92 /* Products */;
@@ -475,6 +482,7 @@
 				"$(SRCROOT)/cards/Model/CardData.swift",
 				"$(SRCROOT)/cards/Model/CardDataStore.swift",
 				"$(SRCROOT)/cards/Model/ICloudDataManager.swift",
+				"$(SRCROOT)/cards/Onboarding/HolderOnboarding.swift",
 				"$(SRCROOT)/cards/Platform/HapticService.swift",
 				"$(SRCROOT)/cards/Platform/AuthenticationSession.swift",
 				"$(SRCROOT)/cards/Platform/PasteboardService.swift",
@@ -516,6 +524,7 @@
 			files = (
 				AA1000052F30000100000005 /* AppAnalyticsEvent.swift in Sources */,
 				AA1000062F30000100000006 /* AppAnalyticsScreen.swift in Sources */,
+				AB2300022F50000100000002 /* HolderOnboarding.swift in Sources */,
 				EE1D3E922B66AE83009733A5 /* CardViewModel.swift in Sources */,
 				AA2100112F41000100000011 /* CardScanning.swift in Sources */,
 				AA2100122F41000100000012 /* CardCandidateEngine.swift in Sources */,
@@ -718,7 +727,7 @@
 				INFOPLIST_FILE = cards/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = "Holder Beta";
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.utilities";
-				INFOPLIST_KEY_NSCameraUsageDescription = "To scan cards";
+				INFOPLIST_KEY_NSCameraUsageDescription = "Holder uses the camera to scan card details so you can review them before saving.";
 				INFOPLIST_KEY_NSFaceIDUsageDescription = "To protect your card vault and security codes";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
@@ -877,7 +886,7 @@
 				INFOPLIST_FILE = cards/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = "Holder-debug";
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.utilities";
-				INFOPLIST_KEY_NSCameraUsageDescription = "To scan cards";
+				INFOPLIST_KEY_NSCameraUsageDescription = "Holder uses the camera to scan card details so you can review them before saving.";
 				INFOPLIST_KEY_NSFaceIDUsageDescription = "To protect your card vault and security codes";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
@@ -917,7 +926,7 @@
 				INFOPLIST_FILE = cards/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = Holder;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.utilities";
-				INFOPLIST_KEY_NSCameraUsageDescription = "To scan cards";
+				INFOPLIST_KEY_NSCameraUsageDescription = "Holder uses the camera to scan card details so you can review them before saving.";
 				INFOPLIST_KEY_NSFaceIDUsageDescription = "To protect your card vault and security codes";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
@@ -1090,14 +1099,6 @@
 /* End XCConfigurationList section */
 
 /* Begin XCRemoteSwiftPackageReference section */
-		EEABD0CF2B6D8AD600FF34E6 /* XCRemoteSwiftPackageReference "WhatsNewKit" */ = {
-			isa = XCRemoteSwiftPackageReference;
-			repositoryURL = "https://github.com/SvenTiigi/WhatsNewKit.git";
-			requirement = {
-				kind = upToNextMajorVersion;
-				minimumVersion = 2.2.0;
-			};
-		};
 		FF9212BC2BE57A50005DF48E /* XCRemoteSwiftPackageReference "SinghDevKit" */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/swiftlysingh/SinghDevKit.git";
@@ -1113,11 +1114,6 @@
 			isa = XCSwiftPackageProductDependency;
 			package = FF9212BC2BE57A50005DF48E /* XCRemoteSwiftPackageReference "SinghDevKit" */;
 			productName = SinghDevKit;
-		};
-		EEABD0D02B6D8AD600FF34E6 /* WhatsNewKit */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = EEABD0CF2B6D8AD600FF34E6 /* XCRemoteSwiftPackageReference "WhatsNewKit" */;
-			productName = WhatsNewKit;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};

@@ -16,7 +16,18 @@ enum AppAnalyticsEvent: AnalyticsEvent {
         case archived
     }
 
-    case cardAddStarted
+    enum CardAddSource: String, Sendable {
+        case home
+        case onboarding
+    }
+
+    enum OnboardingOutcome: String, Sendable {
+        case scanner
+        case manual
+        case skipped
+    }
+
+    case cardAddStarted(source: CardAddSource)
     case cardSaveCompleted(
         operation: SaveOperation,
         inputMethod: InputMethod
@@ -44,6 +55,12 @@ enum AppAnalyticsEvent: AnalyticsEvent {
     case cardScanPermissionDenied(engine: String)
     case cardScanRescanRequested(engine: String)
     case cardOpenedFromWidget
+    case onboardingShown(audience: HolderOnboardingAudience)
+    case onboardingCompleted(
+        audience: HolderOnboardingAudience,
+        outcome: OnboardingOutcome
+    )
+    case onboardingReplayRequested
 
     var name: String {
         switch self {
@@ -75,6 +92,12 @@ enum AppAnalyticsEvent: AnalyticsEvent {
             "card_scan_rescan_requested"
         case .cardOpenedFromWidget:
             "card_opened_from_widget"
+        case .onboardingShown:
+            "onboarding_shown"
+        case .onboardingCompleted:
+            "onboarding_completed"
+        case .onboardingReplayRequested:
+            "onboarding_replay_requested"
         }
     }
 
@@ -114,7 +137,16 @@ enum AppAnalyticsEvent: AnalyticsEvent {
                 properties["time_to_pan_ms"] = .int(timeToPanMs)
             }
             return properties
-        case .cardAddStarted,
+        case .cardAddStarted(let source):
+            return ["source": .string(source.rawValue)]
+        case .onboardingShown(let audience):
+            return ["audience": .string(audience.rawValue)]
+        case .onboardingCompleted(let audience, let outcome):
+            return [
+                "audience": .string(audience.rawValue),
+                "outcome": .string(outcome.rawValue)
+            ]
+        case .onboardingReplayRequested,
              .cardArchived,
              .cardArchiveFailed,
              .cardUnarchived,
@@ -130,7 +162,13 @@ enum AppAnalyticsEvent: AnalyticsEvent {
             .breadcrumb(including: ["operation", "input_method"])
         case .cardDeleted, .cardDeleteFailed:
             .breadcrumb(including: ["location"])
-        case .cardAddStarted,
+        case .cardAddStarted:
+            .breadcrumb(including: ["source"])
+        case .onboardingShown:
+            .breadcrumb(including: ["audience"])
+        case .onboardingCompleted:
+            .breadcrumb(including: ["audience", "outcome"])
+        case .onboardingReplayRequested,
              .cardArchived,
              .cardArchiveFailed,
              .cardUnarchived,

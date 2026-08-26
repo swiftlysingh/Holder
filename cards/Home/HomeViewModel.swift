@@ -13,6 +13,7 @@ final class HomeViewModel: ObservableObject {
 	@Published var isAddingCard = false
 	@Published var selectedCard: CardData?
 	@Bindable var cardDataStore: CardDataStore
+	var addCardStartMode: CardEditorStartMode = .scanner
 	private var deepLinkTask: Task<Void, Never>?
 
 	init(cardDataStore: CardDataStore? = nil) {

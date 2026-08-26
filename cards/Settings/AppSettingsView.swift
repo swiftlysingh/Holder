@@ -11,10 +11,21 @@ import SwiftUI
 struct AppSettingsView: View {
     @ObservedObject private var settings = UserSettings.shared
     @EnvironmentObject private var authenticationSession: AuthenticationSession
+    @Environment(\.analytics) private var analytics
+    @Environment(\.holderOnboardingReplayAction) private var replayOnboarding
     @AppStorage("isAuthEnabled") private var isVaultLockEnabled = true
     @State private var showsTipJar = false
 
     var body: some View {
+        Button {
+            Task {
+                await analytics.capture(AppAnalyticsEvent.onboardingReplayRequested)
+            }
+            replayOnboarding()
+        } label: {
+            Label("View Onboarding", systemImage: "sparkles.rectangle.stack")
+        }
+        .accessibilityHint("Shows Holder's welcome and Add Card walkthrough again")
         VStack(alignment: .leading, spacing: 4) {
             Toggle("Require Authentication for Vault", isOn: vaultLockBinding)
             Text("Holder asks on launch and when you return after more than 60 seconds. Security codes always need a recent authentication.")

@@ -136,7 +136,11 @@ struct CardView: View {
 		}
 		.onAppear {
 			guard model.isAddNewFlow, !isShowingCardForm, !model.isShowingScanner else { return }
-			startScan()
+			if model.startMode == .manual {
+				showCardForm()
+			} else {
+				startScan()
+			}
 		}
 		.onChange(of: authenticationSession.isVaultUnlocked) { _, isUnlocked in
 			if !isUnlocked && model.isShowingScanner {
