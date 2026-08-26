@@ -231,6 +231,8 @@ struct CreditCard: App {
         }
         .environmentObject(authenticationSession)
         .withSDK(sdk)
+        .background(Color.appBackground)
+        .preferredColorScheme(.dark)
     }
 
     #if os(macOS)

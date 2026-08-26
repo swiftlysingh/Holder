@@ -135,6 +135,8 @@ struct HomeView: View {
 			} 
 			else {
 				Text("Tap on a Card to view details")
+					.frame(maxWidth: .infinity, maxHeight: .infinity)
+					.background(Color.appBackground)
 			}
 		}
 		.onOpenURL { url in
@@ -189,6 +191,7 @@ struct HomeView: View {
 				selection: $addCardSheetDetent
 			)
 			.presentationDragIndicator(.visible)
+			.presentationBackground(Color.appBackground)
 			#else
 			NavigationView {
 				CardView(model: cardViewModel)
@@ -229,6 +232,7 @@ struct HomeView: View {
 						}
 					}
 			}
+			.presentationBackground(Color.appBackground)
 		}
 		#endif
 		#if os(macOS)
@@ -281,11 +285,7 @@ struct HomeView: View {
 	}
 
 	private var groupedBackground: Color {
-		#if os(macOS)
-		Color(nsColor: .windowBackgroundColor)
-		#else
-		Color(uiColor: .systemGroupedBackground)
-		#endif
+		Color.appBackground
 	}
 
 	private var addCardButton: some View {

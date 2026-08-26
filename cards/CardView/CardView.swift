@@ -470,6 +470,8 @@ struct CardView: View {
 			}
 			#endif
 		}
+		.scrollContentBackground(.hidden)
+		.background(Color.appBackground)
 		.alert("Image Error", isPresented: $model.showErrorAlert) {
 			Button("OK", role: .cancel) {
 				model.showErrorAlert = false
@@ -614,6 +616,7 @@ struct CardView: View {
 			.frame(maxWidth: .infinity)
 		}
 		.scrollContentBackground(.hidden)
+		.background(Color.appBackground)
 		.contentMargins(0)
 		.toolbar {
 			sensitiveShareMenu

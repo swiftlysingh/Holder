@@ -138,6 +138,7 @@ private struct HolderOnboardingPresentationModifier: ViewModifier {
 		#if os(iOS)
 		content.fullScreenCover(item: $audience, onDismiss: onDismiss) { presentedAudience in
 			onboardingView(for: presentedAudience)
+				.presentationBackground(Color.appBackground)
 				.interactiveDismissDisabled()
 		}
 		#else
@@ -243,15 +244,18 @@ struct HolderOnboardingView: View {
 	}
 
 	private var background: some View {
-		LinearGradient(
-			colors: [
-				Color.accentColor.opacity(0.08),
-				Color.accentColor.opacity(0.02),
-				Color.clear
-			],
-			startPoint: .topLeading,
-			endPoint: .bottomTrailing
-		)
+		ZStack {
+			Color.appBackground
+			LinearGradient(
+				colors: [
+					Color.accentColor.opacity(0.08),
+					Color.accentColor.opacity(0.02),
+					Color.clear
+				],
+				startPoint: .topLeading,
+				endPoint: .bottomTrailing
+			)
+		}
 		.ignoresSafeArea()
 	}
 
