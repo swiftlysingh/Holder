@@ -27,7 +27,7 @@ screenshots:
       app_icon: "../../../cards/Assets.xcassets/AppIcon.appiconset/1024.png"
 
   03_private_details:
-    template: "../templates/03_private_details.html"
+    template: "templates/03_private_details.html"
     frame: false
     variables:
       headline: "Privat von Anfang an."
