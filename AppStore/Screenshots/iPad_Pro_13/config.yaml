@@ -1,8 +1,8 @@
 project:
-  name: "Holder 2.3 App Store screenshots"
-  output_dir: "output"
-  device: "iPhone 17 Pro Max - Portrait"
-  output_size: "iPhone6_9"
+  name: "Holder 2.3 iPad App Store screenshots"
+  output_dir: "../output"
+  device: "iPad Pro 13 - Portrait"
+  output_size: "iPadPro12_9"
   parallel_workers: 3
 
 screenshots:
@@ -13,8 +13,8 @@ screenshots:
       headline: "Your cards. One private place."
       subtitle: "Credit, debit, IDs, and more."
     assets:
-      app_screenshot: "captures/en-US/home.png"
-      app_icon: "../../cards/Assets.xcassets/AppIcon.appiconset/1024.png"
+      app_screenshot: "../captures/en-US/home.png"
+      app_icon: "../../../cards/Assets.xcassets/AppIcon.appiconset/1024.png"
 
   02_scan_card:
     template: "templates/02_scan_card.html"
@@ -23,15 +23,15 @@ screenshots:
       headline: "Scan it. Skip the typing."
       subtitle: "Prefill the number, name, and expiry."
     assets:
-      app_screenshot: "captures/en-US/scanner-sheet.png"
-      app_icon: "../../cards/Assets.xcassets/AppIcon.appiconset/1024.png"
+      app_screenshot: "../captures/en-US/scanner-sheet.png"
+      app_icon: "../../../cards/Assets.xcassets/AppIcon.appiconset/1024.png"
 
   03_private_details:
-    template: "templates/03_private_details.html"
+    template: "../templates/03_private_details.html"
     frame: false
     variables:
       headline: "Private by design."
       subtitle: "Saved to Keychain. Opened with Face ID."
     assets:
-      app_screenshot: "captures/en-US/card-details.png"
-      app_icon: "../../cards/Assets.xcassets/AppIcon.appiconset/1024.png"
+      app_screenshot: "../captures/en-US/card-details.png"
+      app_icon: "../../../cards/Assets.xcassets/AppIcon.appiconset/1024.png"

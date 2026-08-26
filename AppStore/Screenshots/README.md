@@ -1,30 +1,25 @@
-# Holder screenshot concepts
+# Holder 2.3 App Store screenshots
 
-This directory is a review-sized Koubou integration for exploring Holder's App
-Store screenshot direction without committing us to a final capture,
-localization, or upload workflow yet.
-
-The three checked-in outputs use Holder's future semantic palette and a shared
-visual language while telling distinct parts of the product story. Each
-screenshot points to its own HTML template in `config.yaml`.
+This directory contains Holder's review-ready screenshot set. It uses
+real Holder captures wrapped in a shared Koubou marketing layout defined by
+`config.yaml` and the HTML templates.
 
 ## Store sequence
 
 1. **Your cards. One private place.** Establish what Holder is with the card
    list.
-2. **Scan it. Skip the typing.** Introduce scanning as the differentiator after
-   the product is understood.
-3. **Private by design.** Combine the card-detail utility with Holder's
-   Keychain and Face ID privacy story.
+2. **Scan it. Skip the typing.** Show the exact production scanner UI.
+3. **Private by design.** Show useful card details while the security code
+   remains protected.
 
-The scan flow represented by the second concept is:
+The scan flow is:
 
-`Cards → Add card → Scan card → Review detected details → Save → Cards`
+`Cards → Add Card → Scan → Review detected details → Save → Cards`
 
-Manual entry remains the fallback when camera access is unavailable or a field
+Manual entry remains available when camera access is unavailable or a field
 cannot be detected confidently.
 
-## Generate the samples
+## Generate the set
 
 From this directory:
 
@@ -39,63 +34,58 @@ export PLAYWRIGHT_BROWSERS_PATH="$PWD/.playwright-browsers"
 Browser setup is only required once. Koubou writes the PNGs and layout reports
 to `output/`.
 
-## Recapture and update workflow
+## Recapture workflow
 
-1. Use one dedicated screenshot simulator and the app's Debug configuration.
-2. Reset that simulator before the final capture pass. Holder stores the Debug
-   fixtures in Keychain, which can survive deleting and reinstalling the app.
-3. Launch once with an empty Keychain so the fixtures in
-   `cards/Model/CardDataStore.swift` seed cleanly.
-4. Navigate to each approved state and capture raw app UI without a device
-   frame, marketing copy, pointer, debug overlay, notification, or real data.
-5. Replace the corresponding PNG under `captures/<locale>/`. Keep every final
-   capture on the same device, orientation, appearance, and status-bar state.
-6. Update `config.yaml` for screenshot order, copy, templates, and source
+1. Use a dedicated iPhone 17 Pro Max simulator with Holder's Debug
+   configuration for the home and detail captures.
+2. Set a consistent locale, appearance, and status bar. The current en-US set
+   uses 9:41, full signal, Wi-Fi, and a charged battery.
+3. Reset the simulator before the final pass, including its Keychain data, then
+   complete first-launch onboarding. Holder's existing Debug fixtures seed the
+   M. C. Lovin sample cards into an empty vault.
+4. Capture `home.png`, then open the sample Everyday Card for
+   `card-details.png`.
+5. Capture the unchanged scanner on an iPhone at its default half-height
+   presentation. Crop from the scanner sheet's top edge to the bottom of the
+   screen and save it as `scanner-sheet.png`. Do not retain any part of the
+   vault behind the sheet.
+6. Keep source captures under `captures/<locale>/`. Do not add marketing copy,
+   pointers, device frames, notifications, or real card data to these files.
+7. Update `config.yaml` for screenshot order, copy, templates, and source
    assets. Keep marketing layout and styling in `templates/`.
-7. Run the generation command and visually inspect every output at full size
-   and as a small gallery thumbnail.
-8. Check every layout report for annotated overlaps and confirm every final PNG
-   is 1320 x 2868 before committing it.
+8. Regenerate the set and inspect every output at full size and as gallery
+   thumbnails.
+9. Confirm every layout report has an empty `overlaps` array and every final
+   PNG is 1320 × 2868 before upload.
 
 Never edit files under `output/` by hand. Change the capture, template, or
 configuration and regenerate them.
 
-## Source asset rule
+## Source asset rules
 
-`captures/` contains raw simulator screenshots only. The current concepts use
-those real captures for the card list and card details. The scanner is
-illustrative until its production UI is ready. Final App Store artwork should
-replace all three states with representative captures from the redesigned app.
+All three en-US assets are real Holder UI captures. The scanner asset is a
+pixel-preserving crop of the production scanner sheet. Its source vault area is
+excluded completely, so no personal card names or digits are present. The home
+and detail captures use only Debug sample cards and never use production or
+personal vault data.
 
 Do not use screenshots downloaded from App Store Connect because those already
 include marketing artwork and can create a nested, distorted presentation.
 
-The current `en-US` assets are real iPhone 17 Pro Max Debug captures of the
-card list and a card detail. The cards come from Holder's compile-time Debug
-fixture. No production or personal card data is present.
+## Final checklist
 
-## Final capture checklist
-
-- The first screenshot makes Holder's purpose obvious without reading its
-  subtitle.
+- The first screenshot makes Holder's purpose obvious without its subtitle.
 - Each later screenshot communicates one distinct benefit.
 - All claims match behavior in the submitted build.
-- Card names and numbers are synthetic, globally neutral, and consistently
-  masked where appropriate.
+- Card names and numbers are synthetic and clearly presented as samples.
 - Expiration dates are in the future and no reusable-looking credentials or
   personal data are shown.
-- The scanner is captured from the production flow, not the illustrative
-  concept currently checked in.
+- The security code remains protected in the detail screenshot.
 - Text remains legible at App Store search-result size.
 - The generated set uses the approved order from `config.yaml`.
-- App Store Connect upload remains a separate, explicitly authorized action.
+- Upload happens only after explicit authorization and a final visual review.
 
-## Deliberately deferred
+## Deferred
 
-- Automated simulator navigation and capture
-- Representative redesigned app captures and a real widget capture
-- Localization and copy fitting
-- iPad and alternate iPhone sizes
-- App Store Connect validation and upload
-
-Those decisions can follow after the visual direction is approved.
+- Additional localizations
+- Widget artwork

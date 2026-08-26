@@ -403,7 +403,37 @@ extension CreditCard: WhatsNewCollectionProvider {
   }
 
   var whatsNewCollection: WhatsNewCollection {
+	var currentFeatures = [
+	  WhatsNew.Feature(
+		image: .init(systemName: "rectangle.stack"),
+		title: "Clearer saved cards",
+		subtitle: "Saved-card rows are easier to scan, so the right card is quicker to find."
+	  ),
+	  WhatsNew.Feature(
+		image: .init(systemName: "lock.shield"),
+		title: "Smoother secure access",
+		subtitle: "More reliable vault access keeps Holder ready when you need it."
+	  )
+	]
+	#if os(iOS)
+	currentFeatures.insert(
+	  WhatsNew.Feature(
+		image: .init(systemName: "camera.viewfinder"),
+		title: "Private card scanning",
+		subtitle: "Scan cards with on-device processing. Holder keeps the camera image off the cloud."
+	  ),
+	  at: 0
+	)
+	#endif
+
 	return [
+	  WhatsNew(
+		version: "2.3",
+		title: title,
+		features: currentFeatures,
+		primaryAction: primaryAction
+	  ),
+
 	  WhatsNew(
 		version: "1.6",
 		title: title,
