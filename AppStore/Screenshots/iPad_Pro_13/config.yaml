@@ -13,7 +13,7 @@ screenshots:
       headline: "Your cards. One private place."
       subtitle: "Credit, debit, IDs, and more."
     assets:
-      app_screenshot: "../captures/en-US/home.png"
+      app_screenshot: "../captures/en-US/ipad-home.png"
       app_icon: "../../../cards/Assets.xcassets/AppIcon.appiconset/1024.png"
 
   02_scan_card:
@@ -23,7 +23,7 @@ screenshots:
       headline: "Scan it. Skip the typing."
       subtitle: "Prefill the number, name, and expiry."
     assets:
-      app_screenshot: "../captures/en-US/scanner-sheet.png"
+      app_screenshot: "../captures/en-US/ipad-scanner-fixture.png"
       app_icon: "../../../cards/Assets.xcassets/AppIcon.appiconset/1024.png"
 
   03_private_details:
@@ -33,5 +33,5 @@ screenshots:
       headline: "Private by design."
       subtitle: "Saved to Keychain. Opened with Face ID."
     assets:
-      app_screenshot: "../captures/en-US/card-details.png"
+      app_screenshot: "../captures/en-US/ipad-card-details.png"
       app_icon: "../../../cards/Assets.xcassets/AppIcon.appiconset/1024.png"

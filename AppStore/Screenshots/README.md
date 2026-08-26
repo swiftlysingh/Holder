@@ -34,6 +34,10 @@ export PLAYWRIGHT_BROWSERS_PATH="$PWD/.playwright-browsers"
 Browser setup is only required once. Koubou writes the PNGs and layout reports
 to `output/`.
 
+The localized iPhone sets use the same English Debug captures with localized
+marketing copy. Generate them with `config.fr-FR.yaml` and `config.de-DE.yaml`;
+their outputs live under `output/fr-FR/` and `output/de-DE/`.
+
 ## Recapture workflow
 
 1. Use a dedicated iPhone 17 Pro Max simulator with Holder's Debug
@@ -45,8 +49,11 @@ to `output/`.
    M. C. Lovin sample cards into an empty vault.
 4. Capture `home.png`, then open the sample Everyday Card for
    `card-details.png`.
-5. Capture the unchanged scanner on an iPhone at its default half-height
-   presentation. Crop from the scanner sheet's top edge to the bottom of the
+5. Capture the unchanged scanner UI on an iPhone at its default half-height
+   presentation, using the explicit Debug screenshot fixture for the simulator
+   camera feed. Launch the Debug build with
+   `--holder-screenshot-scanner-fixture`; Release and Beta builds do not compile
+   the fixture. Crop from the scanner sheet's top edge to the bottom of the
    screen and save it as `scanner-sheet.png`. Do not retain any part of the
    vault behind the sheet.
 6. Keep source captures under `captures/<locale>/`. Do not add marketing copy,
@@ -64,10 +71,11 @@ configuration and regenerate them.
 ## Source asset rules
 
 All three en-US assets are real Holder UI captures. The scanner asset is a
-pixel-preserving crop of the production scanner sheet. Its source vault area is
-excluded completely, so no personal card names or digits are present. The home
-and detail captures use only Debug sample cards and never use production or
-personal vault data.
+pixel-preserving crop of the production scanner sheet with the explicit Debug
+screenshot fixture beneath its unchanged frame and controls. Its source vault
+area is excluded completely, so no personal card names or digits are present.
+The home and detail captures use only Debug sample cards and never use
+production or personal vault data.
 
 Do not use screenshots downloaded from App Store Connect because those already
 include marketing artwork and can create a nested, distorted presentation.
@@ -78,8 +86,8 @@ include marketing artwork and can create a nested, distorted presentation.
 - Each later screenshot communicates one distinct benefit.
 - All claims match behavior in the submitted build.
 - Card names and numbers are synthetic and clearly presented as samples.
-- Expiration dates are in the future and no reusable-looking credentials or
-  personal data are shown.
+- Expiration dates are in the future, card values are documented public test
+  fixtures, and no real or personal credentials are shown.
 - The security code remains protected in the detail screenshot.
 - Text remains legible at App Store search-result size.
 - The generated set uses the approved order from `config.yaml`.
@@ -87,5 +95,4 @@ include marketing artwork and can create a nested, distorted presentation.
 
 ## Deferred
 
-- Additional localizations
 - Widget artwork
