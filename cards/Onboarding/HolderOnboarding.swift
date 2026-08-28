@@ -245,8 +245,8 @@ struct HolderOnboardingView: View {
 	private var background: some View {
 		LinearGradient(
 			colors: [
-				Color.accentColor.opacity(0.08),
-				Color.accentColor.opacity(0.02),
+				Color.accentColor.opacity(0.18),
+				Color.accentColor.opacity(0.06),
 				Color.clear
 			],
 			startPoint: .topLeading,
