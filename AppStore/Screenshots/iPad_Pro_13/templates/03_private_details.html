@@ -7,11 +7,11 @@
     html, body { margin: 0; width: 100%; height: 100%; overflow: hidden; }
     body {
       position: relative;
-      color: #103b32;
+      color: #edf8f1;
       font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", sans-serif;
       background:
-        radial-gradient(circle at 88% 8%, rgba(255, 255, 255, .48), transparent 25%),
-        #b7f3cf;
+        radial-gradient(circle at 88% 36%, rgba(183, 243, 207, .17), transparent 27%),
+        linear-gradient(165deg, #12493e 0%, #103b32 52%, #121c19 100%);
     }
     .brand {
       position: absolute;
@@ -21,7 +21,7 @@
       display: flex;
       align-items: center;
       gap: 2.3vw;
-      color: #3f6b5d;
+      color: #a7c0b8;
       font-size: 3.6vw;
       font-weight: 700;
     }
@@ -29,7 +29,7 @@
       width: 8.2vw;
       height: 8.2vw;
       border-radius: 2vw;
-      box-shadow: 0 1.4vh 4vw rgba(16, 59, 50, .17);
+      box-shadow: 0 1.4vh 4vw rgba(0, 0, 0, .24);
     }
     .copy {
       position: absolute;
@@ -48,29 +48,30 @@
     }
     p {
       margin: 2.2vh 0 0;
-      color: #3f6b5d;
+      color: #a7c0b8;
       font-size: 4.35vw;
       line-height: 1.22;
     }
     .screen {
       position: absolute;
       z-index: 3;
-      left: 5.5vw;
-      right: 5.5vw;
+      left: 7vw;
+      right: 7vw;
       bottom: 4.6vh;
-      height: 42vh;
-      padding: .8vw;
+      height: 57vh;
+      padding: 1.05vw;
       overflow: hidden;
-      border: 1px solid rgba(255, 255, 255, .46);
-      border-radius: 7.2vw;
+      border: 1px solid rgba(255, 255, 255, .16);
+      border-radius: 3.6vw;
       background: #121c19;
-      box-shadow: 0 4vh 12vw rgba(16, 59, 50, .26);
+      box-shadow: 0 4vh 13vw rgba(0, 0, 0, .42);
     }
     .screen img {
       width: 100%;
       height: 100%;
-      object-fit: contain;
-      border-radius: 6.3vw;
+      object-fit: cover;
+      object-position: center top;
+      border-radius: 3vw;
     }
   </style>
 </head>
@@ -81,7 +82,7 @@
     <p data-kou-id="subtitle" data-kou-role="supporting">{{subtitle}}</p>
   </div>
   <div class="screen" data-kou-id="device" data-kou-role="device">
-    <img src="{{app_screenshot}}" alt="Holder's card scanner">
+    <img src="{{app_screenshot}}" alt="Private card details in Holder">
   </div>
 </body>
 </html>

@@ -328,6 +328,9 @@ private final class SimulatorVisionScannerViewController: UIViewController, AVCa
 	private let imageLock = NSLock()
 	private var latestImage: UIImage?
 	private var previewLayer: AVCaptureVideoPreviewLayer?
+	#if DEBUG
+	private var screenshotFixtureView: ScreenshotScannerFixtureView?
+	#endif
 	private var lastRecognitionTime: CFTimeInterval = 0
 	private var didStart = false
 	private var isStopping = false
@@ -350,6 +353,14 @@ private final class SimulatorVisionScannerViewController: UIViewController, AVCa
 	func startScanning() {
 		guard !didStart else { return }
 		didStart = true
+
+		#if DEBUG
+		if Self.isScreenshotFixtureEnabled {
+			installScreenshotFixture()
+			return
+		}
+		#endif
+
 		captureQueue.async { [weak self] in
 			self?.configureAndStart()
 		}
@@ -371,6 +382,21 @@ private final class SimulatorVisionScannerViewController: UIViewController, AVCa
 		defer { imageLock.unlock() }
 		return latestImage
 	}
+
+	#if DEBUG
+	private static var isScreenshotFixtureEnabled: Bool {
+		let processInfo = ProcessInfo.processInfo
+		return processInfo.arguments.contains("--holder-screenshot-scanner-fixture")
+			|| processInfo.environment["HOLDER_SCREENSHOT_SCANNER_FIXTURE"] == "1"
+	}
+
+	private func installScreenshotFixture() {
+		let fixtureView = ScreenshotScannerFixtureView(frame: view.bounds)
+		fixtureView.autoresizingMask = [.flexibleWidth, .flexibleHeight]
+		view.insertSubview(fixtureView, at: 0)
+		screenshotFixtureView = fixtureView
+	}
+	#endif
 
 	private func configureAndStart() {
 		guard !isStopping else { return }
@@ -453,6 +479,73 @@ private final class SimulatorVisionScannerViewController: UIViewController, AVCa
 		}
 	}
 }
+
+#if DEBUG
+/// A clean, fictional camera feed used only for App Store screenshot capture.
+/// The real scanner overlay remains owned by `ScannerOverlayView` above this view.
+private final class ScreenshotScannerFixtureView: UIView {
+	override func draw(_ rect: CGRect) {
+		guard let context = UIGraphicsGetCurrentContext() else { return }
+
+		UIColor(red: 0.08, green: 0.10, blue: 0.14, alpha: 1).setFill()
+		context.fill(bounds)
+
+		let guide = ScannerOverlayView.guideFrame(in: bounds)
+		let card = guide.insetBy(dx: 12, dy: 12)
+		let cardPath = UIBezierPath(roundedRect: card, cornerRadius: 14)
+
+		let colors = [
+			UIColor(red: 0.08, green: 0.20, blue: 0.38, alpha: 1).cgColor,
+			UIColor(red: 0.20, green: 0.42, blue: 0.66, alpha: 1).cgColor
+		] as CFArray
+		let colorSpace = CGColorSpaceCreateDeviceRGB()
+		if let gradient = CGGradient(colorsSpace: colorSpace, colors: colors, locations: [0, 1]) {
+			context.saveGState()
+			context.addPath(cardPath.cgPath)
+			context.clip()
+			context.drawLinearGradient(
+				gradient,
+				start: CGPoint(x: card.minX, y: card.minY),
+				end: CGPoint(x: card.maxX, y: card.maxY),
+				options: []
+			)
+			context.restoreGState()
+		}
+
+		UIColor.white.withAlphaComponent(0.18).setStroke()
+		cardPath.lineWidth = 1
+		cardPath.stroke()
+
+		let inset = card.width * 0.08
+		let left = card.minX + inset
+		let top = card.minY + inset
+		let right = card.maxX - inset
+		let bottom = card.maxY - inset
+
+		drawText("HOLDER", at: CGPoint(x: left, y: top), font: .systemFont(ofSize: card.width * 0.065, weight: .semibold), color: .white)
+		drawText("VISA", at: CGPoint(x: right, y: top), font: .systemFont(ofSize: card.width * 0.06, weight: .bold), color: .white, alignment: .right)
+		drawText("4242 4242 4242 4242", at: CGPoint(x: left, y: card.midY - card.height * 0.06), font: .monospacedSystemFont(ofSize: card.width * 0.06, weight: .medium), color: .white)
+		drawText("M. C. LOVIN", at: CGPoint(x: left, y: bottom - card.height * 0.13), font: .systemFont(ofSize: card.width * 0.048, weight: .medium), color: .white)
+		drawText("09/29", at: CGPoint(x: right, y: bottom - card.height * 0.13), font: .monospacedSystemFont(ofSize: card.width * 0.045, weight: .medium), color: .white, alignment: .right)
+	}
+
+	private func drawText(
+		_ text: String,
+		at point: CGPoint,
+		font: UIFont,
+		color: UIColor,
+		alignment: NSTextAlignment = .left
+	) {
+		let attributes: [NSAttributedString.Key: Any] = [
+			.font: font,
+			.foregroundColor: color
+		]
+		let size = text.size(withAttributes: attributes)
+		let x = alignment == .right ? point.x - size.width : point.x
+		text.draw(at: CGPoint(x: x, y: point.y), withAttributes: attributes)
+	}
+}
+#endif
 #endif
 
 extension VisionScannerHostViewController: DataScannerViewControllerDelegate {
