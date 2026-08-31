@@ -36,15 +36,6 @@
         "revision" : "88fc9305ef8434f1ea4eb9f7d33f6b4a7d4b4bc5",
         "version" : "2.6.0"
       }
-    },
-    {
-      "identity" : "whatsnewkit",
-      "kind" : "remoteSourceControl",
-      "location" : "https://github.com/SvenTiigi/WhatsNewKit.git",
-      "state" : {
-        "revision" : "6157c77e8be9b3d2310bc680681b61a8d9e290ac",
-        "version" : "2.2.1"
-      }
     }
   ],
   "version" : 3

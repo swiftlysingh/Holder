@@ -33,6 +33,7 @@ final class CardViewModel: ObservableObject {
 	private var imageMutationTask: Task<Void, Never>?
 	private let imageStore: CardImageStore
 	private(set) var didUseScanner = false
+	let startMode: CardEditorStartMode
 
 	#if os(iOS)
 	@Published var selectedItem: PhotosPickerItem?
@@ -51,6 +52,7 @@ final class CardViewModel: ObservableObject {
 		card: CardData,
 		isEditing: Bool = false,
 		addNewFlow: Bool = false,
+		startMode: CardEditorStartMode = .scanner,
 		addUpdateCard: @escaping CardUpdateAction,
 		imageStore: CardImageStore = ICloudDataManager.shared
 	) {
@@ -58,6 +60,7 @@ final class CardViewModel: ObservableObject {
 		self.isEditing = isEditing
 		self.addUpdateCard = addUpdateCard
 		self.isAddNewFlow = addNewFlow
+		self.startMode = startMode
 		self.imageStore = imageStore
 		self.selectedCardType = addNewFlow ? nil : card.type
 		let id = card.id
@@ -157,4 +160,9 @@ final class CardViewModel: ObservableObject {
 		isShowingScanner = false
 		isEditing = true
 	}
+}
+
+enum CardEditorStartMode: Equatable {
+	case scanner
+	case manual
 }

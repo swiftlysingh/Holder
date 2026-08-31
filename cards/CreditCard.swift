@@ -8,7 +8,6 @@
 import Foundation
 import SwiftUI
 import TipKit
-import WhatsNewKit
 import SinghDevKit
 
 #if os(macOS)
@@ -175,7 +174,7 @@ struct CreditCard: App {
     @State private var sdk: SinghDevKit
     @StateObject private var homeViewModel: HomeViewModel
     @StateObject private var authenticationSession = AuthenticationSession()
-    private let sdkConfiguration: SDKConfiguration
+    @StateObject private var appFlow: HolderAppFlow
     private let privacyPolicyURL: URL?
 
     init() {
@@ -194,9 +193,9 @@ struct CreditCard: App {
         _homeViewModel = StateObject(
             wrappedValue: HomeViewModel(cardDataStore: cardDataStore)
         )
-        self.sdkConfiguration = sdkConfiguration
         self.privacyPolicyURL = settings.privacyPolicyURL
         _sdk = State(initialValue: SinghDevKit(configuration: sdkConfiguration))
+        _appFlow = StateObject(wrappedValue: HolderAppFlow())
     }
 
     var body: some Scene {
@@ -218,46 +217,17 @@ struct CreditCard: App {
     @ViewBuilder
     private var rootContent: some View {
         VaultProtectedView(session: authenticationSession) {
-            HomeView(model: homeViewModel)
+            HomeView(
+                model: homeViewModel,
+                appFlow: appFlow,
+                privacyPolicyURL: privacyPolicyURL
+            )
                 .task {
                     try? Tips.configure([
                         .displayFrequency(.immediate),
                         .datastoreLocation(.applicationDefault)
                     ])
                 }
-                .environment(
-                    \.whatsNew,
-                    WhatsNewEnvironment(
-                        versionStore: UserDefaultsWhatsNewVersionStore(),
-                        whatsNewCollection: self
-                    )
-                )
-                .showOnboardingIfNeeded(
-                    configuration: sdkConfiguration.onboarding,
-                    features: [
-                        .init(
-                            image: Image(systemName: "lock.shield"),
-                            title: "Secure Storage",
-                            content: "Keep your card details encrypted and protected on your device."
-                        ),
-                        .init(
-                            image: Image(systemName: "faceid"),
-                            title: "Contextual Authentication",
-                            content: "Unlock your vault once. Security codes and sharing require a recent authentication."
-                        ),
-                        .init(
-                            image: Image(systemName: "square.and.arrow.up"),
-                            title: "Easily Shareable",
-                            content: "Authenticate before sharing card details with someone you trust."
-                        ),
-                        .init(
-                            image: Image(systemName: "hand.raised.slash"),
-                            title: "Privacy First, Open Source",
-                            content: "Your data stays private and secure, and the app's code is open-source for transparency."
-                        )
-                    ],
-                    privacyPolicyURL: privacyPolicyURL
-                )
         }
         .environmentObject(authenticationSession)
         .withSDK(sdk)
@@ -278,6 +248,13 @@ struct CreditCard: App {
             sdk.settingsView()
                 .sdkScreen(AppAnalyticsScreen.settings)
                 .environmentObject(authenticationSession)
+                .environment(
+                    \.holderOnboardingReplayAction,
+                    HolderOnboardingReplayAction {
+                        appFlow.requestOnboardingReplay()
+                        MainWindowCoordinator.open()
+                    }
+                )
                 .withSDK(sdk)
                 .presentationSizing(.fitted)
                 .frame(minWidth: 620, minHeight: 480)
@@ -364,141 +341,4 @@ struct AppSecrets: Sendable {
         let trimmed = string.trimmingCharacters(in: .whitespacesAndNewlines)
         return trimmed.isEmpty ? nil : trimmed
     }
-}
-
-extension CreditCard: WhatsNewCollectionProvider {
-  var primaryAction: WhatsNew.PrimaryAction {
-	#if os(iOS)
-	WhatsNew.PrimaryAction(
-	  title: "Dive In 🚀",
-	  backgroundColor: .accentColor,
-	  foregroundColor: .white,
-	  hapticFeedback: .notification(.success),
-	  onDismiss: {
-		print("Ready to explore the new features!")
-	  }
-	)
-	#else
-	WhatsNew.PrimaryAction(
-	  title: "Dive In 🚀",
-	  backgroundColor: .accentColor,
-	  foregroundColor: .white,
-	  onDismiss: {
-		print("Ready to explore the new features!")
-	  }
-	)
-	#endif
-  }
-
-  var title: WhatsNew.Title {
-	return WhatsNew.Title(text: "Discover What's New in Holder!")
-  }
-
-  var bugFixFeature: WhatsNew.Feature {
-	WhatsNew.Feature(
-	  image: .init(systemName: "ant.fill"),
-	  title: "Bug Squashing Party 🐜🔨",
-	  subtitle: "We threw a party for bugs, and none made it out alive. Enjoy the smoother experience!"
-	)
-  }
-
-  var whatsNewCollection: WhatsNewCollection {
-	return [
-	  WhatsNew(
-		version: "1.6",
-		title: title,
-		features: [
-		  WhatsNew.Feature(
-			image: .init(systemName: "camera.fill"),
-			title: "Add & Store All Your Cards",
-			subtitle: "Easily save gift cards, ID cards, and more with images for quick access!"
-		  ),
-		  bugFixFeature
-		],
-		primaryAction: primaryAction
-	  ),
-
-	  WhatsNew(
-		version: "1.5",
-		title: title,
-		features: [
-		  WhatsNew.Feature(
-			image: .init(systemName: "gear.badge.checkmark"),
-			title: "New and improved settings",
-			subtitle: "Configurations are easier and beautiful than ever!"
-		  ),
-		  bugFixFeature
-		],
-		primaryAction: primaryAction
-	  ),
-	  WhatsNew(
-		version: "1.4",
-		title: title,
-		features: [
-		  WhatsNew.Feature(
-			image: .init(systemName: "creditcard.and.123"),
-			title: "Network Images are here!",
-			subtitle: "Now, it's easy to identify cards using there network!"
-		  ),
-		  bugFixFeature
-		],
-		primaryAction: primaryAction
-	  ),
-	  WhatsNew(
-		version: "1.3",
-		title: title,
-		features: [
-		  WhatsNew.Feature(
-			image: .init(systemName: "square.and.arrow.up.fill"),
-			title: "Sharing is here",
-			subtitle: "Effortlessly share your cards with friends and family"
-		  ),
-		  WhatsNew.Feature(
-			image: .init(systemName: "ipad.sizes"),
-			title: "Now Authentication is Optional",
-			subtitle: "For the daring, enjoy a more smooth experience with no Authentication"
-		  ),
-		  bugFixFeature
-		],
-		primaryAction: primaryAction
-	  ),
-	  WhatsNew(
-		version: "1.2",
-		title: title,
-		features: [
-		  WhatsNew.Feature(
-			image: .init(systemName: "cloud"),
-			title: "iCloud Sync Is Here!",
-			subtitle: "Effortlessly keep your cards in sync across all devices."
-		  ),
-		  WhatsNew.Feature(
-			image: .init(systemName: "ipad.sizes"),
-			title: "Optimized for iPad",
-			subtitle: "Enjoy a seamless, multitasking-friendly UI, now with split view."
-		  ),
-		  bugFixFeature
-		],
-		primaryAction: primaryAction
-	  ),
-	  WhatsNew(
-		version: "1.1",
-		title: title,
-		features: [
-		  WhatsNew.Feature(
-			image: .init(systemName: "camera.on.rectangle"),
-			title: "Snap & Add Cards 📸",
-			subtitle: "Adding your cards is now a snap away! Just point your camera, and voilà, securely stored."
-		  ),
-		  WhatsNew.Feature(
-			image: .init(systemName: "star.fill"),
-			title: "Rate Us With a Tap 💫",
-			subtitle: "Loving Holder? Tap to rate us! Your feedback brings smiles and helps us grow."
-		  ),
-		  bugFixFeature
-		],
-		primaryAction: primaryAction
-	  )
-	]
-
-  }
 }

@@ -9,6 +9,18 @@ import UIKit
 
 @MainActor
 final class CardViewModelTests: XCTestCase {
+	func testManualStartModeIsStoredForTheAddCardFlow() {
+		let model = makeAddCardModel(startMode: .manual)
+
+		XCTAssertEqual(model.startMode, .manual)
+	}
+
+	func testScannerRemainsTheDefaultAddCardStartMode() {
+		let model = makeAddCardModel()
+
+		XCTAssertEqual(model.startMode, .scanner)
+	}
+
 	func testInitDoesNotWaitForCardImageLoad() async {
 		let imageStore = GatedCardImageStore()
 		let model = makeModel(imageStore: imageStore)
@@ -137,6 +149,35 @@ final class CardViewModelTests: XCTestCase {
 			),
 			addUpdateCard: { _ in true },
 			imageStore: imageStore
+		)
+	}
+
+	private func makeAddCardModel(startMode: CardEditorStartMode? = nil) -> CardViewModel {
+		let card = CardData(
+			id: UUID(),
+			number: "",
+			cvv: "",
+			expiration: "",
+			name: "",
+			description: "",
+			type: .credit
+		)
+		if let startMode {
+			return CardViewModel(
+				card: card,
+				isEditing: true,
+				addNewFlow: true,
+				startMode: startMode,
+				addUpdateCard: { _ in true },
+				imageStore: EmptyCardImageStore()
+			)
+		}
+		return CardViewModel(
+			card: card,
+			isEditing: true,
+			addNewFlow: true,
+			addUpdateCard: { _ in true },
+			imageStore: EmptyCardImageStore()
 		)
 	}
 

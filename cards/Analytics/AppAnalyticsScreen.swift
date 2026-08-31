@@ -6,6 +6,8 @@ enum AppAnalyticsScreen: String, AnalyticsScreen {
     case cardEditor = "card_editor"
     case archivedCards = "archived_cards"
     case settings
+    case onboardingWelcome = "onboarding_welcome"
+    case onboardingGetStarted = "onboarding_get_started"
     case cardScanner = "card_scanner"
     case menuBar = "menu_bar"
 
