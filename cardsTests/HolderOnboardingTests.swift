@@ -160,4 +160,66 @@ final class HolderAppFlowTests: XCTestCase {
 		XCTAssertFalse(flow.isOnboardingReplayPending)
 		XCTAssertNil(flow.onboardingAudience)
 	}
+
+	func testAutomaticOnboardingStaysHiddenUntilCardsLoad() {
+		let flow = makeFreshInstallFlow()
+
+		XCTAssertEqual(flow.onboardingAudience, .newUser)
+		XCTAssertNil(
+			flow.visibleOnboardingAudience(
+				hasAttemptedInitialCardLoad: false,
+				isAddingCard: false
+			)
+		)
+	}
+
+	func testAutomaticOnboardingStaysHiddenWhileAddingACard() {
+		let flow = makeFreshInstallFlow()
+
+		XCTAssertNil(
+			flow.visibleOnboardingAudience(
+				hasAttemptedInitialCardLoad: true,
+				isAddingCard: true
+			)
+		)
+		XCTAssertEqual(
+			flow.visibleOnboardingAudience(
+				hasAttemptedInitialCardLoad: true,
+				isAddingCard: false
+			),
+			.newUser
+		)
+	}
+
+	func testAutomaticOnboardingStaysHiddenWhileSettingsAreOpen() {
+		let flow = makeFreshInstallFlow()
+
+		XCTAssertNil(
+			flow.visibleOnboardingAudience(
+				hasAttemptedInitialCardLoad: true,
+				isAddingCard: false,
+				isShowingSettings: true
+			)
+		)
+		XCTAssertEqual(
+			flow.visibleOnboardingAudience(
+				hasAttemptedInitialCardLoad: true,
+				isAddingCard: false,
+				isShowingSettings: false
+			),
+			.newUser
+		)
+	}
+
+	private func makeFreshInstallFlow() -> HolderAppFlow {
+		let suiteName = "HolderAppFlowTests.\(UUID().uuidString)"
+		let defaults = UserDefaults(suiteName: suiteName)!
+		defaults.removePersistentDomain(forName: suiteName)
+		addTeardownBlock {
+			defaults.removePersistentDomain(forName: suiteName)
+		}
+		return HolderAppFlow(
+			onboardingStore: HolderOnboardingStore(defaults: defaults)
+		)
+	}
 }
