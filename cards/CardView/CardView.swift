@@ -293,6 +293,7 @@ struct CardView: View {
 						.multilineTextAlignment(.trailing)
 				}
 			}
+			.frame(maxWidth: .infinity, alignment: .leading)
 			.contentShape(Rectangle())
 		}
 		.buttonStyle(.plain)
