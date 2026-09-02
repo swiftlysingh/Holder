@@ -132,13 +132,15 @@ final class CardViewModel: ObservableObject {
 		}
 	}
 
-	func copyAction(with value: String) {
+	@discardableResult
+	func copyAction(with value: String) -> Bool {
 		guard !value.isEmpty else {
 			HapticService.trigger(.error)
-			return
+			return false
 		}
 		PasteboardService.copy(value)
 		HapticService.trigger(.success)
+		return true
 	}
 
 	func saveCard() async -> Bool? {

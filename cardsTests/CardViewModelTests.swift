@@ -96,6 +96,31 @@ final class CardViewModelTests: XCTestCase {
 		XCTAssertFalse(resolver.didResolveOnMainThread)
 	}
 
+	func testCopyActionWritesNonEmptyValueToPasteboard() {
+		let model = makeModel(imageStore: EmptyCardImageStore())
+		let value = "4111111111111111"
+
+		XCTAssertTrue(model.copyAction(with: value))
+		#if os(macOS)
+		XCTAssertEqual(NSPasteboard.general.string(forType: .string), value)
+		#else
+		XCTAssertEqual(UIPasteboard.general.string, value)
+		#endif
+	}
+
+	func testCopyActionRejectsEmptyValueWithoutChangingPasteboard() {
+		let model = makeModel(imageStore: EmptyCardImageStore())
+		let existing = "keep-me"
+		PasteboardService.copy(existing)
+
+		XCTAssertFalse(model.copyAction(with: ""))
+		#if os(macOS)
+		XCTAssertEqual(NSPasteboard.general.string(forType: .string), existing)
+		#else
+		XCTAssertEqual(UIPasteboard.general.string, existing)
+		#endif
+	}
+
 	func testSaveCardPreventsReentryAndOnlyLeavesEditingAfterSuccess() async {
 		let saver = GatedCardSaveAction()
 		let model = CardViewModel(

@@ -27,9 +27,7 @@ struct CardView: View {
 	@State private var isShowingCardForm = false
 	@FocusState private var isFieldFocused: Bool
 	#endif
-	#if os(macOS)
 	@State private var copiedField: String?
-	#endif
 
 	#if os(iOS)
 	init(
@@ -207,17 +205,18 @@ struct CardView: View {
 	#endif
 
 	#if os(iOS)
+	@ViewBuilder
 	fileprivate func itemView(
 		heading: String,
 		value: Binding<String>,
 		keyboardType: UIKeyboardType,
 		requiresAuthentication: Bool
 	) -> some View {
-		return HStack {
-			Text(heading)
-				.bold()
-			Spacer()
-			if requiresAuthentication && isCVVLocked {
+		if requiresAuthentication && isCVVLocked {
+			HStack {
+				Text(heading)
+					.bold()
+				Spacer()
 				Button {
 					authenticateForCVV()
 				} label: {
@@ -226,73 +225,85 @@ struct CardView: View {
 				}
 				.disabled(authenticationSession.isAuthenticating)
 				.accessibilityLabel("Authenticate to view security code")
-			} else {
+			}
+		} else if model.isEditing {
+			HStack {
+				Text(heading)
+					.bold()
+				Spacer()
 				TextField(heading, text: value)
 					.labelsHidden()
 					.multilineTextAlignment(.trailing)
-					.disabled(!model.isEditing)
-					.foregroundColor(model.isEditing ? .blue : .accentColor)
+					.foregroundColor(.blue)
 					.keyboardType(keyboardType)
 					.focused($isFieldFocused)
-					.contextMenu(menuItems: {
-						Button(action: {
-							model.copyAction(with: value.wrappedValue)
-							UserSettings.shared.requestReview()
-						}) {
-							Text("Copy to clipboard")
-							Image(systemName: "doc.on.doc")
-						}
-					})
 			}
+		} else {
+			copyableDetailRow(heading: heading, value: value.wrappedValue)
 		}
-		.if(!model.isEditing && (!requiresAuthentication || !isCVVLocked), transform: { view in
-			view.onTapGesture(count: 2, perform: {
-				model.copyAction(with: value.wrappedValue)
-			})
-		})
 	}
 	#else
+	@ViewBuilder
 	fileprivate func itemView(
 		heading: String,
 		value: Binding<String>,
 		requiresAuthentication: Bool
 	) -> some View {
-		return HStack {
-			Text(heading)
-				.bold()
-			Spacer()
-			if requiresAuthentication && isCVVLocked {
+		if requiresAuthentication && isCVVLocked {
+			HStack {
+				Text(heading)
+					.bold()
+				Spacer()
 				Button("Authenticate to view") {
 					authenticateForCVV()
 				}
 				.disabled(authenticationSession.isAuthenticating)
 				.accessibilityLabel("Authenticate to view security code")
-			} else {
+			}
+		} else if model.isEditing {
+			HStack {
+				Text(heading)
+					.bold()
+				Spacer()
 				TextField("", text: value)
 					.multilineTextAlignment(.trailing)
-					.disabled(!model.isEditing)
-					.foregroundColor(model.isEditing ? .blue : .accentColor)
-					.contextMenu(menuItems: {
-						Button(action: {
-							model.copyAction(with: value.wrappedValue)
-							UserSettings.shared.requestReview()
-						}) {
-							Text("Copy to clipboard")
-							Image(systemName: "doc.on.doc")
-						}
-					})
+					.foregroundColor(.blue)
 			}
+		} else {
+			copyableDetailRow(heading: heading, value: value.wrappedValue)
 		}
-		.if(!model.isEditing && (!requiresAuthentication || !isCVVLocked), transform: { view in
-			view.onTapGesture(count: 2, perform: {
-				model.copyAction(with: value.wrappedValue)
-			})
-		})
 	}
 	#endif
 
+	@ViewBuilder
+	private func copyableDetailRow(heading: String, value: String) -> some View {
+		Button {
+			copyToClipboard(value, field: heading)
+		} label: {
+			HStack {
+				Text(heading)
+					.bold()
+				Spacer()
+				if copiedField == heading {
+					Label("Copied!", systemImage: "checkmark")
+						.foregroundStyle(.green)
+				} else {
+					Text(value)
+						.foregroundColor(.accentColor)
+						.multilineTextAlignment(.trailing)
+				}
+			}
+			.frame(maxWidth: .infinity, alignment: .leading)
+			.contentShape(Rectangle())
+		}
+		.buttonStyle(.plain)
+		.accessibilityLabel(copiedField == heading ? "Copied \(heading)" : "Copy \(heading)")
+		.accessibilityHint("Copies this value to the clipboard")
+		.accessibilityValue(copiedField == heading ? "Copied" : value)
+	}
+
 	fileprivate func getCardListView() -> some View {
-		let tip = DoubleTapTip()
+		let tip = TapToCopyTip()
 		let hasCardImage = model.cardImage != nil
 
 		return List {
@@ -958,9 +969,13 @@ struct CardView: View {
 		default: return field
 		}
 	}
+	#endif
 
 	private func copyToClipboard(_ value: String, field: String) {
-		PasteboardService.copy(value)
+		guard model.copyAction(with: value) else { return }
+		#if os(iOS)
+		UserSettings.shared.requestReview()
+		#endif
 		copiedField = field
 		DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
 			if copiedField == field {
@@ -968,5 +983,4 @@ struct CardView: View {
 			}
 		}
 	}
-	#endif
 }
