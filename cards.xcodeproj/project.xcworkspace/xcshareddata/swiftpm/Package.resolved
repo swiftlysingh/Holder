@@ -1,5 +1,5 @@
 {
-  "originHash" : "d69c62cd0ece5c2cdd02759550ecd9cad8c84039c489a83b6bfa4842e2e5ec10",
+  "originHash" : "7d685d74d5a95f35fce8797ce84267a52e801dc5791a95ed20f0fbf4569b870e",
   "pins" : [
     {
       "identity" : "posthog-ios",
@@ -33,8 +33,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/swiftlysingh/SinghDevKit.git",
       "state" : {
-        "revision" : "88fc9305ef8434f1ea4eb9f7d33f6b4a7d4b4bc5",
-        "version" : "2.6.1"
+        "revision" : "ecf4908554c2c8156444e48a2938240ed8efe129",
+        "version" : "2.7.0"
       }
     }
   ],
