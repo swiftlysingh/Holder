@@ -13,7 +13,7 @@ import VisionKit
 #endif
 
 /// Recognized payment-card fields. PAN is required; expiry and name are best-effort.
-struct CardScanResult: Equatable, Sendable {
+nonisolated struct CardScanResult: Equatable, Sendable {
 	var pan: String
 	var expiry: String?
 	var cardholderName: String?
@@ -25,7 +25,7 @@ struct CardScanResult: Equatable, Sendable {
 }
 
 /// Non-sensitive scan timing used for analytics. Never include PAN, name, expiry, CVV, OCR, or images.
-struct CardScanMetrics: Equatable, Sendable {
+nonisolated struct CardScanMetrics: Equatable, Sendable {
 	var engine: String
 	var timeToPANMs: Int?
 	var timeToCompleteMs: Int
@@ -35,7 +35,7 @@ struct CardScanMetrics: Equatable, Sendable {
 	var wasRescan: Bool
 }
 
-enum CardScanUpdate: Sendable {
+nonisolated enum CardScanUpdate: Sendable {
 	case permissionDenied
 	case unsupported(String)
 	case scanning(guidance: String)
@@ -63,7 +63,7 @@ extension CardScanningEngine {
 	func setTorchEnabled(_ isEnabled: Bool) -> Bool { false }
 }
 
-enum CardScanningEngineID {
+nonisolated enum CardScanningEngineID {
 	static let vision = "vision"
 }
 

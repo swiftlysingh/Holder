@@ -7,20 +7,22 @@ import AppKit
 import UIKit
 #endif
 
-@MainActor
 final class CardViewModelTests: XCTestCase {
-	func testManualStartModeIsStoredForTheAddCardFlow() {
+	@MainActor
+	func testManualStartModeIsStoredForTheAddCardFlow() async {
 		let model = makeAddCardModel(startMode: .manual)
 
 		XCTAssertEqual(model.startMode, .manual)
 	}
 
-	func testScannerRemainsTheDefaultAddCardStartMode() {
+	@MainActor
+	func testScannerRemainsTheDefaultAddCardStartMode() async {
 		let model = makeAddCardModel()
 
 		XCTAssertEqual(model.startMode, .scanner)
 	}
 
+	@MainActor
 	func testInitDoesNotWaitForCardImageLoad() async {
 		let imageStore = GatedCardImageStore()
 		let model = makeModel(imageStore: imageStore)
@@ -35,7 +37,8 @@ final class CardViewModelTests: XCTestCase {
 		XCTAssertNil(model.cardImage)
 	}
 
-	func testImageDataNormalizerConvertsPNGToJPEG() throws {
+	@MainActor
+	func testImageDataNormalizerConvertsPNGToJPEG() async throws {
 		let png = try makePNGData()
 
 		let jpeg = try XCTUnwrap(CardImageData.normalizedJPEG(from: png))
@@ -45,6 +48,7 @@ final class CardViewModelTests: XCTestCase {
 		XCTAssertNotNil(PlatformImage(data: jpeg))
 	}
 
+	@MainActor
 	func testLoadingExistingImageDoesNotRewriteItsData() async throws {
 		let directory = FileManager.default.temporaryDirectory
 			.appendingPathComponent("holder-existing-image-\(UUID().uuidString)", isDirectory: true)
@@ -63,6 +67,7 @@ final class CardViewModelTests: XCTestCase {
 		XCTAssertEqual(try Data(contentsOf: imageURL), existingData)
 	}
 
+	@MainActor
 	func testICloudDirectoryRetriesAndNormalizesAfterTransientUnavailability() async throws {
 		let directory = FileManager.default.temporaryDirectory
 			.appendingPathComponent("holder-icloud-test-\(UUID().uuidString)", isDirectory: true)
@@ -96,7 +101,8 @@ final class CardViewModelTests: XCTestCase {
 		XCTAssertFalse(resolver.didResolveOnMainThread)
 	}
 
-	func testCopyActionWritesNonEmptyValueToPasteboard() {
+	@MainActor
+	func testCopyActionWritesNonEmptyValueToPasteboard() async {
 		let model = makeModel(imageStore: EmptyCardImageStore())
 		let value = "4111111111111111"
 
@@ -108,7 +114,8 @@ final class CardViewModelTests: XCTestCase {
 		#endif
 	}
 
-	func testCopyActionRejectsEmptyValueWithoutChangingPasteboard() {
+	@MainActor
+	func testCopyActionRejectsEmptyValueWithoutChangingPasteboard() async {
 		let model = makeModel(imageStore: EmptyCardImageStore())
 		let existing = "keep-me"
 		PasteboardService.copy(existing)
@@ -121,6 +128,7 @@ final class CardViewModelTests: XCTestCase {
 		#endif
 	}
 
+	@MainActor
 	func testSaveCardPreventsReentryAndOnlyLeavesEditingAfterSuccess() async {
 		let saver = GatedCardSaveAction()
 		let model = CardViewModel(
@@ -161,6 +169,7 @@ final class CardViewModelTests: XCTestCase {
 		XCTAssertEqual(finalSaveCount, 2)
 	}
 
+	@MainActor
 	private func makeModel(imageStore: CardImageStore) -> CardViewModel {
 		CardViewModel(
 			card: CardData(
@@ -177,6 +186,7 @@ final class CardViewModelTests: XCTestCase {
 		)
 	}
 
+	@MainActor
 	private func makeAddCardModel(startMode: CardEditorStartMode? = nil) -> CardViewModel {
 		let card = CardData(
 			id: UUID(),
@@ -206,6 +216,7 @@ final class CardViewModelTests: XCTestCase {
 		)
 	}
 
+	@MainActor
 	private func makePNGData() throws -> Data {
 		#if os(macOS)
 		let bitmap = try XCTUnwrap(NSBitmapImageRep(

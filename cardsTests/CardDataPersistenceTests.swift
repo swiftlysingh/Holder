@@ -1,9 +1,9 @@
 import XCTest
 @testable import Holder
 
-@MainActor
 final class CardDataPersistenceTests: XCTestCase {
-	func testArchivedCardRoundTripPreservesState() throws {
+	@MainActor
+	func testArchivedCardRoundTripPreservesState() async throws {
 		var card = makeCard(id: UUID(), isArchived: true)
 		card.network = .master
 
@@ -14,7 +14,8 @@ final class CardDataPersistenceTests: XCTestCase {
 		XCTAssertEqual(decoded.network, .master)
 	}
 
-	func testLegacyCardDefaultsToActiveAndDerivesNetwork() throws {
+	@MainActor
+	func testLegacyCardDefaultsToActiveAndDerivesNetwork() async throws {
 		let id = UUID()
 		let data = try JSONSerialization.data(withJSONObject: [
 			"id": id.uuidString,
@@ -33,7 +34,8 @@ final class CardDataPersistenceTests: XCTestCase {
 		XCTAssertFalse(card.isArchived)
 	}
 
-	func testPartitionSeparatesActiveAndArchivedCards() {
+	@MainActor
+	func testPartitionSeparatesActiveAndArchivedCards() async {
 		let creditCard = makeCard(id: UUID())
 		let debitCard = makeCard(id: UUID(), type: .debit)
 		let archivedCard = makeCard(id: UUID(), type: .other, isArchived: true)
@@ -46,13 +48,15 @@ final class CardDataPersistenceTests: XCTestCase {
 		XCTAssertEqual(partition.archivedCards.map(\.id), [archivedCard.id])
 	}
 
-	func testCardRetrievalKindDistinguishesEmptyFromFailure() {
+	@MainActor
+	func testCardRetrievalKindDistinguishesEmptyFromFailure() async {
 		XCTAssertEqual(CardDataStore.cardRetrievalKind(forStatus: errSecSuccess), .success)
 		XCTAssertEqual(CardDataStore.cardRetrievalKind(forStatus: errSecItemNotFound), .empty)
 		XCTAssertEqual(CardDataStore.cardRetrievalKind(forStatus: errSecAuthFailed), .failure)
 		XCTAssertEqual(CardDataStore.cardRetrievalKind(forStatus: errSecInteractionNotAllowed), .failure)
 	}
 
+	@MainActor
 	func testLoadCardsReportsFailureAndPreservesExistingCards() async throws {
 		let fixturesKey = "debugFixturesInitialized"
 		let previousFixturesValue = UserDefaults.standard.object(forKey: fixturesKey)
@@ -89,6 +93,7 @@ final class CardDataPersistenceTests: XCTestCase {
 		XCTAssertNil(store.findCard(by: card.id))
 	}
 
+	@MainActor
 	func testKeychainReadsWritesAndDeletesRunOffTheMainThread() async throws {
 		let storedCard = makeCard(id: UUID())
 		let newCard = makeCard(id: UUID())
@@ -116,6 +121,7 @@ final class CardDataPersistenceTests: XCTestCase {
 		XCTAssertTrue(deleteSucceeded)
 	}
 
+	@MainActor
 	func testLoadingExistingCardsDoesNotWriteOrDelete() async throws {
 		let card = makeCard(id: UUID())
 		let recorder = MutationCallRecorder()
@@ -138,6 +144,7 @@ final class CardDataPersistenceTests: XCTestCase {
 		XCTAssertEqual(recorder.deleteCount, 0)
 	}
 
+	@MainActor
 	func testSuccessfulSaveDoesNotDependOnFollowingReload() async throws {
 		let existingCard = makeCard(id: UUID())
 		let newCard = makeCard(id: UUID(), type: .debit)
@@ -164,6 +171,7 @@ final class CardDataPersistenceTests: XCTestCase {
 		XCTAssertEqual(store.findCard(by: newCard.id), newCard)
 	}
 
+	@MainActor
 	func testLateLoadMergesNewerMutationWithoutHidingExistingCards() async throws {
 		let existingCard = makeCard(id: UUID())
 		let newerCard = makeCard(id: UUID())
@@ -195,6 +203,7 @@ final class CardDataPersistenceTests: XCTestCase {
 		XCTAssertEqual(store.findCard(by: newerCard.id), newerCard)
 	}
 
+	@MainActor
 	func testLateLoadDoesNotRestoreADeletedCard() async throws {
 		let card = makeCard(id: UUID())
 		let payload = try card.toData()
@@ -224,6 +233,7 @@ final class CardDataPersistenceTests: XCTestCase {
 		XCTAssertNil(store.findCard(by: card.id))
 	}
 
+	@MainActor
 	func testDeletingOtherCardKeepsImageWhenKeychainDeleteFails() async throws {
 		let card = makeCard(id: UUID(), type: .other)
 		let payload = try card.toData()
@@ -245,6 +255,7 @@ final class CardDataPersistenceTests: XCTestCase {
 		XCTAssertTrue(deletedImageIDs.isEmpty)
 	}
 
+	@MainActor
 	func testDeletingCardAttemptsImageCleanupRegardlessOfCurrentType() async throws {
 		let card = makeCard(id: UUID())
 		let stub = CardPayloadRetrievalStub(result: .success([try card.toData()]))
@@ -268,6 +279,7 @@ final class CardDataPersistenceTests: XCTestCase {
 		XCTAssertEqual(deletedImageIDs, [card.id])
 	}
 
+	@MainActor
 	func testQueuedUpdateDoesNotRestoreDeletedCard() async throws {
 		let card = makeCard(id: UUID())
 		let persistence = BlockingDeletePersistence(payload: try card.toData())
@@ -292,7 +304,8 @@ final class CardDataPersistenceTests: XCTestCase {
 		XCTAssertEqual(persistence.saveCount, 0)
 	}
 
-	func testDecodeAllCardDataRecoversValidPayloads() throws {
+	@MainActor
+	func testDecodeAllCardDataRecoversValidPayloads() async throws {
 		let valid = try JSONEncoder().encode(makeCard(id: UUID()))
 		let invalid = Data("{}".utf8)
 
@@ -304,7 +317,8 @@ final class CardDataPersistenceTests: XCTestCase {
 		XCTAssertEqual(decoded.count, 1)
 	}
 
-	func testDebugFixturesSeedOnlyBeforeInitialization() {
+	@MainActor
+	func testDebugFixturesSeedOnlyBeforeInitialization() async {
 		XCTAssertTrue(CardDataStore.shouldSeedDebugFixtures(
 			isDebugOrSimulator: true,
 			hasStoredCards: false,
@@ -317,6 +331,7 @@ final class CardDataPersistenceTests: XCTestCase {
 		))
 	}
 
+	@MainActor
 	private func makeCard(
 		id: UUID,
 		type: CardType = .credit,

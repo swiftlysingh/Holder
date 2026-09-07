@@ -7,7 +7,7 @@
 import SwiftUI
 import WidgetKit
 
-enum CardPayloadRetrievalResult: Sendable {
+nonisolated enum CardPayloadRetrievalResult: Sendable {
 	case success([Data?])
 	case empty
 	case failure
