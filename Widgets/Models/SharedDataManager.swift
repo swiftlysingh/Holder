@@ -8,7 +8,7 @@
 import Foundation
 import WidgetKit
 
-final class SharedDataManager {
+nonisolated final class SharedDataManager: Sendable {
     static let shared = SharedDataManager()
 
     private let appGroupID = "group.com.swiftlysingh.cards"

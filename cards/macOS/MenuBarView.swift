@@ -10,7 +10,7 @@ import AppKit
 import SinghDevKit
 import SwiftUI
 
-enum MenuBarContentState: Equatable {
+nonisolated enum MenuBarContentState: Equatable {
     case unavailable
     case empty
     case cards

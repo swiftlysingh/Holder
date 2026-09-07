@@ -8,7 +8,7 @@
 import Foundation
 
 /// Card data struct for widgets - only contains display-safe information
-struct WidgetCardData: Codable, Identifiable, Hashable {
+struct WidgetCardData: Codable, Identifiable, Hashable, Sendable {
     let id: UUID
     let displayName: String
     let lastFourDigits: String
@@ -21,7 +21,7 @@ struct WidgetCardData: Codable, Identifiable, Hashable {
 }
 
 /// Card type enum (mirrored from main app)
-enum WidgetCardType: String, CaseIterable, Identifiable, Codable {
+enum WidgetCardType: String, CaseIterable, Identifiable, Codable, Sendable {
     var id: Self { self }
 
     case credit = "Credit"
@@ -30,7 +30,7 @@ enum WidgetCardType: String, CaseIterable, Identifiable, Codable {
 }
 
 /// Card network enum (mirrored from main app)
-enum WidgetCardNetwork: String, CaseIterable, Identifiable, Codable {
+enum WidgetCardNetwork: String, CaseIterable, Identifiable, Codable, Sendable {
     var id: Self { self }
 
     case visa = "Visa"

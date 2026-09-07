@@ -8,14 +8,14 @@
 import Foundation
 
 /// Card image persistence. Implementations must not block the main thread.
-protocol CardImageStore: AnyObject, Sendable {
+nonisolated protocol CardImageStore: AnyObject, Sendable {
 	func loadImageData(for uuid: UUID) async -> Data?
 	func saveImageData(_ data: Data, for uuid: UUID) async -> Bool
 	func deleteImage(for uuid: UUID) async -> Bool
 }
 
 /// `ioQueue` serializes all mutable state and every resolver/file operation.
-final class ICloudDataManager: CardImageStore, @unchecked Sendable {
+nonisolated final class ICloudDataManager: CardImageStore, @unchecked Sendable {
 
 	static let shared = ICloudDataManager()
 
