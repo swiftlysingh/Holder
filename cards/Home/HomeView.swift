@@ -47,34 +47,36 @@ struct HomeView: View {
 				List(selection: $model.selectedCard) {
 					ForEach(CardType.allCases) { type in
 						let cards = model.cardDataStore.cardsByType[type] ?? []
-						Section(header: sectionHeader(for: type, count: cards.count)) {
-							ForEach(cards, id: \.id) { card in
-								getRowforCards(with: card)
-									.swipeActions(edge: .trailing, allowsFullSwipe: false) {
-										Button(role: .destructive) {
-											cardPendingDeletion = card
-										} label: {
-											Label("Delete", systemImage: "trash")
+						if !cards.isEmpty {
+							Section(header: sectionHeader(for: type, count: cards.count)) {
+								ForEach(cards, id: \.id) { card in
+									getRowforCards(with: card)
+										.swipeActions(edge: .trailing, allowsFullSwipe: false) {
+											Button(role: .destructive) {
+												cardPendingDeletion = card
+											} label: {
+												Label("Delete", systemImage: "trash")
+											}
+											Button {
+												archiveCard(card)
+											} label: {
+												Label("Archive", systemImage: "archivebox")
+											}
+											.tint(.orange)
 										}
-										Button {
-											archiveCard(card)
-										} label: {
-											Label("Archive", systemImage: "archivebox")
+										.contextMenu {
+											Button {
+												archiveCard(card)
+											} label: {
+												Label("Archive", systemImage: "archivebox")
+											}
+											Button(role: .destructive) {
+												cardPendingDeletion = card
+											} label: {
+												Label("Delete", systemImage: "trash")
+											}
 										}
-										.tint(.orange)
-									}
-									.contextMenu {
-										Button {
-											archiveCard(card)
-										} label: {
-											Label("Archive", systemImage: "archivebox")
-										}
-										Button(role: .destructive) {
-											cardPendingDeletion = card
-										} label: {
-											Label("Delete", systemImage: "trash")
-										}
-									}
+								}
 							}
 						}
 					}
