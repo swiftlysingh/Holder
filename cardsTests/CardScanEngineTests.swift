@@ -172,6 +172,39 @@ final class CardCandidateEngineTests: XCTestCase {
 }
 
 #if os(iOS)
+final class CardScannerLayoutTests: XCTestCase {
+	func testRejectsEmptyOrTinyBoundsThatWouldAbortVisionKit() {
+		XCTAssertNil(CardScannerLayout.regionOfInterest(in: .zero))
+		XCTAssertNil(CardScannerLayout.regionOfInterest(in: CGRect(x: 0, y: 0, width: 8, height: 430)))
+		XCTAssertNil(CardScannerLayout.regionOfInterest(in: CGRect(x: 0, y: 0, width: 390, height: 8)))
+		XCTAssertNil(CardScannerLayout.regionOfInterest(in: CGRect(
+			x: 0,
+			y: 0,
+			width: CGFloat.nan,
+			height: 430
+		)))
+	}
+
+	func testReturnsAGuideInsideTypicalAddCardSheetBounds() {
+		let bounds = CGRect(x: 0, y: 0, width: 390, height: 430)
+		guard let roi = CardScannerLayout.regionOfInterest(in: bounds) else {
+			return XCTFail("Expected a region of interest for a laid-out add-card sheet")
+		}
+
+		XCTAssertGreaterThanOrEqual(roi.width, CardScannerLayout.minimumRegionWidth)
+		XCTAssertGreaterThanOrEqual(roi.height, CardScannerLayout.minimumRegionHeight)
+		XCTAssertTrue(bounds.insetBy(dx: -0.5, dy: -0.5).contains(roi))
+		XCTAssertEqual(roi, CardScannerLayout.guideFrame(in: bounds))
+	}
+
+	func testIgnoresSubpixelRegionDrift() {
+		let lhs = CGRect(x: 52.1, y: 120.2, width: 286.4, height: 180.6)
+		let rhs = CGRect(x: 52.3, y: 120.4, width: 286.2, height: 180.4)
+		XCTAssertTrue(CardScannerLayout.isSameRegion(lhs, as: rhs))
+		XCTAssertFalse(CardScannerLayout.isSameRegion(lhs, as: lhs.offsetBy(dx: 8, dy: 0)))
+	}
+}
+
 @MainActor
 final class CardScannerTorchTests: XCTestCase {
 	func testTorchToggleAndScannerStopTurnTorchOff() {
