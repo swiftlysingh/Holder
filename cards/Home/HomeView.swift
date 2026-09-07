@@ -94,7 +94,7 @@ struct HomeView: View {
 				}
 				.scrollContentBackground(.hidden)
 			}
-			.navigationTitle("Cards")
+			.navigationTitle("Holder")
 			.toolbarTitleDisplayMode(.inlineLarge)
 			.task {
 				defer { hasAttemptedInitialCardLoad = true }

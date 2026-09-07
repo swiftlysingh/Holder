@@ -335,7 +335,7 @@ struct VaultProtectedView<Content: View>: View {
     private var blurredHomeBackdrop: some View {
         VStack(alignment: .leading, spacing: 20) {
             HStack {
-                Text("Cards")
+                Text("Holder")
                     .font(.largeTitle.bold())
                 Spacer()
                 Image(systemName: "gearshape.fill")
