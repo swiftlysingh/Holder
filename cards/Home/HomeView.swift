@@ -446,7 +446,7 @@ struct HomeView: View {
 
 	private func sectionHeader(for type: CardType, count: Int) -> some View {
 		HStack {
-			Text("\(type.rawValue)s")
+			Text(type.rawValue)
 				.font(.subheadline.weight(.semibold))
 				.foregroundStyle(.primary)
 			Spacer()
