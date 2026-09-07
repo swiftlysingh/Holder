@@ -94,7 +94,7 @@ struct HomeView: View {
 				}
 				.scrollContentBackground(.hidden)
 			}
-			.navigationTitle("Cards")
+			.navigationTitle("Holder")
 			.toolbarTitleDisplayMode(.inlineLarge)
 			.task {
 				defer { hasAttemptedInitialCardLoad = true }
@@ -446,7 +446,7 @@ struct HomeView: View {
 
 	private func sectionHeader(for type: CardType, count: Int) -> some View {
 		HStack {
-			Text("\(type.rawValue)s")
+			Text(type.rawValue)
 				.font(.subheadline.weight(.semibold))
 				.foregroundStyle(.primary)
 			Spacer()
