@@ -45,7 +45,7 @@ final class VisionCardScanningEngine: NSObject, CardScanningEngine {
 	}
 
 	func verifyCurrentCandidate() async -> CardScanResult? {
-		guard let pan = stablePAN else { return nil }
+		guard !isStopping, let pan = stablePAN else { return nil }
 
 		if let image = await host.captureStill() {
 			if let verified = await VisionStillVerifier.recognize(in: image) {
@@ -167,6 +167,54 @@ private protocol VisionScannerHostDelegate: AnyObject {
 	func scannerHostDidRecognize(_ items: [OCRTextItem])
 }
 
+/// Card-guide geometry used by the overlay and VisionKit's `regionOfInterest`.
+/// Invalid or zero-sized rects abort `DataScannerViewController`.
+enum CardScannerLayout {
+	static let cardAspect: CGFloat = 1.586
+	static let minimumBoundsWidth: CGFloat = 32
+	static let minimumBoundsHeight: CGFloat = 32
+	static let minimumRegionWidth: CGFloat = 16
+	static let minimumRegionHeight: CGFloat = 16
+
+	static func guideFrame(in bounds: CGRect) -> CGRect {
+		let maxWidth = bounds.width * 0.86
+		let width = min(maxWidth, bounds.height * 0.42 * cardAspect)
+		let height = width / cardAspect
+		return CGRect(
+			x: (bounds.width - width) / 2,
+			y: (bounds.height - height) / 2,
+			width: width,
+			height: height
+		)
+	}
+
+	static func regionOfInterest(in bounds: CGRect) -> CGRect? {
+		guard bounds.width.isFinite, bounds.height.isFinite,
+			  bounds.origin.x.isFinite, bounds.origin.y.isFinite,
+			  bounds.width >= minimumBoundsWidth,
+			  bounds.height >= minimumBoundsHeight else {
+			return nil
+		}
+
+		let frame = guideFrame(in: bounds)
+		guard frame.width.isFinite, frame.height.isFinite,
+			  frame.origin.x.isFinite, frame.origin.y.isFinite,
+			  frame.width >= minimumRegionWidth,
+			  frame.height >= minimumRegionHeight,
+			  bounds.insetBy(dx: -0.5, dy: -0.5).contains(frame) else {
+			return nil
+		}
+		return frame
+	}
+
+	static func isSameRegion(_ lhs: CGRect, as rhs: CGRect) -> Bool {
+		abs(lhs.origin.x - rhs.origin.x) < 0.5
+			&& abs(lhs.origin.y - rhs.origin.y) < 0.5
+			&& abs(lhs.width - rhs.width) < 0.5
+			&& abs(lhs.height - rhs.height) < 0.5
+	}
+}
+
 private final class VisionScannerHostViewController: UIViewController {
 	weak var delegate: VisionScannerHostDelegate?
 	private var scanner: DataScannerViewController?
@@ -174,18 +222,30 @@ private final class VisionScannerHostViewController: UIViewController {
 	private var simulatorScanner: SimulatorVisionScannerViewController?
 	#endif
 	private var overlay: ScannerOverlayView?
+	private var wantsScanning = false
 
 	override func viewDidLoad() {
 		super.viewDidLoad()
 		view.backgroundColor = .black
 	}
 
+	override func viewDidAppear(_ animated: Bool) {
+		super.viewDidAppear(animated)
+		#if !targetEnvironment(simulator)
+		startEmbeddedScannerIfPossible()
+		#endif
+	}
+
 	override func viewDidLayoutSubviews() {
 		super.viewDidLayoutSubviews()
-		scanner?.regionOfInterest = ScannerOverlayView.guideFrame(in: view.bounds)
+		#if !targetEnvironment(simulator)
+		startEmbeddedScannerIfPossible()
+		updateRegionOfInterest()
+		#endif
 	}
 
 	func startScanning() {
+		wantsScanning = true
 		#if targetEnvironment(simulator)
 		guard simulatorScanner == nil else { return }
 
@@ -205,6 +265,34 @@ private final class VisionScannerHostViewController: UIViewController {
 		installOverlay()
 		controller.startScanning()
 		#else
+		embedScannerIfNeeded()
+		startEmbeddedScannerIfPossible()
+		#endif
+	}
+
+	func stopScanning() {
+		wantsScanning = false
+		#if targetEnvironment(simulator)
+		simulatorScanner?.stopScanning()
+		#else
+		setTorchEnabled(false)
+		if scanner?.isScanning == true {
+			scanner?.stopScanning()
+		}
+		#endif
+	}
+
+	func captureStill() async -> UIImage? {
+		#if targetEnvironment(simulator)
+		return simulatorScanner?.captureStill()
+		#else
+		guard wantsScanning, let scanner, scanner.isScanning else { return nil }
+		return try? await scanner.capturePhoto()
+		#endif
+	}
+
+	#if !targetEnvironment(simulator)
+	private func embedScannerIfNeeded() {
 		guard scanner == nil else { return }
 
 		guard DataScannerViewController.isSupported, DataScannerViewController.isAvailable else {
@@ -234,31 +322,32 @@ private final class VisionScannerHostViewController: UIViewController {
 		controller.didMove(toParent: self)
 		scanner = controller
 		installOverlay()
+	}
+
+	private func startEmbeddedScannerIfPossible() {
+		guard wantsScanning, view.window != nil, let scanner, !scanner.isScanning else { return }
+		guard scanner.view.bounds.width >= CardScannerLayout.minimumBoundsWidth,
+			  scanner.view.bounds.height >= CardScannerLayout.minimumBoundsHeight else {
+			return
+		}
 
 		do {
-			try controller.startScanning()
+			try scanner.startScanning()
+			updateRegionOfInterest()
 		} catch {
 			delegate?.scannerHostDidFail("Unable to start the camera.")
 		}
-		#endif
 	}
 
-	func stopScanning() {
-		#if targetEnvironment(simulator)
-		simulatorScanner?.stopScanning()
-		#else
-		setTorchEnabled(false)
-		scanner?.stopScanning()
-		#endif
+	private func updateRegionOfInterest() {
+		guard let scanner, scanner.isScanning else { return }
+		guard let roi = CardScannerLayout.regionOfInterest(in: scanner.view.bounds) else { return }
+		if let current = scanner.regionOfInterest, CardScannerLayout.isSameRegion(current, as: roi) {
+			return
+		}
+		scanner.regionOfInterest = roi
 	}
-
-	func captureStill() async -> UIImage? {
-		#if targetEnvironment(simulator)
-		return simulatorScanner?.captureStill()
-		#else
-		return try? await scanner?.capturePhoto()
-		#endif
-	}
+	#endif
 
 	var isTorchAvailable: Bool {
 		#if targetEnvironment(simulator)
@@ -588,16 +677,7 @@ private struct VisionScannerRepresentable: UIViewControllerRepresentable {
 
 private final class ScannerOverlayView: UIView {
 	static func guideFrame(in bounds: CGRect) -> CGRect {
-		let cardAspect: CGFloat = 1.586
-		let maxWidth = bounds.width * 0.86
-		let width = min(maxWidth, bounds.height * 0.42 * cardAspect)
-		let height = width / cardAspect
-		return CGRect(
-			x: (bounds.width - width) / 2,
-			y: (bounds.height - height) / 2,
-			width: width,
-			height: height
-		)
+		CardScannerLayout.guideFrame(in: bounds)
 	}
 
 	override init(frame: CGRect) {
