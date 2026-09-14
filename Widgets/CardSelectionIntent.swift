@@ -10,13 +10,13 @@ import WidgetKit
 
 // MARK: - Card Entity
 
-struct CardEntity: AppEntity {
+struct CardEntity: AppEntity, Sendable {
     let id: UUID
     let displayName: String
     let lastFourDigits: String
 
-    static var typeDisplayRepresentation: TypeDisplayRepresentation = "Card"
-    static var defaultQuery = CardQuery()
+    static let typeDisplayRepresentation: TypeDisplayRepresentation = "Card"
+    static let defaultQuery = CardQuery()
 
     var displayRepresentation: DisplayRepresentation {
         DisplayRepresentation(title: "\(displayName) (**** \(lastFourDigits))")
@@ -59,8 +59,8 @@ struct CardQuery: EntityQuery {
 // MARK: - Single Card Selection Intent
 
 struct SelectCardIntent: WidgetConfigurationIntent {
-    static var title: LocalizedStringResource = "Select Card"
-    static var description = IntentDescription("Choose which card to display")
+    static let title: LocalizedStringResource = "Select Card"
+    static let description = IntentDescription("Choose which card to display")
 
     @Parameter(title: "Card")
     var card: CardEntity?
@@ -77,8 +77,8 @@ struct SelectCardIntent: WidgetConfigurationIntent {
 
 @available(iOS 18.0, *)
 struct ControlCenterCardIntent: ControlConfigurationIntent {
-    static var title: LocalizedStringResource = "Select Card"
-    static var description = IntentDescription("Choose which card to display")
+    static let title: LocalizedStringResource = "Select Card"
+    static let description = IntentDescription("Choose which card to display")
 
     @Parameter(title: "Card")
     var card: CardEntity?
@@ -94,8 +94,8 @@ struct ControlCenterCardIntent: ControlConfigurationIntent {
 // MARK: - Multiple Cards Selection Intent
 
 struct SelectMultipleCardsIntent: WidgetConfigurationIntent {
-    static var title: LocalizedStringResource = "Select Cards"
-    static var description = IntentDescription("Choose cards to display (up to 4)")
+    static let title: LocalizedStringResource = "Select Cards"
+    static let description = IntentDescription("Choose cards to display (up to 4)")
 
     @Parameter(title: "Cards")
     var cards: [CardEntity]?

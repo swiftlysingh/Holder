@@ -15,7 +15,7 @@ import UIKit
 public typealias PlatformImage = UIImage
 #endif
 
-enum CardImageData {
+nonisolated enum CardImageData {
 	static func decodeOffMain(_ data: Data) async -> PlatformImage? {
 		await Task.detached(priority: .userInitiated) {
 			PlatformImage(data: data)

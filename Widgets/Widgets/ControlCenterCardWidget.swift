@@ -48,8 +48,8 @@ struct ControlCenterCardWidget: ControlWidget {
 
 @available(iOS 18.0, *)
 struct OpenHolderCardIntent: AppIntent {
-    static var title: LocalizedStringResource = "Open Card in Holder"
-    static var openAppWhenRun: Bool = true
+    static let title: LocalizedStringResource = "Open Card in Holder"
+    static let openAppWhenRun = true
 
     @Parameter(title: "Card ID")
     var cardIDString: String?

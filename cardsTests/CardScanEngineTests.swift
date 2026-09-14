@@ -172,9 +172,9 @@ final class CardCandidateEngineTests: XCTestCase {
 }
 
 #if os(iOS)
-@MainActor
 final class CardScannerTorchTests: XCTestCase {
-	func testTorchToggleAndScannerStopTurnTorchOff() {
+	@MainActor
+	func testTorchToggleAndScannerStopTurnTorchOff() async {
 		let engine = TorchSpyCardScanningEngine()
 		let model = CardScannerViewModel(isRescan: false, engine: engine)
 
@@ -199,24 +199,29 @@ private final class TorchSpyCardScanningEngine: CardScanningEngine {
 	var torchRequests: [Bool] = []
 	var didStop = false
 
+	@MainActor
 	func makeCameraView() -> AnyView { AnyView(EmptyView()) }
+	@MainActor
 	func scanUpdates() -> AsyncStream<CardScanUpdate> { AsyncStream { $0.finish() } }
+	@MainActor
 	func verifyCurrentCandidate() async -> CardScanResult? { nil }
 
+	@MainActor
 	func setTorchEnabled(_ isEnabled: Bool) -> Bool {
 		torchRequests.append(isEnabled)
 		return isEnabled
 	}
 
+	@MainActor
 	func stop() {
 		didStop = true
 	}
 }
 #endif
 
-@MainActor
 final class CardScanSessionTests: XCTestCase {
-	func testScanAttemptDoesNotCarryMetadataAcrossPANs() {
+	@MainActor
+	func testScanAttemptDoesNotCarryMetadataAcrossPANs() async {
 		var attempt = CardScanAttempt()
 		attempt.record(CardFrameObservation(
 			pan: "4111111111111111",
@@ -235,7 +240,8 @@ final class CardScanSessionTests: XCTestCase {
 		XCTAssertNil(attempt.latestObservation.cardholderName)
 	}
 
-	func testScanAttemptMergesMetadataOnlyFramesForTheCurrentPAN() {
+	@MainActor
+	func testScanAttemptMergesMetadataOnlyFramesForTheCurrentPAN() async {
 		var attempt = CardScanAttempt()
 		attempt.record(CardFrameObservation(
 			pan: "4111111111111111",
@@ -253,7 +259,8 @@ final class CardScanSessionTests: XCTestCase {
 		XCTAssertEqual(attempt.latestObservation.cardholderName, "JANE DOE")
 	}
 
-	func testScanAttemptResetDropsMetadataFromFailedCandidate() {
+	@MainActor
+	func testScanAttemptResetDropsMetadataFromFailedCandidate() async {
 		var attempt = CardScanAttempt()
 		attempt.record(CardFrameObservation(
 			pan: "4111111111111111",
@@ -266,7 +273,8 @@ final class CardScanSessionTests: XCTestCase {
 		XCTAssertEqual(attempt.latestObservation, CardFrameObservation())
 	}
 
-	func testApplyScanFillsPANAndNetwork() {
+	@MainActor
+	func testApplyScanFillsPANAndNetwork() async {
 		var card = makeBlankCard()
 		let result = CardScanResult(
 			pan: "4111111111111111",
@@ -283,7 +291,8 @@ final class CardScanSessionTests: XCTestCase {
 		XCTAssertEqual(card.network, .visa)
 	}
 
-	func testMissingExpiryAndNameDoNotEraseExistingValues() {
+	@MainActor
+	func testMissingExpiryAndNameDoNotEraseExistingValues() async {
 		var card = makeBlankCard()
 		card.expiration = "11/29"
 		card.name = "EXISTING NAME"
@@ -299,7 +308,8 @@ final class CardScanSessionTests: XCTestCase {
 		XCTAssertEqual(card.network, .master)
 	}
 
-	func testCardViewModelApplyScanLeavesManualFieldsIntact() {
+	@MainActor
+	func testCardViewModelApplyScanLeavesManualFieldsIntact() async {
 		let model = CardViewModel(
 			card: CardData(
 				id: UUID(),
@@ -332,7 +342,8 @@ final class CardScanSessionTests: XCTestCase {
 		XCTAssertFalse(model.isShowingScanner)
 	}
 
-	func testAddNewCardStartsWithoutSelectedType() {
+	@MainActor
+	func testAddNewCardStartsWithoutSelectedType() async {
 		let model = CardViewModel(
 			card: CardData(
 				id: UUID(),
@@ -351,7 +362,8 @@ final class CardScanSessionTests: XCTestCase {
 		XCTAssertFalse(model.canFinishEditing)
 	}
 
-	func testScanDoesNotGuessAnUnselectedCardType() {
+	@MainActor
+	func testScanDoesNotGuessAnUnselectedCardType() async {
 		let model = CardViewModel(
 			card: makeBlankCard(),
 			isEditing: true,
@@ -377,6 +389,7 @@ final class CardScanSessionTests: XCTestCase {
 		XCTAssertTrue(model.canFinishEditing)
 		XCTAssertEqual(model.card.type, .credit)
 	}
+	@MainActor
 	private func makeBlankCard() -> CardData {
 		CardData(
 			id: UUID(),
@@ -391,16 +404,18 @@ final class CardScanSessionTests: XCTestCase {
 }
 
 #if os(iOS)
-@MainActor
 final class CardScannerViewModelTests: XCTestCase {
+	@MainActor
 	func testFailedUpdateStopsBeforeAlertAndIgnoresBufferedResult() async {
 		await assertTerminalUpdateStops(.failed("The camera is unavailable."))
 	}
 
+	@MainActor
 	func testUnsupportedUpdateStopsBeforeAlertAndIgnoresBufferedResult() async {
 		await assertTerminalUpdateStops(.unsupported("Card scanning is unavailable."))
 	}
 
+	@MainActor
 	func testRetryableFailureClearsCandidateAndContinuesScanning() async {
 		let engine = TerminalUpdateCardScanningEngine(updates: [
 			.candidate(lastFour: "1111", network: .visa),
@@ -427,6 +442,7 @@ final class CardScannerViewModelTests: XCTestCase {
 		XCTAssertTrue(receivedResult)
 	}
 
+	@MainActor
 	func testStopBeforeConsumingDoesNotStartTheEngineStream() async {
 		let engine = StreamStartTrackingCardScanningEngine()
 		let model = CardScannerViewModel(isRescan: false, engine: engine)
@@ -441,6 +457,7 @@ final class CardScannerViewModelTests: XCTestCase {
 		XCTAssertFalse(engine.didStartStream)
 	}
 
+	@MainActor
 	private func assertTerminalUpdateStops(_ terminalUpdate: CardScanUpdate) async {
 		let engine = TerminalUpdateCardScanningEngine(updates: [
 			terminalUpdate,
@@ -475,8 +492,10 @@ private final class TerminalUpdateCardScanningEngine: CardScanningEngine {
 		self.updates = updates
 	}
 
+	@MainActor
 	func makeCameraView() -> AnyView { AnyView(EmptyView()) }
 
+	@MainActor
 	func scanUpdates() -> AsyncStream<CardScanUpdate> {
 		let streamUpdates = updates
 		return AsyncStream { continuation in
@@ -487,8 +506,10 @@ private final class TerminalUpdateCardScanningEngine: CardScanningEngine {
 		}
 	}
 
+	@MainActor
 	func verifyCurrentCandidate() async -> CardScanResult? { nil }
 
+	@MainActor
 	func stop() {
 		didStop = true
 	}
@@ -500,15 +521,19 @@ private final class StreamStartTrackingCardScanningEngine: CardScanningEngine {
 	private(set) var didStartStream = false
 	private(set) var didStop = false
 
+	@MainActor
 	func makeCameraView() -> AnyView { AnyView(EmptyView()) }
 
+	@MainActor
 	func scanUpdates() -> AsyncStream<CardScanUpdate> {
 		didStartStream = true
 		return AsyncStream { $0.finish() }
 	}
 
+	@MainActor
 	func verifyCurrentCandidate() async -> CardScanResult? { nil }
 
+	@MainActor
 	func stop() {
 		didStop = true
 	}

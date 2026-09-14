@@ -86,9 +86,9 @@ final class HolderOnboardingStoreTests: XCTestCase {
 	}
 }
 
-@MainActor
 final class HolderAppFlowTests: XCTestCase {
-	func testReplayDoesNotMarkAutomaticOnboardingComplete() {
+	@MainActor
+	func testReplayDoesNotMarkAutomaticOnboardingComplete() async {
 		let suiteName = "HolderAppFlowTests.\(UUID().uuidString)"
 		let defaults = UserDefaults(suiteName: suiteName)!
 		defaults.removePersistentDomain(forName: suiteName)
@@ -113,7 +113,8 @@ final class HolderAppFlowTests: XCTestCase {
 		XCTAssertNil(flow.onboardingAudience)
 	}
 
-	func testReplayWaitsUntilAnotherPresentationFinishes() {
+	@MainActor
+	func testReplayWaitsUntilAnotherPresentationFinishes() async {
 		let suiteName = "HolderAppFlowTests.\(UUID().uuidString)"
 		let defaults = UserDefaults(suiteName: suiteName)!
 		defaults.removePersistentDomain(forName: suiteName)
@@ -138,7 +139,8 @@ final class HolderAppFlowTests: XCTestCase {
 		XCTAssertEqual(flow.onboardingAudience, .replay)
 	}
 
-	func testReplayDoesNotQueueItselfWhileAlreadyPresented() {
+	@MainActor
+	func testReplayDoesNotQueueItselfWhileAlreadyPresented() async {
 		let suiteName = "HolderAppFlowTests.\(UUID().uuidString)"
 		let defaults = UserDefaults(suiteName: suiteName)!
 		defaults.removePersistentDomain(forName: suiteName)
@@ -161,7 +163,8 @@ final class HolderAppFlowTests: XCTestCase {
 		XCTAssertNil(flow.onboardingAudience)
 	}
 
-	func testAutomaticOnboardingStaysHiddenUntilCardsLoad() {
+	@MainActor
+	func testAutomaticOnboardingStaysHiddenUntilCardsLoad() async {
 		let flow = makeFreshInstallFlow()
 
 		XCTAssertEqual(flow.onboardingAudience, .newUser)
@@ -173,7 +176,8 @@ final class HolderAppFlowTests: XCTestCase {
 		)
 	}
 
-	func testAutomaticOnboardingStaysHiddenWhileAddingACard() {
+	@MainActor
+	func testAutomaticOnboardingStaysHiddenWhileAddingACard() async {
 		let flow = makeFreshInstallFlow()
 
 		XCTAssertNil(
@@ -191,7 +195,8 @@ final class HolderAppFlowTests: XCTestCase {
 		)
 	}
 
-	func testAutomaticOnboardingStaysHiddenWhileSettingsAreOpen() {
+	@MainActor
+	func testAutomaticOnboardingStaysHiddenWhileSettingsAreOpen() async {
 		let flow = makeFreshInstallFlow()
 
 		XCTAssertNil(
@@ -211,6 +216,7 @@ final class HolderAppFlowTests: XCTestCase {
 		)
 	}
 
+	@MainActor
 	private func makeFreshInstallFlow() -> HolderAppFlow {
 		let suiteName = "HolderAppFlowTests.\(UUID().uuidString)"
 		let defaults = UserDefaults(suiteName: suiteName)!

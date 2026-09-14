@@ -7,7 +7,7 @@
 
 import Foundation
 
-struct CardScanAttempt {
+nonisolated struct CardScanAttempt {
 	private(set) var latestObservation = CardFrameObservation()
 
 	mutating func record(_ observation: CardFrameObservation) {
@@ -31,7 +31,7 @@ struct CardScanAttempt {
 	}
 }
 
-enum CardScanSession {
+nonisolated enum CardScanSession {
 	static func apply(_ result: CardScanResult, to card: inout CardData) {
 		card.number = CardPAN.formatted(result.pan)
 		if result.network != .other {

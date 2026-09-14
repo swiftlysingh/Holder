@@ -1,6 +1,6 @@
 import SinghDevKit
 
-enum AppAnalyticsEvent: AnalyticsEvent {
+nonisolated enum AppAnalyticsEvent: AnalyticsEvent, Sendable {
     enum SaveOperation: String, Sendable {
         case create
         case update

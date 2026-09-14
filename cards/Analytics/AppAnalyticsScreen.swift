@@ -1,6 +1,6 @@
 import SinghDevKit
 
-enum AppAnalyticsScreen: String, AnalyticsScreen {
+nonisolated enum AppAnalyticsScreen: String, AnalyticsScreen {
     case home
     case cardDetails = "card_details"
     case cardEditor = "card_editor"

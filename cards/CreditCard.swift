@@ -263,7 +263,7 @@ struct CreditCard: App {
     #endif
 }
 
-struct AppSecrets: Sendable {
+nonisolated struct AppSecrets: Sendable {
     let postHogProjectToken: String?
     let postHogHost: URL
     let revenueCatAPIKey: String?

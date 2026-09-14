@@ -8,13 +8,13 @@
 import SwiftUI
 
 extension String {
-	func maskedCardNumber() -> String {
+	nonisolated func maskedCardNumber() -> String {
 		let digits = filter(\.isNumber)
 		guard !digits.isEmpty else { return "No number" }
 		return "•••• \(digits.suffix(4))"
 	}
 
-	func getCardNetwork() -> CardNetwork {
+	nonisolated func getCardNetwork() -> CardNetwork {
 		guard let number = UInt(self.replacingOccurrences(of: " ", with: "")) else {return .other}
 		
 		let first1 = number.firstDigits(count: 1)
@@ -67,7 +67,7 @@ extension String {
 	}
 }
 extension UInt {
-	func firstDigits(count: Int) -> UInt {
+	nonisolated func firstDigits(count: Int) -> UInt {
 		if self == 0 || count <= 0 {
 			return 0
 		}
