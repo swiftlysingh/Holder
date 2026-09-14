@@ -579,7 +579,7 @@ private final class ScreenshotScannerFixtureView: UIView {
 		UIColor(red: 0.08, green: 0.10, blue: 0.14, alpha: 1).setFill()
 		context.fill(bounds)
 
-		let guide = ScannerOverlayView.guideFrame(in: bounds)
+		let guide = CardScannerLayout.guideFrame(in: bounds)
 		let card = guide.insetBy(dx: 12, dy: 12)
 		let cardPath = UIBezierPath(roundedRect: card, cornerRadius: 14)
 
@@ -676,10 +676,6 @@ private struct VisionScannerRepresentable: UIViewControllerRepresentable {
 }
 
 private final class ScannerOverlayView: UIView {
-	static func guideFrame(in bounds: CGRect) -> CGRect {
-		CardScannerLayout.guideFrame(in: bounds)
-	}
-
 	override init(frame: CGRect) {
 		super.init(frame: frame)
 		backgroundColor = .clear
@@ -702,7 +698,7 @@ private final class ScannerOverlayView: UIView {
 		UIColor.black.withAlphaComponent(0.45).setFill()
 		context.fill(bounds)
 
-		let guide = Self.guideFrame(in: bounds)
+		let guide = CardScannerLayout.guideFrame(in: bounds)
 		let path = UIBezierPath(roundedRect: guide, cornerRadius: 16)
 		context.setBlendMode(.clear)
 		path.fill()
