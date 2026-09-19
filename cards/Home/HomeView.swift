@@ -435,11 +435,13 @@ struct HomeView: View {
 						.font(.body.weight(.semibold))
 						.foregroundStyle(.primary)
 						.lineLimit(2)
+						.withoutInterpolatingText()
 
 					Text(card.number.maskedCardNumber())
 						.font(.footnote)
 						.foregroundStyle(.secondary)
 						.monospacedDigit()
+						.withoutInterpolatingText()
 				}
 			}
 			.padding(.vertical, 2)

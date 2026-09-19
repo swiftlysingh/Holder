@@ -249,7 +249,9 @@ final class CardDataStore {
 		#endif
 
 		guard loadGeneration == latestLoadGeneration else { return true }
-		commitCards(retrievedCards)
+		withTransaction(HangSafeUI.dataCommitTransaction()) {
+			commitCards(retrievedCards)
+		}
 		return true
 	}
 

@@ -64,12 +64,14 @@ struct CardScannerView: View {
 						Text("\(network.rawValue) •••• \(lastFour)")
 							.font(.headline)
 							.foregroundStyle(.white)
+							.withoutInterpolatingText()
 					}
 					Text(model.guidance)
 						.font(.subheadline)
 						.multilineTextAlignment(.center)
 						.foregroundStyle(.white)
 						.padding(.horizontal, 24)
+						.withoutInterpolatingText()
 
 					if showsManualEntry, let onManualEntry {
 						Button {
@@ -115,9 +117,7 @@ struct CardScannerView: View {
 			} catch {
 				return
 			}
-			withAnimation {
-				showsManualEntry = true
-			}
+			showsManualEntry = true
 		}
 		.onDisappear {
 			model.stop()
