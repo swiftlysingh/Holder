@@ -41,7 +41,8 @@ final class CardImageDownsamplingTests: XCTestCase {
 
 	func testDecodeOffMainReturnsADownsampledImage() async throws {
 		let data = try makeJPEGData(width: 400, height: 300)
-		let image = try XCTUnwrap(await CardImageData.decodeOffMain(data))
+		let decoded = await CardImageData.decodeOffMain(data)
+		let image = try XCTUnwrap(decoded)
 		let size = CardImageData.pixelSize(of: image)
 
 		XCTAssertLessThanOrEqual(max(size.width, size.height), CGFloat(CardImageData.maxPixelSize))
