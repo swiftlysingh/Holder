@@ -117,11 +117,14 @@ struct ArchivedCardsView: View {
 			VStack(alignment: .leading) {
 				if !card.description.isEmpty {
 					Text(card.description)
+						.withoutInterpolatingText()
 				} else {
 					Text(card.name)
+						.withoutInterpolatingText()
 				}
 				Text(card.number.maskedCardNumber())
 					.foregroundStyle(.secondary)
+					.withoutInterpolatingText()
 			}
 		}
 	}

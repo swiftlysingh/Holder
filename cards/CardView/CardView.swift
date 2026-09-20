@@ -188,19 +188,17 @@ struct CardView: View {
 	private func startScan() {
 		track(.cardScanStarted(engine: CardScanningEngineFactory.currentEngineID))
 		isFieldFocused = false
-		withAnimation {
-			cardSheetDetent = .height(430)
-			model.isShowingScanner = true
-		}
+		// Sheet height already animates via `presentationDetents`. Wrapping this
+		// tree in `withAnimation` interpolates Text through Core Text and can hang.
+		cardSheetDetent = .height(430)
+		model.isShowingScanner = true
 	}
 
 	private func showCardForm() {
 		isFieldFocused = false
-		withAnimation {
-			isShowingCardForm = true
-			model.isShowingScanner = false
-			cardSheetDetent = .fraction(0.5)
-		}
+		isShowingCardForm = true
+		model.isShowingScanner = false
+		cardSheetDetent = .fraction(0.5)
 	}
 	#endif
 
@@ -287,10 +285,12 @@ struct CardView: View {
 				if copiedField == heading {
 					Label("Copied!", systemImage: "checkmark")
 						.foregroundStyle(.green)
+						.withoutInterpolatingText()
 				} else {
 					Text(value)
 						.foregroundColor(.accentColor)
 						.multilineTextAlignment(.trailing)
+						.withoutInterpolatingText()
 				}
 			}
 			.frame(maxWidth: .infinity, alignment: .leading)
@@ -923,10 +923,12 @@ struct CardView: View {
 							.foregroundStyle(.green)
 						Text("Copied!")
 							.foregroundStyle(.green)
+							.withoutInterpolatingText()
 					}
 				} else {
 					Text(value)
 						.foregroundStyle(.primary)
+						.withoutInterpolatingText()
 				}
 			}
 			.padding(.horizontal, 12)

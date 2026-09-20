@@ -296,17 +296,20 @@ struct HolderOnboardingView: View {
 					Text(welcomeEyebrow)
 						.font(.caption.weight(.semibold))
 						.foregroundStyle(Color.accentColor)
+						.withoutInterpolatingText()
 				}
 				Text(welcomeTitle)
 					.font(.title2.bold())
 					.multilineTextAlignment(.center)
 					.accessibilityAddTraits(.isHeader)
 					.accessibilityFocused($isPageHeadingFocused)
+					.withoutInterpolatingText()
 				Text(welcomeSubtitle)
 					.font(.body)
 					.foregroundStyle(.secondary)
 					.multilineTextAlignment(.center)
 					.fixedSize(horizontal: false, vertical: true)
+					.withoutInterpolatingText()
 			}
 		}
 	}
@@ -318,11 +321,13 @@ struct HolderOnboardingView: View {
 				.multilineTextAlignment(.center)
 				.accessibilityAddTraits(.isHeader)
 				.accessibilityFocused($isPageHeadingFocused)
+				.withoutInterpolatingText()
 			Text(getStartedSubtitle)
 				.font(.body)
 				.foregroundStyle(.secondary)
 				.multilineTextAlignment(.center)
 				.fixedSize(horizontal: false, vertical: true)
+				.withoutInterpolatingText()
 		}
 	}
 
@@ -385,6 +390,8 @@ struct HolderOnboardingView: View {
 		.padding(.top, 8)
 		.padding(.bottom, 12)
 		.frame(maxWidth: .infinity)
+		.id(page)
+		.transition(pageTransition)
 	}
 
 	private var welcomeReassurance: some View {
@@ -393,6 +400,7 @@ struct HolderOnboardingView: View {
 				.foregroundStyle(.secondary)
 				.multilineTextAlignment(.center)
 				.fixedSize(horizontal: false, vertical: true)
+				.withoutInterpolatingText()
 
 			if let privacyPolicyURL {
 				Link(destination: privacyPolicyURL) {
@@ -413,6 +421,7 @@ struct HolderOnboardingView: View {
 			.foregroundStyle(.secondary)
 			.multilineTextAlignment(.center)
 			.fixedSize(horizontal: false, vertical: true)
+			.withoutInterpolatingText()
 			.frame(maxWidth: 420)
 	}
 
@@ -587,10 +596,12 @@ private struct OnboardingCardArtwork: View {
 					VStack(alignment: .leading, spacing: 5) {
 						Text("•••• 4821")
 							.font(.system(size: 16, weight: .semibold, design: .monospaced))
+							.withoutInterpolatingText()
 						Text("YOUR CARD")
 							.font(.system(size: 9, weight: .bold))
 							.tracking(1)
 							.foregroundStyle(.secondary)
+							.withoutInterpolatingText()
 					}
 					.padding(17)
 				}
