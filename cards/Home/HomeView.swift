@@ -26,7 +26,6 @@ struct HomeView: View {
 	#endif
 	#if os(iOS)
 	@State private var addCardSheetDetent: PresentationDetent = .height(430)
-	@Namespace private var addCardTransition
 	#endif
 
 	init(
@@ -176,21 +175,14 @@ struct HomeView: View {
 				}
 			)
 			#if os(iOS)
-			Group {
-				if #available(iOS 18.0, *) {
-					addCardSheetContent(cardViewModel)
-						.navigationTransition(
-							.zoom(sourceID: "add-card", in: addCardTransition)
-						)
-				} else {
-					addCardSheetContent(cardViewModel)
-				}
-			}
-			.presentationDetents(
-				[.fraction(0.5), .height(430), .large],
-				selection: $addCardSheetDetent
-			)
-			.presentationDragIndicator(.visible)
+			// Zoom morphs the sheet's Text through SwiftUI's text animation
+			// provider and can hang. Sheet presentation still animates on its own.
+			addCardSheetContent(cardViewModel)
+				.presentationDetents(
+					[.fraction(0.5), .height(430), .large],
+					selection: $addCardSheetDetent
+				)
+				.presentationDragIndicator(.visible)
 			#else
 			NavigationView {
 				CardView(model: cardViewModel)
@@ -310,11 +302,6 @@ struct HomeView: View {
 		if #available(iOS 26.0, *) {
 			button
 				.buttonStyle(.glassProminent)
-				.matchedTransitionSource(id: "add-card", in: addCardTransition)
-		} else if #available(iOS 18.0, *) {
-			button
-				.buttonStyle(.borderedProminent)
-				.matchedTransitionSource(id: "add-card", in: addCardTransition)
 		} else {
 			button
 				.buttonStyle(.borderedProminent)

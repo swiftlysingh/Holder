@@ -85,7 +85,6 @@ struct CardScannerView: View {
 						.buttonStyle(.plain)
 						.foregroundStyle(.white)
 						.accessibilityIdentifier("manualCardEntryButton")
-						.transition(.move(edge: .bottom).combined(with: .opacity))
 					}
 				}
 				.padding(.bottom, 24)

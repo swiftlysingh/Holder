@@ -187,7 +187,6 @@ struct HolderOnboardingView: View {
 		case getStarted
 	}
 
-	@Environment(\.accessibilityReduceMotion) private var reduceMotion
 	@Environment(\.dynamicTypeSize) private var dynamicTypeSize
 	@AccessibilityFocusState private var isPageHeadingFocused: Bool
 	@State private var page = Self.initialPage
@@ -285,7 +284,6 @@ struct HolderOnboardingView: View {
 				}
 			}
 			.id(page)
-			.transition(pageTransition)
 		}
 	}
 
@@ -391,7 +389,6 @@ struct HolderOnboardingView: View {
 		.padding(.bottom, 12)
 		.frame(maxWidth: .infinity)
 		.id(page)
-		.transition(pageTransition)
 	}
 
 	private var welcomeReassurance: some View {
@@ -425,17 +422,11 @@ struct HolderOnboardingView: View {
 			.frame(maxWidth: 420)
 	}
 
-	private var pageTransition: AnyTransition {
-		guard !reduceMotion else { return .opacity }
-		return .asymmetric(
-			insertion: .offset(y: 12).combined(with: .opacity),
-			removal: .opacity
-		)
-	}
-
 	private func move(to newPage: Page) {
 		isPageHeadingFocused = false
-		withAnimation(reduceMotion ? .easeOut(duration: 0.2) : .snappy(duration: 0.4)) {
+		// Page copy, buttons, and artwork all contain Text. Animating that swap
+		// through SwiftUI's text animation provider can hang the main thread.
+		HangSafeUI.withoutTextAnimation {
 			page = newPage
 		}
 		Task { @MainActor in
@@ -564,10 +555,6 @@ private struct OnboardingCardArtwork: View {
 				.scaleEffect(0.82)
 				.frame(width: 230, height: 124)
 		}
-		.animation(
-			reduceMotion ? .easeOut(duration: 0.18) : .snappy(duration: 0.42),
-			value: showsScanner
-		)
 		.accessibilityHidden(true)
 	}
 
@@ -615,11 +602,6 @@ private struct OnboardingCardArtwork: View {
 					.background(.thinMaterial, in: RoundedRectangle(cornerRadius: 17, style: .continuous))
 					.shadow(color: .black.opacity(0.09), radius: 10, y: 5)
 					.offset(x: 78, y: 46)
-					.transition(
-						reduceMotion
-							? .opacity
-							: .scale(scale: 0.82).combined(with: .opacity)
-					)
 			}
 		}
 		.frame(width: 280, height: 150)
