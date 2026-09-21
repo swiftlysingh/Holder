@@ -3,5 +3,5 @@
   "keywords": "credit,debit,manager,keeper,storage,biometric,faceid,touchid,private,password,notes,id,loyalty",
   "promotionalText": "Keep credit cards, IDs, memberships, and loyalty cards organized in one private vault, with Face ID protection and quick access from widgets and Mac.",
   "supportUrl": "https://twitter.com/swiftlysingh",
-  "whatsNew": "The home screen now hides empty card categories, so you can focus on the cards you have saved.\n\nThis update also fixes a freeze that could occur during text animations."
+  "whatsNew": "Empty card categories now stay hidden on the home screen.\n\nFixed a freeze during text animations."
 }

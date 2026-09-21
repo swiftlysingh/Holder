@@ -3,5 +3,5 @@
   "keywords": "credit,debit,id,membership,loyalty,insurance,scanner,organizer,biometric,private,keeper,storage",
   "promotionalText": "Add credit cards, IDs, memberships, and loyalty cards faster with private, on-device scanning, then protect them in Holder with Face ID.",
   "supportUrl": "https://twitter.com/swiftlysingh",
-  "whatsNew": "Copie os detalhes do cartão com um toque no iPhone e no iPad. Toque no número do cartão, no nome ou na data de validade para copiar a informação quando precisar. Os códigos de segurança ainda exigem autenticação.\n\nA tela inicial agora oculta categorias de cartões vazias para que você possa se concentrar nos cartões salvos.\n\nEsta atualização também corrige uma falha que podia ocorrer ao abrir o scanner de cartões e um travamento que podia ocorrer durante as animações de texto."
+  "whatsNew": "Copie os dados do cartão com um toque. Toque no número do cartão, no nome ou na data de validade para copiar. Os códigos de segurança ainda exigem autenticação.\n\nAs categorias de cartões vazias agora ficam ocultas na tela inicial.\n\nCorrigimos uma falha ao abrir o scanner de cartões e um travamento durante as animações de texto."
 }

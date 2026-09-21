@@ -3,5 +3,5 @@
   "keywords": "credit,debit,id,membership,loyalty,insurance,scanner,organizer,biometric,private,keeper,storage",
   "promotionalText": "Add credit cards, IDs, memberships, and loyalty cards faster with private, on-device scanning, then protect them in Holder with Face ID.",
   "supportUrl": "https://twitter.com/swiftlysingh",
-  "whatsNew": "在 iPhone 和 iPad 上轻点一下即可复制卡片详情。需要时，轻点卡号、姓名或到期日期即可复制。安全码仍需要进行身份验证。\n\n主屏幕现在会隐藏空的卡片类别，让您专注于已保存的卡片。\n\n本次更新还修复了打开卡片扫描器时可能发生的崩溃问题，以及文字动画期间可能出现的卡顿问题。"
+  "whatsNew": "轻点一下即可复制卡片详情。轻点卡号、姓名或到期日期即可复制。安全码仍需要进行身份验证。\n\n主屏幕现在会隐藏空的卡片类别。\n\n修复了打开卡片扫描器时的崩溃问题，以及文字动画期间的卡死问题。"
 }

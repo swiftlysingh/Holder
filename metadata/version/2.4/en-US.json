@@ -3,5 +3,5 @@
   "keywords": "credit,debit,id,membership,loyalty,insurance,scanner,organizer,biometric,private,keeper,storage",
   "promotionalText": "Add credit cards, IDs, memberships, and loyalty cards faster with private, on-device scanning, then protect them in Holder with Face ID.",
   "supportUrl": "https://twitter.com/swiftlysingh",
-  "whatsNew": "Copy card details with a tap on iPhone and iPad. Tap a card number, name, or expiry date to copy it when you need it. Security codes still require authentication.\n\nThe home screen now hides empty card categories, so you can focus on the cards you have saved.\n\nThis update also fixes a crash that could occur when opening the card scanner and a freeze that could occur during text animations."
+  "whatsNew": "Copy card details with one tap. Tap a card number, name, or expiry date to copy it. Security codes still require authentication.\n\nEmpty card categories now stay hidden on the home screen.\n\nFixed a crash when opening the card scanner and a freeze during text animations."
 }
