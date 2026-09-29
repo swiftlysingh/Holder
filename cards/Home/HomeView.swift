@@ -152,7 +152,9 @@ struct HomeView: View {
 				}))
 			.id(card.id)
 		}
-		.sheet(isPresented: $model.isAddingCard) {
+		.sheet(isPresented: $model.isAddingCard, onDismiss: {
+			model.revealPendingCardSelection()
+		}) {
 			let cardViewModel = CardViewModel(
 				card: .init(id: UUID(),
 						number: "",
@@ -169,8 +171,9 @@ struct HomeView: View {
 					// Keep the sheet open on failure so the entered form is preserved for retry.
 					let succeeded = await model.cardDataStore.addCard(card)
 					if succeeded {
-						model.selectedCard = model.cardDataStore.findCard(by: card.id) ?? card
-						model.isAddingCard = false
+						model.finishAddingCard(
+							selecting: model.cardDataStore.findCard(by: card.id) ?? card
+						)
 					}
 					return succeeded
 				}

@@ -15,6 +15,10 @@ final class HomeViewModel: ObservableObject {
 	@Bindable var cardDataStore: CardDataStore
 	var addCardStartMode: CardEditorStartMode = .scanner
 	private var deepLinkTask: Task<Void, Never>?
+	/// Held until the add-card sheet's dismiss animation finishes. Selecting
+	/// immediately tears down the iOS 18 zoom source while UIKit is still
+	/// morphing `PresentationHostingController` (HOLDER-IOS-1 / #117).
+	private var pendingCardSelection: CardData?
 
 	init(cardDataStore: CardDataStore? = nil) {
 		self.cardDataStore = cardDataStore ?? CardDataStore()
@@ -65,7 +69,7 @@ final class HomeViewModel: ObservableObject {
 		let baseDelay: UInt64 = 50_000_000 // 50ms
 
 		if let card = cardDataStore.findCard(by: cardID) {
-			selectedCard = card
+			selectCard(card)
 			onOpenedFromWidget?()
 			return
 		}
@@ -84,5 +88,28 @@ final class HomeViewModel: ObservableObject {
 				onOpenedFromWidget: onOpenedFromWidget
 			)
 		}
+	}
+
+	/// Selects a card unless the add-card sheet is up, in which case the
+	/// selection waits so the zoom morph source stays in the hierarchy.
+	func selectCard(_ card: CardData) {
+		if isAddingCard {
+			pendingCardSelection = card
+			return
+		}
+		selectedCard = card
+	}
+
+	/// Dismisses the add-card sheet and reveals `card` only after that
+	/// presentation has finished tearing down.
+	func finishAddingCard(selecting card: CardData) {
+		pendingCardSelection = card
+		isAddingCard = false
+	}
+
+	func revealPendingCardSelection() {
+		guard let card = pendingCardSelection else { return }
+		pendingCardSelection = nil
+		selectedCard = card
 	}
 }
