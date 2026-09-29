@@ -280,7 +280,7 @@ struct MenuBarCardRow: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
             Button {
-                withAnimation(.easeInOut(duration: 0.2)) {
+                HangSafeUI.withoutTextAnimation {
                     isExpanded.toggle()
                 }
             } label: {

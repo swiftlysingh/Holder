@@ -249,7 +249,7 @@ final class CardDataStore {
 		#endif
 
 		guard loadGeneration == latestLoadGeneration else { return true }
-		withTransaction(HangSafeUI.dataCommitTransaction()) {
+		HangSafeUI.withoutTextAnimation {
 			commitCards(retrievedCards)
 		}
 		return true

@@ -82,12 +82,16 @@ extension UInt {
 }
 
 enum HangSafeUI {
-	/// Use when publishing stored cards so List/Text layout does not run through
-	/// SwiftUI's Core Text animation interpolator on the main thread.
+	/// Use when publishing stored cards or swapping Text-heavy trees so layout
+	/// does not run through SwiftUI's text animation provider on the main thread.
 	static func dataCommitTransaction() -> Transaction {
 		var transaction = Transaction()
 		transaction.disablesAnimations = true
 		return transaction
+	}
+
+	static func withoutTextAnimation(_ updates: () -> Void) {
+		withTransaction(dataCommitTransaction(), updates)
 	}
 }
 
@@ -105,8 +109,9 @@ extension View {
 		}
 	}
 
-	/// Skip Core Text glyph interpolation. Animating `Text` through
-	/// `SwiftUICoreTextAnimationProvider` can block the main thread for seconds.
+	/// Skip glyph interpolation. Animating `Text` through
+	/// `SwiftUITextAnimationProvider` / `SwiftUICoreTextAnimationProvider`
+	/// can block the main thread for seconds.
 	func withoutInterpolatingText() -> some View {
 		contentTransition(.identity)
 	}
