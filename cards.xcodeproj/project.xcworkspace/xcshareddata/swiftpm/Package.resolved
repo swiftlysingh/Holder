@@ -1,42 +1,42 @@
 {
-  "originHash" : "7d685d74d5a95f35fce8797ce84267a52e801dc5791a95ed20f0fbf4569b870e",
-  "pins" : [
+  "originHash": "7d685d74d5a95f35fce8797ce84267a52e801dc5791a95ed20f0fbf4569b870e",
+  "pins": [
     {
-      "identity" : "posthog-ios",
-      "kind" : "remoteSourceControl",
-      "location" : "https://github.com/PostHog/posthog-ios.git",
-      "state" : {
-        "revision" : "9fcdb83e79b155c0dae104eadf5c269079dcbddb",
-        "version" : "3.62.0"
+      "identity": "posthog-ios",
+      "kind": "remoteSourceControl",
+      "location": "https://github.com/PostHog/posthog-ios.git",
+      "state": {
+        "revision": "9fcdb83e79b155c0dae104eadf5c269079dcbddb",
+        "version": "3.62.0"
       }
     },
     {
-      "identity" : "purchases-ios",
-      "kind" : "remoteSourceControl",
-      "location" : "https://github.com/RevenueCat/purchases-ios.git",
-      "state" : {
-        "revision" : "e89cb027a472e5cf1c15435c4e690b9a3c170cdc",
-        "version" : "5.80.0"
+      "identity": "purchases-ios",
+      "kind": "remoteSourceControl",
+      "location": "https://github.com/RevenueCat/purchases-ios.git",
+      "state": {
+        "revision": "e89cb027a472e5cf1c15435c4e690b9a3c170cdc",
+        "version": "5.80.0"
       }
     },
     {
-      "identity" : "sentry-cocoa",
-      "kind" : "remoteSourceControl",
-      "location" : "https://github.com/getsentry/sentry-cocoa.git",
-      "state" : {
-        "revision" : "cd213f98af160e6497eeff0707bc3f6a205b159c",
-        "version" : "9.26.0"
+      "identity": "sentry-cocoa",
+      "kind": "remoteSourceControl",
+      "location": "https://github.com/getsentry/sentry-cocoa.git",
+      "state": {
+        "revision": "cd213f98af160e6497eeff0707bc3f6a205b159c",
+        "version": "9.26.0"
       }
     },
     {
-      "identity" : "singhdevkit",
-      "kind" : "remoteSourceControl",
-      "location" : "https://github.com/swiftlysingh/SinghDevKit.git",
-      "state" : {
-        "revision" : "ecf4908554c2c8156444e48a2938240ed8efe129",
-        "version" : "2.7.2"
+      "identity": "singhdevkit",
+      "kind": "remoteSourceControl",
+      "location": "https://github.com/swiftlysingh/SinghDevKit.git",
+      "state": {
+        "revision": "ecf4908554c2c8156444e48a2938240ed8efe129",
+        "version": "2.7.6"
       }
     }
   ],
-  "version" : 3
+  "version": 3
 }
