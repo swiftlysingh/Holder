@@ -1,9 +1,3 @@
-//
-//  CardDataStore.swift
-//  credit-card
-//
-//  Created by Pushpinder Pal Singh on 07/01/24.
-//
 import SwiftUI
 import WidgetKit
 
@@ -13,7 +7,6 @@ enum CardPayloadRetrievalResult: Sendable {
 	case failure
 }
 
-/// Executes synchronizable Keychain work on one serial, non-main queue.
 private final class CardKeychainPersistence: @unchecked Sendable {
 	typealias RetrievePayloads = @Sendable (String) -> CardPayloadRetrievalResult
 	typealias SavePayload = @Sendable (Data, String, String) -> Bool
@@ -70,7 +63,6 @@ private final class CardKeychainPersistence: @unchecked Sendable {
 	}
 }
 
-/// Serializes complete card mutations, including their in-memory commits.
 private actor CardMutationGate {
 	private var isLocked = false
 	private var waiters: [CheckedContinuation<Void, Never>] = []
@@ -102,8 +94,6 @@ final class CardDataStore {
 	var cardsByType: [CardType: [CardData]] = [:]
 	var archivedCards: [CardData] = []
 
-	// MARK: - Widget Data Sharing
-
 	private let appGroupID = "group.com.swiftlysingh.cards"
 	private let widgetCardsKey = "widgetAvailableCards"
 	private let debugFixturesInitializedKey = "debugFixturesInitialized"
@@ -120,7 +110,6 @@ final class CardDataStore {
 	#endif
 	}()
 
-	/// Distinguishes confirmed empty Keychain results from Security failures.
 	enum CardRetrievalKind: Equatable {
 		case success
 		case empty
@@ -163,7 +152,6 @@ final class CardDataStore {
 		let service = Bundle.main.bundleIdentifier ?? "com.myApp.defaultService"
 		switch await persistence.retrieve(service: service) {
 		case .failure:
-			// Preserve in-memory cards and widget snapshot on real Keychain/decode errors.
 			return false
 		case .empty:
 			return await commitRetrievedCards([], loadGeneration: loadGeneration, service: service)
@@ -323,7 +311,6 @@ final class CardDataStore {
 		}
 	}
 
-	/// Finds a card by its UUID (used for deep linking from widgets)
 	func findCard(by id: UUID) -> CardData? {
 		for type in CardType.allCases {
 			if let cards = cardsByType[type], let card = cards.first(where: { $0.id == id }) {
@@ -345,8 +332,6 @@ final class CardDataStore {
 			return true
 		}
 	}
-
-	// MARK: - Archive
 
 	@discardableResult
 	func archiveCard(_ card: CardData) async -> Bool {
@@ -439,21 +424,17 @@ final class CardDataStore {
 			kSecAttrSynchronizable as String : kCFBooleanTrue!
 		]
 
-		// Check if item already exists
 		let status = SecItemCopyMatching(query as CFDictionary, nil)
 
 		if status == errSecItemNotFound {
-			// Add a new item
 			var newItem = query
 			newItem[kSecValueData as String] = cardDataEncoded
 			return SecItemAdd(newItem as CFDictionary, nil) == errSecSuccess
 		} else if status == errSecSuccess {
-			// Update existing item
 			let updateAttributes: [String: Any] = [kSecValueData as String: cardDataEncoded]
 
 			return SecItemUpdate(query as CFDictionary, updateAttributes as CFDictionary) == errSecSuccess
 		} else {
-			// Handle other errors
 			print("Error checking for existing Keychain item: \(status)")
 			return false
 		}
@@ -501,8 +482,6 @@ final class CardDataStore {
 		let payloads = existingItems.map { $0[kSecValueData as String] as? Data }
 		return .success(payloads)
 	}
-
-	// MARK: - Widget Sync
 
 	/// Syncs card data to widget via App Group (only safe display data, no sensitive info)
 	func syncCardsToWidget() {

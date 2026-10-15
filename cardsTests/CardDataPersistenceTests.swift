@@ -85,7 +85,6 @@ final class CardDataPersistenceTests: XCTestCase {
 		stub.result = .empty
 		let emptyLoadSucceeded = await store.loadCards()
 		XCTAssertTrue(emptyLoadSucceeded)
-		// Sample/debug cards use fresh UUIDs, so the previously stubbed id must not resolve.
 		XCTAssertNil(store.findCard(by: card.id))
 	}
 

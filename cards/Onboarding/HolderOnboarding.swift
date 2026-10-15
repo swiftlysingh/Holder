@@ -424,8 +424,6 @@ struct HolderOnboardingView: View {
 
 	private func move(to newPage: Page) {
 		isPageHeadingFocused = false
-		// Page copy, buttons, and artwork all contain Text. Animating that swap
-		// through SwiftUI's text animation provider can hang the main thread.
 		HangSafeUI.withoutTextAnimation {
 			page = newPage
 		}

@@ -1,10 +1,3 @@
-//
-//  CardView.swift
-//  credit-card
-//
-//  Created by Pushpinder Pal Singh on 09/12/23.
-//
-
 import SinghDevKit
 import SwiftUI
 import UniformTypeIdentifiers
@@ -48,7 +41,6 @@ struct CardView: View {
 			&& !authenticationSession.isSensitiveAccessFresh
 	}
 
-	/// Formats expiration date input (auto-inserts "/" after 2 digits, limits to 5 chars)
 	private func formatExpirationIfNeeded(_ newValue: String) {
 		Task { @MainActor in
 			if newValue.count == 2 && !newValue.contains("/") {
@@ -188,8 +180,6 @@ struct CardView: View {
 	private func startScan() {
 		track(.cardScanStarted(engine: CardScanningEngineFactory.currentEngineID))
 		isFieldFocused = false
-		// Sheet height already animates via `presentationDetents`. Wrapping this
-		// tree in `withAnimation` interpolates Text through Core Text and can hang.
 		cardSheetDetent = .height(430)
 		model.isShowingScanner = true
 	}
@@ -597,17 +587,14 @@ struct CardView: View {
 		}
 	}
 
-	// MARK: - macOS Card View
 	@ViewBuilder
 	private func macOSCardView() -> some View {
 		ScrollView {
 			VStack(spacing: 24) {
-				// Visual Card Preview (only for credit/debit cards)
 				if model.selectedCardType != .other && !model.isEditing {
 					macOSCardPreview()
 				}
 
-				// Card Image for Other Cards
 				if let image = model.cardImage, model.selectedCardType == .other {
 					Image(nsImage: image)
 						.resizable()
@@ -616,7 +603,6 @@ struct CardView: View {
 						.clipShape(RoundedRectangle(cornerRadius: 12))
 				}
 
-				// Card Details Form
 				macOSCardForm()
 			}
 			.padding(.top, 24)
@@ -635,7 +621,6 @@ struct CardView: View {
 	@ViewBuilder
 	private func macOSCardPreview() -> some View {
 		ZStack {
-			// Card Background
 			RoundedRectangle(cornerRadius: 16)
 				.fill(
 					LinearGradient(
@@ -647,9 +632,7 @@ struct CardView: View {
 				.shadow(color: .black.opacity(0.2), radius: 10, x: 0, y: 5)
 
 			VStack(alignment: .leading, spacing: 16) {
-				// Top row: Network logo and type
 				HStack {
-					// Show network logo if available, otherwise show icon
 					if model.card.network != .other {
 						Image(model.card.network.rawValue)
 							.renderingMode(.original)
@@ -670,7 +653,6 @@ struct CardView: View {
 
 				Spacer()
 
-				// Card Number
 				Text(formatCardNumber(model.card.number))
 					.font(.system(size: 20, weight: .medium, design: .monospaced))
 					.foregroundStyle(.white)
@@ -678,7 +660,6 @@ struct CardView: View {
 						copyToClipboard(model.card.number, field: "number")
 					}
 
-				// Bottom row: Name and Expiry
 				HStack(alignment: .bottom) {
 					VStack(alignment: .leading, spacing: 2) {
 						Text("CARDHOLDER")
@@ -732,7 +713,6 @@ struct CardView: View {
 			}
 			.padding(20)
 
-			// Copied feedback overlay
 			if let field = copiedField {
 				VStack {
 					HStack {
@@ -756,7 +736,6 @@ struct CardView: View {
 		GroupBox {
 			VStack(spacing: 0) {
 				if model.isEditing {
-					// Editing mode - show all fields
 					macOSFormRow(label: "Name", value: $model.card.name, isEditing: true)
 					Divider()
 					macOSFormRow(label: "Number", value: $model.card.number, isEditing: true)
@@ -774,7 +753,6 @@ struct CardView: View {
 					Divider()
 					macOSFormRow(label: "Description", value: $model.card.description, isEditing: true)
 				} else {
-					// View mode - show non-empty fields with copy on click
 					if !model.card.name.isEmpty {
 						macOSCopyableRow(label: "Name", value: model.card.name, field: "name")
 						Divider()
@@ -801,7 +779,6 @@ struct CardView: View {
 					}
 				}
 
-				// Pickers
 				if model.selectedCardType != .other {
 					Divider()
 					HStack {
@@ -845,7 +822,6 @@ struct CardView: View {
 		}
 		.frame(maxWidth: 400)
 
-		// Image section for Other Cards
 		if model.isEditing && model.selectedCardType == .other {
 			GroupBox {
 				VStack(spacing: 12) {

@@ -1,10 +1,3 @@
-//
-//  PlatformTypes.swift
-//  cards
-//
-//  Cross-platform type aliases and utilities
-//
-
 import Foundation
 import ImageIO
 
@@ -51,7 +44,6 @@ enum CardImageData {
 		#endif
 	}
 
-	/// Matches Holder's existing JPEG storage contract without carrying source metadata.
 	static func normalizedJPEG(
 		from data: Data,
 		compressionQuality: CGFloat = 0.8,

@@ -1,10 +1,3 @@
-//
-//  ArchivedCardsView.swift
-//  cards
-//
-//  View for displaying and managing archived cards
-//
-
 import SinghDevKit
 import SwiftUI
 

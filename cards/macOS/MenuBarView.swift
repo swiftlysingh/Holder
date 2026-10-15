@@ -1,10 +1,3 @@
-//
-//  MenuBarView.swift
-//  cards
-//
-//  Menu bar extra view for quick card access on macOS
-//
-
 #if os(macOS)
 import AppKit
 import SinghDevKit

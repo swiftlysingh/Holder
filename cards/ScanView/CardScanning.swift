@@ -1,18 +1,9 @@
-//
-//  CardScanning.swift
-//  cards
-//
-//  Engine boundary for Holder's on-device card scanning. Keeping the camera
-//  lifecycle behind a protocol makes the app-owned flow testable.
-//
-
 import SwiftUI
 
 #if os(iOS)
 import VisionKit
 #endif
 
-/// Recognized payment-card fields. PAN is required; expiry and name are best-effort.
 struct CardScanResult: Equatable, Sendable {
 	var pan: String
 	var expiry: String?
@@ -24,7 +15,6 @@ struct CardScanResult: Equatable, Sendable {
 	}
 }
 
-/// Non-sensitive scan timing used for analytics. Never include PAN, name, expiry, CVV, OCR, or images.
 struct CardScanMetrics: Equatable, Sendable {
 	var engine: String
 	var timeToPANMs: Int?

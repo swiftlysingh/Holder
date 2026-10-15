@@ -1,10 +1,3 @@
-//
-//  UserSettings.swift
-//  credit-card
-//
-//  Created by Pushpinder Pal Singh on 09/12/23.
-//
-
 import SwiftUI
 
 class UserSettings : ObservableObject {

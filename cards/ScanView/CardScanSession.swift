@@ -1,10 +1,3 @@
-//
-//  CardScanSession.swift
-//  cards
-//
-//  Applies a scan to CardData without wiping fields the user already entered.
-//
-
 import Foundation
 
 struct CardScanAttempt {

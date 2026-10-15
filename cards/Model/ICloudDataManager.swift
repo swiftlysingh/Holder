@@ -1,13 +1,5 @@
-//
-//  ICloudDataManager.swift
-//  cards
-//
-//  Created by Pushpinder Pal Singh on 20/11/24.
-//
-
 import Foundation
 
-/// Card image persistence. Implementations must not block the main thread.
 protocol CardImageStore: AnyObject, Sendable {
 	func loadImageData(for uuid: UUID) async -> Data?
 	func saveImageData(_ data: Data, for uuid: UUID) async -> Bool

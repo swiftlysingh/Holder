@@ -1,16 +1,7 @@
-//
-//  ControlCenterCardWidget.swift
-//  HolderWidgets
-//
-//  Control Center widget displaying a single card (iOS 18+)
-//
-
 #if os(iOS)
 import WidgetKit
 import SwiftUI
 import AppIntents
-
-// MARK: - Control Center Widget (iOS 18+)
 
 @available(iOS 18.0, *)
 struct ControlCenterCardWidget: ControlWidget {
@@ -43,8 +34,6 @@ struct ControlCenterCardWidget: ControlWidget {
         .description("View card info")
     }
 }
-
-// MARK: - Open Holder Card Intent
 
 @available(iOS 18.0, *)
 struct OpenHolderCardIntent: AppIntent {

@@ -1,10 +1,3 @@
-//
-//  credit_cardApp.swift
-//  credit-card
-//
-//  Created by Pushpinder Pal Singh on 08/12/23.
-//
-
 import Foundation
 import SwiftUI
 import TipKit
@@ -14,15 +7,11 @@ import SinghDevKit
 import AppKit
 #endif
 
-/// Stable scene id for the main SwiftUI window; used with `openWindow` on macOS.
 enum MainWindowScene {
     static let id = "main"
 }
 
 #if os(macOS)
-/// Shared open path for Menu Bar "Open Holder" and Dock reopen.
-/// Registers the exact main `NSWindow` (never Settings / `canBecomeMain` search) plus
-/// `OpenWindowAction` so AppDelegate can recreate the singleton scene without SwiftUI environment.
 @MainActor
 enum MainWindowCoordinator {
     private static weak var mainWindow: NSWindow?
@@ -50,8 +39,6 @@ enum MainWindowCoordinator {
         }
     }
 
-    /// Clears the registered window only when `window` is the currently tracked host,
-    /// so an obsolete accessor cannot unregister a newer main window.
     static func unregister(window: NSWindow) {
         guard mainWindow === window else { return }
         stopObservingMainWindowClose()
@@ -68,8 +55,6 @@ enum MainWindowCoordinator {
         self.openWindow = openWindow
     }
 
-    /// Restore Dock presence, focus/deminiaturize the registered main window, or open the singleton scene.
-    /// Returns false when SwiftUI has not registered either route yet so AppKit can use its default reopen behavior.
     @discardableResult
     static func open() -> Bool {
         NSApp.setActivationPolicy(.regular)
@@ -96,8 +81,6 @@ enum MainWindowCoordinator {
     }
 }
 
-/// Bridge: SwiftUI `openWindow` is only in the environment; AppDelegate needs a stored action for Dock reopen.
-/// Also captures the exact main `NSWindow` hosting this content (not Settings).
 private struct MainWindowRegistrar: View {
     let authenticationSession: AuthenticationSession
     @Environment(\.openWindow) private var openWindow
@@ -114,7 +97,6 @@ private struct MainWindowRegistrar: View {
     }
 }
 
-/// Bridge: AppKit window identity is not available from SwiftUI; bind the host `NSWindow` once attached.
 private struct MainWindowAccessor: NSViewRepresentable {
     final class HostView: NSView {
         var onWindowChange: ((NSWindow?, NSWindow?) -> Void)?
@@ -146,9 +128,7 @@ private struct MainWindowAccessor: NSViewRepresentable {
 
 class AppDelegate: NSObject, NSApplicationDelegate {
     func applicationShouldTerminateAfterLastWindowClosed(_ sender: NSApplication) -> Bool {
-        // If "Keep in Menu Bar" is enabled, don't quit when window closes
         if UserSettings.shared.keepInMenuBar {
-            // Hide from dock but keep running in menu bar
             NSApp.setActivationPolicy(.accessory)
             return false
         }
@@ -156,7 +136,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     func applicationShouldHandleReopen(_ sender: NSApplication, hasVisibleWindows _: Bool) -> Bool {
-        // Ignore hasVisibleWindows: Settings-only still reports true, but Dock must restore main (P2).
+        // Ignore hasVisibleWindows: Settings-only still reports true, but Dock must restore main.
         return !MainWindowCoordinator.open()
     }
 }
@@ -169,7 +149,6 @@ struct CreditCard: App {
     @AppStorage("keepInMenuBar") private var keepInMenuBar = false
     #endif
 
-    /// Shared card data store for menu bar access on macOS
     @State private var cardDataStore: CardDataStore
     @State private var sdk: SinghDevKit
     @StateObject private var homeViewModel: HomeViewModel
@@ -200,7 +179,6 @@ struct CreditCard: App {
 
     var body: some Scene {
         #if os(macOS)
-        // Single-instance main scene: openWindow focuses/recreates this window rather than spawning duplicates.
         Window("Holder", id: MainWindowScene.id) {
             rootContent
                 .background(MainWindowRegistrar(authenticationSession: authenticationSession))

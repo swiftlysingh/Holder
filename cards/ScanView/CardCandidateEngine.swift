@@ -1,12 +1,3 @@
-//
-//  CardCandidateEngine.swift
-//  cards
-//
-//  Reconstructs PANs from split/multi-line OCR, votes across frames, and
-//  parses expiry / cardholder name. PAN acceptance requires 13–19 digits,
-//  Luhn, and a known network/IIN.
-//
-
 import CoreGraphics
 import Foundation
 
@@ -26,7 +17,6 @@ enum CardPAN {
 	static let minimumLength = 13
 	static let maximumLength = 19
 
-	/// Safe numeric OCR substitutions, applied only to tokens that already look numeric.
 	private static let substitutions: [Character: Character] = [
 		"O": "0", "o": "0", "Q": "0",
 		"I": "1", "l": "1", "|": "1",
@@ -89,7 +79,6 @@ enum CardPAN {
 		return chunks.joined(separator: " ")
 	}
 
-	/// String IIN matching so 19-digit PANs are not truncated by `UInt`.
 	static func network(for digits: String) -> CardNetwork {
 		guard !digits.isEmpty, digits.allSatisfy(\.isNumber) else { return .other }
 
@@ -390,7 +379,6 @@ enum CardCandidateEngine {
 	}
 }
 
-/// Rolling-window vote so a single high-confidence OCR miss does not become the PAN.
 struct TemporalPANVoter: Sendable {
 	var windowSize: Int
 	var requiredVotes: Int
