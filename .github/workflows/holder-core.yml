@@ -1,0 +1,16 @@
+name: holder-core
+
+on:
+  pull_request:
+
+jobs:
+  holder-core:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install Swift 6.2.1
+        uses: swift-actions/setup-swift@v2
+        with:
+          swift-version: "6.2.1"
+      - name: Prove the card scan engine
+        run: scripts/prove.sh linux
