@@ -1,0 +1,45 @@
+{
+  "now": "2026-10-17T12:00:00Z",
+  "editor": {
+    "cvv": "123",
+    "description": "Travel card",
+    "type": "Debit"
+  },
+  "frames": [
+    [
+      { "text": "HOLDER TEST BANK", "box": { "x": 0.08, "y": 0.80, "width": 0.50, "height": 0.08 } },
+      { "text": "4111 1111", "box": { "x": 0.08, "y": 0.45, "width": 0.38, "height": 0.08 } },
+      { "text": "1111 1111", "box": { "x": 0.50, "y": 0.45, "width": 0.38, "height": 0.08 } },
+      { "text": "VALID THRU 12/28", "box": { "x": 0.45, "y": 0.30, "width": 0.40, "height": 0.06 } },
+      { "text": "JANE DOE", "box": { "x": 0.08, "y": 0.15, "width": 0.30, "height": 0.06 } },
+      { "text": "VISA", "box": { "x": 0.75, "y": 0.10, "width": 0.15, "height": 0.08 } }
+    ],
+    [
+      { "text": "HOLDER TEST BANK", "box": { "x": 0.08, "y": 0.80, "width": 0.50, "height": 0.08 } },
+      { "text": "4111 1111", "box": { "x": 0.08, "y": 0.45, "width": 0.38, "height": 0.08 } },
+      { "text": "1lll 1111", "box": { "x": 0.50, "y": 0.45, "width": 0.38, "height": 0.08 } },
+      { "text": "VALID THRU 12/28", "box": { "x": 0.45, "y": 0.30, "width": 0.40, "height": 0.06 } },
+      { "text": "JANE DOE", "box": { "x": 0.08, "y": 0.15, "width": 0.30, "height": 0.06 } }
+    ],
+    [
+      { "text": "4111 1111 1111 1111", "box": { "x": 0.08, "y": 0.45, "width": 0.80, "height": 0.08 } }
+    ]
+  ],
+  "still": [
+    { "text": "4111 1111 1111 1111", "box": { "x": 0.08, "y": 0.45, "width": 0.80, "height": 0.08 } },
+    { "text": "12/28", "box": { "x": 0.55, "y": 0.30, "width": 0.15, "height": 0.06 } },
+    { "text": "JANE DOE", "box": { "x": 0.08, "y": 0.15, "width": 0.30, "height": 0.06 } }
+  ],
+  "expect": {
+    "verified": true,
+    "editor": {
+      "number": "4111 1111 1111 1111",
+      "network": "Visa",
+      "expiration": "12/28",
+      "name": "JANE DOE",
+      "description": "Travel card",
+      "type": "Debit",
+      "cvv": "123"
+    }
+  }
+}
