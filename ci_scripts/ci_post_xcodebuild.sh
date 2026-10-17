@@ -6,25 +6,19 @@ if [[ ! -d "${CI_ARCHIVE_PATH:-}" ]]; then
   exit 0
 fi
 
-# Adds testflight notes
 if [[ -d "$CI_APP_STORE_SIGNED_APP_PATH" ]]; then
   TESTFLIGHT_DIR_PATH="../TestFlight"
   mkdir -p "$TESTFLIGHT_DIR_PATH"
 
-  # Fetch the branch name
   BRANCH_NAME=$(git rev-parse --abbrev-ref HEAD)
 
-  # Ensure you have enough commit history
   git fetch --deepen=3
 
-  # Write the branch name as the heading
   echo "Branch: $BRANCH_NAME" > "$TESTFLIGHT_DIR_PATH/WhatToTest.en-US.txt"
 
-  # Append the last 3 commits with hyphens
   git log -3 --pretty=format:" - %s" >> "$TESTFLIGHT_DIR_PATH/WhatToTest.en-US.txt"
 fi
 
-# Emerge Tools
 required_env_vars=(
     "CI_ARCHIVE_PATH"
     "CI_BRANCH"
@@ -63,7 +57,6 @@ json_fields=$(cat <<EOF
 EOF
 )
 
-# For previousSha (required for only some features): Check if git is available
 if ! command -v git &> /dev/null; then
     echo "Git is not installed or not in PATH. Cannot fetch previous SHA."
 elif ! git rev-parse --is-inside-work-tree &> /dev/null; then
@@ -108,7 +101,6 @@ upload_response=$(curl \
     --header "X-API-Token: $EMERGE_API_KEY" \
     --data "{$json_fields}")
 
-# Pull the uploadURL field from the response using jq
 upload_url=$(echo "$upload_response" | jq -r .uploadURL)
 
 curl -v -H 'Content-Type: application/zip' -T "$zip_path" "$upload_url"

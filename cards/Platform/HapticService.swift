@@ -1,10 +1,3 @@
-//
-//  HapticService.swift
-//  cards
-//
-//  Cross-platform haptic feedback (no-op on macOS)
-//
-
 import Foundation
 
 #if os(iOS)
@@ -30,6 +23,5 @@ struct HapticService {
             generator.notificationOccurred(.warning)
         }
         #endif
-        // No haptic feedback on macOS - silent no-op
     }
 }

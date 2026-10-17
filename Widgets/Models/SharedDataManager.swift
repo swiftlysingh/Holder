@@ -1,10 +1,3 @@
-//
-//  SharedDataManager.swift
-//  HolderWidgets
-//
-//  Manages data sharing between main app and widget via App Group
-//
-
 import Foundation
 import WidgetKit
 
@@ -20,8 +13,6 @@ final class SharedDataManager {
 
     private init() {}
 
-    // MARK: - Save Methods (called from main app)
-
     /// Saves available cards to shared storage for widget access
     /// - Note: This method uses JSONEncoder which is incompatible with how the main app
     ///   writes data (using JSONSerialization). Use CardDataStore.syncCardsToWidget() instead.
@@ -31,9 +22,6 @@ final class SharedDataManager {
         sharedDefaults?.set(data, forKey: availableCardsKey)
     }
 
-    // MARK: - Load Methods (called from widget)
-
-    /// Loads available cards from shared storage
     func loadAvailableCards() -> [WidgetCardData] {
         guard let data = sharedDefaults?.data(forKey: availableCardsKey),
               let jsonArray = try? JSONSerialization.jsonObject(with: data) as? [[String: Any]] else {
@@ -59,20 +47,15 @@ final class SharedDataManager {
         }
     }
 
-    /// Gets a specific card by ID
     func getCard(by id: UUID) -> WidgetCardData? {
         loadAvailableCards().first { $0.id == id }
     }
 
-    /// Gets cards by IDs (for medium widget)
     func getCards(by ids: [UUID]) -> [WidgetCardData] {
         let allCards = loadAvailableCards()
         return ids.compactMap { id in allCards.first { $0.id == id } }
     }
 
-    // MARK: - Widget Refresh
-
-    /// Triggers widget timeline refresh
     static func refreshWidgets() {
         WidgetCenter.shared.reloadAllTimelines()
     }

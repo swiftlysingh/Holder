@@ -1,10 +1,3 @@
-//
-//  CardData.swift
-//  credit-card
-//
-//  Created by Pushpinder Pal Singh on 09/12/23.
-//
-
 import Foundation
 
 struct CardData : Identifiable, Codable, Hashable {
@@ -46,7 +39,6 @@ struct CardData : Identifiable, Codable, Hashable {
 			].compactMap { String($0) }
 			self.number = chunks.joined(separator: " ")
 		} else {
-			// Format as XXXX XXXX XXXX XXXX for 16-digit cards
 			let chunks = stride(from: 0, to: cleanNumber.count, by: 4).map {
 			let start = cleanNumber.index(cleanNumber.startIndex, offsetBy: $0)
 			let end = cleanNumber.index(start, offsetBy: min(4, cleanNumber.count - $0))

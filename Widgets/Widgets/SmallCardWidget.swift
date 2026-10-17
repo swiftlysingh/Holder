@@ -1,14 +1,5 @@
-//
-//  SmallCardWidget.swift
-//  HolderWidgets
-//
-//  Small home screen widget displaying a single card
-//
-
 import WidgetKit
 import SwiftUI
-
-// MARK: - Timeline Provider
 
 struct SmallCardProvider: AppIntentTimelineProvider {
     func placeholder(in context: Context) -> SmallCardEntry {
@@ -31,15 +22,11 @@ struct SmallCardProvider: AppIntentTimelineProvider {
     }
 }
 
-// MARK: - Timeline Entry
-
 struct SmallCardEntry: TimelineEntry {
     let date: Date
     let card: WidgetCardData?
     let configuration: SelectCardIntent
 }
-
-// MARK: - Widget View
 
 struct SmallCardWidgetView: View {
     var entry: SmallCardEntry
@@ -77,8 +64,6 @@ struct SmallCardWidgetView: View {
     }
 }
 
-// MARK: - Widget Configuration
-
 struct SmallCardWidget: Widget {
     let kind: String = "SmallCardWidget"
 
@@ -96,8 +81,6 @@ struct SmallCardWidget: Widget {
         .supportedFamilies([.systemSmall])
     }
 }
-
-// MARK: - Preview
 
 #Preview(as: .systemSmall) {
     SmallCardWidget()

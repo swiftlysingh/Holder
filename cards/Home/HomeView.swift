@@ -1,10 +1,3 @@
-//
-//  ContentView.swift
-//  credit-card
-//
-//  Created by Pushpinder Pal Singh on 08/12/23.
-//
-
 import SwiftUI
 import SinghDevKit
 
@@ -79,7 +72,6 @@ struct HomeView: View {
 							}
 						}
 					}
-					// Archived Cards Link
 					if !model.cardDataStore.archivedCards.isEmpty {
 						Section {
 							NavigationLink {
@@ -165,7 +157,6 @@ struct HomeView: View {
 				addNewFlow: true,
 				startMode: model.addCardStartMode,
 				addUpdateCard: { card in
-					// Keep the sheet open on failure so the entered form is preserved for retry.
 					let succeeded = await model.cardDataStore.addCard(card)
 					if succeeded {
 						model.selectedCard = model.cardDataStore.findCard(by: card.id) ?? card
@@ -175,8 +166,6 @@ struct HomeView: View {
 				}
 			)
 			#if os(iOS)
-			// Zoom morphs the sheet's Text through SwiftUI's text animation
-			// provider and can hang. Sheet presentation still animates on its own.
 			addCardSheetContent(cardViewModel)
 				.presentationDetents(
 					[.fraction(0.5), .height(430), .large],

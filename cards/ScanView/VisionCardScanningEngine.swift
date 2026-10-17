@@ -6,8 +6,6 @@ import SwiftUI
 import Vision
 import VisionKit
 
-/// Live pass: DataScannerViewController (.balanced) over the whole card.
-/// Once a PAN is stable, capture a still and run .accurate Vision verification.
 @MainActor
 final class VisionCardScanningEngine: NSObject, CardScanningEngine {
 	let engineID = CardScanningEngineID.vision
@@ -167,7 +165,6 @@ private protocol VisionScannerHostDelegate: AnyObject {
 	func scannerHostDidRecognize(_ items: [OCRTextItem])
 }
 
-/// Card-guide geometry used by the overlay and VisionKit's `regionOfInterest`.
 /// Invalid or zero-sized rects abort `DataScannerViewController`.
 enum CardScannerLayout {
 	static let cardAspect: CGFloat = 1.586
@@ -405,8 +402,7 @@ private final class VisionScannerHostViewController: UIViewController {
 }
 
 #if targetEnvironment(simulator)
-/// VisionKit's live scanner is unavailable on Simulator. This native fallback keeps
-/// simulator camera fixtures useful without changing the on-device scanner path.
+/// VisionKit's live scanner is unavailable on Simulator.
 private final class SimulatorVisionScannerViewController: UIViewController, AVCaptureVideoDataOutputSampleBufferDelegate {
 	weak var delegate: VisionScannerHostDelegate?
 
@@ -570,8 +566,6 @@ private final class SimulatorVisionScannerViewController: UIViewController, AVCa
 }
 
 #if DEBUG
-/// A clean, fictional camera feed used only for App Store screenshot capture.
-/// The real scanner overlay remains owned by `ScannerOverlayView` above this view.
 private final class ScreenshotScannerFixtureView: UIView {
 	override func draw(_ rect: CGRect) {
 		guard let context = UIGraphicsGetCurrentContext() else { return }

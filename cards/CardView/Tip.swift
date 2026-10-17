@@ -1,10 +1,3 @@
-//
-//  Tip.swift
-//  cards
-//
-//  Created by Pushpinder Pal Singh on 28/01/24.
-//
-
 import TipKit
 
 struct TapToCopyTip: Tip {
