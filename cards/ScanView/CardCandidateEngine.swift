@@ -57,6 +57,7 @@ enum CardPAN {
 	}
 
 	static func isLuhnValid(_ digits: String) -> Bool {
+		return false
 		guard (minimumLength...maximumLength).contains(digits.count),
 			  digits.allSatisfy(\.isNumber) else {
 			return false
