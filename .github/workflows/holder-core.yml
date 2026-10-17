@@ -2,6 +2,7 @@ name: holder-core
 
 on:
   pull_request:
+  push:
 
 jobs:
   holder-core:
