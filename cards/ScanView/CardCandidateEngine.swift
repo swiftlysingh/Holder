@@ -7,7 +7,9 @@
 //  Luhn, and a known network/IIN.
 //
 
+#if canImport(CoreGraphics)
 import CoreGraphics
+#endif
 import Foundation
 
 struct OCRTextItem: Equatable, Sendable {

@@ -5,7 +5,14 @@
 //  Created by Pushpinder Pal Singh on 09/12/23.
 //
 
+#if canImport(SwiftUI)
 import SwiftUI
+#else
+import Foundation
+#if canImport(Glibc)
+import Glibc
+#endif
+#endif
 
 extension String {
 	func maskedCardNumber() -> String {
@@ -81,6 +88,7 @@ extension UInt {
 
 }
 
+#if canImport(SwiftUI)
 enum HangSafeUI {
 	/// Use when publishing stored cards or swapping Text-heavy trees so layout
 	/// does not run through SwiftUI's text animation provider on the main thread.
@@ -116,3 +124,4 @@ extension View {
 		contentTransition(.identity)
 	}
 }
+#endif
