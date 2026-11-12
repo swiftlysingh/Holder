@@ -268,13 +268,7 @@ struct AppSecrets: Sendable {
     }
 
     static var sentryEnvironment: String {
-        #if DEBUG
-        "debug"
-        #elseif BETA
-        "beta"
-        #else
-        "production"
-        #endif
+        SDKDeploymentEnvironment.current.rawValue
     }
 
     static var sentryRelease: String {
