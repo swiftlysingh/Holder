@@ -18,6 +18,7 @@ struct CardView: View {
 	@Environment(\.dismiss) private var dismiss
 	@Binding private var cardSheetDetent: PresentationDetent
 	@State private var isShowingCardForm = false
+	@State private var scanAttemptNumber = 0
 	@FocusState private var isFieldFocused: Bool
 	#endif
 	@State private var copiedField: String?
@@ -79,17 +80,19 @@ struct CardView: View {
 
 			if authenticationSession.isVaultUnlocked && model.isShowingScanner {
 				CardScannerView(
-					isRescan: model.didUseScanner,
+					isRescan: model.didUseScanner || scanAttemptNumber > 1,
+					attemptNumber: scanAttemptNumber,
 					onCancel: {
-						dismiss()
+						showCardForm()
 					},
 					onPermissionDenied: {
-						track(.cardScanPermissionDenied(engine: CardScanningEngineFactory.currentEngineID))
 						showCardForm()
 					},
 					onManualEntry: {
 						showCardForm()
 					},
+					onEnded: { track(.cardScanEnded($0)) },
+					onRetryableFailure: { track(.cardScanRetryableFailure($0)) },
 					onResult: { result, metrics in
 						model.applyScan(result)
 						showCardForm()
@@ -143,13 +146,19 @@ struct CardView: View {
 	}
 
 	private var addCardHeader: some View {
-		Text("Add a Card")
-			.font(.title2.weight(.semibold))
-			.frame(maxWidth: .infinity, alignment: .leading)
-			.padding(.horizontal, 20)
-			.padding(.top, 24)
-			.padding(.bottom, 16)
-			.accessibilityAddTraits(.isHeader)
+		HStack {
+			Text("Add a Card")
+				.font(.title2.weight(.semibold))
+				.accessibilityAddTraits(.isHeader)
+			Spacer()
+			Button("Cancel") {
+				dismiss()
+			}
+			.frame(minWidth: 44, minHeight: 44)
+		}
+		.padding(.horizontal, 20)
+		.padding(.top, 24)
+		.padding(.bottom, 16)
 	}
 
 	private var addCardActionButton: some View {
@@ -178,6 +187,7 @@ struct CardView: View {
 	}
 
 	private func startScan() {
+		scanAttemptNumber += 1
 		track(.cardScanStarted(engine: CardScanningEngineFactory.currentEngineID))
 		isFieldFocused = false
 		cardSheetDetent = .height(430)

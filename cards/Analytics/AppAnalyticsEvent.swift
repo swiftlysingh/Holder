@@ -52,8 +52,8 @@ enum AppAnalyticsEvent: AnalyticsEvent {
         timeToCompleteMs: Int,
         rescan: Bool
     )
-    case cardScanPermissionDenied(engine: String)
-    case cardScanRescanRequested(engine: String)
+    case cardScanEnded(CardScanEndMetrics)
+    case cardScanRetryableFailure(CardScanRetryMetrics)
     case cardOpenedFromWidget
     case onboardingShown(audience: HolderOnboardingAudience)
     case onboardingCompleted(
@@ -86,10 +86,10 @@ enum AppAnalyticsEvent: AnalyticsEvent {
             "card_scan_started"
         case .cardScanCompleted:
             "card_scan_completed"
-        case .cardScanPermissionDenied:
-            "card_scan_permission_denied"
-        case .cardScanRescanRequested:
-            "card_scan_rescan_requested"
+        case .cardScanEnded:
+            "card_scan_ended"
+        case .cardScanRetryableFailure:
+            "card_scan_retryable_failure"
         case .cardOpenedFromWidget:
             "card_opened_from_widget"
         case .onboardingShown:
@@ -112,10 +112,32 @@ enum AppAnalyticsEvent: AnalyticsEvent {
         case .cardDeleted(let location),
              .cardDeleteFailed(let location):
             return ["location": .string(location.rawValue)]
-        case .cardScanStarted(let engine),
-             .cardScanPermissionDenied(let engine),
-             .cardScanRescanRequested(let engine):
+        case .cardScanStarted(let engine):
             return ["engine": .string(engine)]
+        case .cardScanRetryableFailure(let metrics):
+            return [
+                "engine": .string(metrics.engine),
+                "reason": .string("verification_conflict"),
+                "elapsed_ms": .int(metrics.elapsedMs),
+                "had_candidate": .bool(metrics.hadCandidate),
+                "is_rescan": .bool(metrics.isRescan),
+                "attempt_number": .int(metrics.attemptNumber)
+            ]
+        case .cardScanEnded(let metrics):
+            var properties: AnalyticsProperties = [
+                "engine": .string(metrics.engine),
+                "outcome": .string(metrics.outcome.rawValue),
+                "reason": .string(metrics.reason),
+                "elapsed_ms": .int(metrics.elapsedMs),
+                "had_candidate": .bool(metrics.hadCandidate),
+                "torch_on": .bool(metrics.torchOn),
+                "is_rescan": .bool(metrics.isRescan),
+                "attempt_number": .int(metrics.attemptNumber)
+            ]
+            if let timeToPANMs = metrics.timeToPANMs {
+                properties["time_to_pan_ms"] = .int(timeToPANMs)
+            }
+            return properties
         case .cardScanCompleted(
             let engine,
             let panSuccess,
@@ -175,8 +197,8 @@ enum AppAnalyticsEvent: AnalyticsEvent {
              .cardUnarchiveFailed,
              .cardScanStarted,
              .cardScanCompleted,
-             .cardScanPermissionDenied,
-             .cardScanRescanRequested,
+             .cardScanEnded,
+             .cardScanRetryableFailure,
              .cardOpenedFromWidget:
             .breadcrumb()
         }

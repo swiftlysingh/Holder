@@ -25,6 +25,48 @@ struct CardScanMetrics: Equatable, Sendable {
 	var wasRescan: Bool
 }
 
+struct CardScanEndMetrics: Equatable, Sendable {
+	enum Outcome: String, Sendable {
+		case success
+		case cancelled
+		case manualEntry = "manual_entry"
+		case permissionDenied = "permission_denied"
+		case unsupported
+		case cameraUnavailable = "camera_unavailable"
+		case dismissed
+	}
+
+	var engine: String
+	var outcome: Outcome
+	var elapsedMs: Int
+	var hadCandidate: Bool
+	var timeToPANMs: Int?
+	var torchOn: Bool
+	var isRescan: Bool
+	var attemptNumber: Int
+	var backgrounded = false
+
+	var reason: String {
+		switch outcome {
+		case .success: "verified_pan"
+		case .cancelled: "cancel_button"
+		case .manualEntry: "manual_entry_button"
+		case .permissionDenied: "camera_permission_denied"
+		case .unsupported: "scanner_unsupported"
+		case .cameraUnavailable: "camera_unavailable"
+		case .dismissed: backgrounded ? "backgrounded" : "view_disappeared"
+		}
+	}
+}
+
+struct CardScanRetryMetrics: Equatable, Sendable {
+	var engine: String
+	var elapsedMs: Int
+	var hadCandidate: Bool
+	var isRescan: Bool
+	var attemptNumber: Int
+}
+
 enum CardScanUpdate: Sendable {
 	case permissionDenied
 	case unsupported(String)
