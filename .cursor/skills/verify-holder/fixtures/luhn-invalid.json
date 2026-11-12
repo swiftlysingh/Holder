@@ -1,0 +1,21 @@
+{
+  "now": "2026-10-17T12:00:00Z",
+  "frames": [
+    [
+      { "text": "4111 1111 1111 1112", "box": { "x": 0.08, "y": 0.45, "width": 0.80, "height": 0.08 } },
+      { "text": "12/28", "box": { "x": 0.55, "y": 0.30, "width": 0.15, "height": 0.06 } }
+    ],
+    [
+      { "text": "4111 1111 1111 1112", "box": { "x": 0.08, "y": 0.45, "width": 0.80, "height": 0.08 } },
+      { "text": "12/28", "box": { "x": 0.55, "y": 0.30, "width": 0.15, "height": 0.06 } }
+    ]
+  ],
+  "expect": {
+    "verified": false,
+    "editor": {
+      "number": "",
+      "network": "Unknown",
+      "expiration": ""
+    }
+  }
+}
