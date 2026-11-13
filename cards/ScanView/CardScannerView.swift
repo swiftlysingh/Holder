@@ -5,27 +5,36 @@ import UIKit
 
 struct CardScannerView: View {
 	var isRescan: Bool
+	var attemptNumber: Int
 	var onCancel: () -> Void
 	var onPermissionDenied: () -> Void
 	var onManualEntry: (() -> Void)?
+	var onEnded: (CardScanEndMetrics) -> Void
+	var onRetryableFailure: (CardScanRetryMetrics) -> Void
 	var onResult: (CardScanResult, CardScanMetrics) -> Void
 
+	@Environment(\.scenePhase) private var scenePhase
 	@StateObject private var model: CardScannerViewModel
-	@State private var showsManualEntry = false
 
 	init(
 		isRescan: Bool,
+		attemptNumber: Int = 1,
 		onCancel: @escaping () -> Void,
 		onPermissionDenied: @escaping () -> Void,
 		onManualEntry: (() -> Void)? = nil,
+		onEnded: @escaping (CardScanEndMetrics) -> Void = { _ in },
+		onRetryableFailure: @escaping (CardScanRetryMetrics) -> Void = { _ in },
 		onResult: @escaping (CardScanResult, CardScanMetrics) -> Void
 	) {
 		self.isRescan = isRescan
+		self.attemptNumber = attemptNumber
 		self.onCancel = onCancel
 		self.onPermissionDenied = onPermissionDenied
 		self.onManualEntry = onManualEntry
+		self.onEnded = onEnded
+		self.onRetryableFailure = onRetryableFailure
 		self.onResult = onResult
-		_model = StateObject(wrappedValue: CardScannerViewModel(isRescan: isRescan))
+		_model = StateObject(wrappedValue: CardScannerViewModel(isRescan: isRescan, attemptNumber: attemptNumber))
 	}
 
 	var body: some View {
@@ -35,7 +44,7 @@ struct CardScannerView: View {
 			VStack(spacing: 16) {
 				HStack {
 					Button("Cancel") {
-						model.stop()
+						model.end(.cancelled)
 						onCancel()
 					}
 					.foregroundStyle(.white)
@@ -73,12 +82,12 @@ struct CardScannerView: View {
 						.padding(.horizontal, 24)
 						.withoutInterpolatingText()
 
-					if showsManualEntry, let onManualEntry {
+					if let onManualEntry {
 						Button {
-							model.stop()
+							model.end(.manualEntry)
 							onManualEntry()
 						} label: {
-							Text("Having trouble? Enter manually")
+							Text("Enter card manually")
 								.frame(minHeight: 44)
 								.contentShape(Rectangle())
 						}
@@ -94,32 +103,30 @@ struct CardScannerView: View {
 		.sdkScreen(AppAnalyticsScreen.cardScanner)
 		.alert("Scanner", isPresented: $model.showsMessage) {
 			Button("OK") {
-				model.stop()
 				onCancel()
 			}
 		} message: {
 			Text(model.message)
 		}
 		.onAppear {
+			model.setCallbacks(onEnded: onEnded, onRetryableFailure: onRetryableFailure)
 			UIAccessibility.post(notification: .announcement, argument: model.guidance)
 		}
 		.task {
 			await model.consumeUpdates(
 				onPermissionDenied: onPermissionDenied,
-				onResult: onResult
+				onResult: onResult,
+				onEnded: onEnded,
+				onRetryableFailure: onRetryableFailure
 			)
 		}
-		.task {
-			guard onManualEntry != nil else { return }
-			do {
-				try await Task.sleep(for: .seconds(3))
-			} catch {
-				return
-			}
-			showsManualEntry = true
-		}
 		.onDisappear {
-			model.stop()
+			model.end(.dismissed)
+		}
+		.onChange(of: scenePhase) { _, phase in
+			guard phase == .background else { return }
+			model.end(.dismissed, backgrounded: true)
+			onCancel()
 		}
 		.onChange(of: model.guidance) { _, guidance in
 			UIAccessibility.post(notification: .announcement, argument: guidance)
@@ -141,8 +148,14 @@ final class CardScannerViewModel: ObservableObject {
 	private let startedAt = Date()
 	private var panDetectedAt: Date?
 	private var stopped = false
+	private var ended = false
+	private var hadCandidate = false
+	private let attemptNumber: Int
+	private var onEnded: ((CardScanEndMetrics) -> Void)?
+	private var onRetryableFailure: ((CardScanRetryMetrics) -> Void)?
 
-	init(isRescan: Bool, engine: (any CardScanningEngine)? = nil) {
+	init(isRescan: Bool, attemptNumber: Int = 1, engine: (any CardScanningEngine)? = nil) {
+		self.attemptNumber = attemptNumber
 		self.isRescan = isRescan
 		self.engine = engine ?? CardScanningEngineFactory.make()
 	}
@@ -151,35 +164,60 @@ final class CardScannerViewModel: ObservableObject {
 		engine.isTorchAvailable
 	}
 
+	func setCallbacks(
+		onEnded: @escaping (CardScanEndMetrics) -> Void,
+		onRetryableFailure: @escaping (CardScanRetryMetrics) -> Void
+	) {
+		self.onEnded = onEnded
+		self.onRetryableFailure = onRetryableFailure
+	}
+
 	func toggleTorch() {
 		isTorchOn = engine.setTorchEnabled(!isTorchOn)
 	}
 
 	func consumeUpdates(
 		onPermissionDenied: @escaping () -> Void,
-		onResult: @escaping (CardScanResult, CardScanMetrics) -> Void
+		onResult: @escaping (CardScanResult, CardScanMetrics) -> Void,
+		onEnded: @escaping (CardScanEndMetrics) -> Void = { _ in },
+		onRetryableFailure: @escaping (CardScanRetryMetrics) -> Void = { _ in }
 	) async {
 		guard !stopped else { return }
+		self.onEnded = onEnded
+		self.onRetryableFailure = onRetryableFailure
 
 		for await update in engine.scanUpdates() {
 			guard !stopped else { return }
 			switch update {
 			case .permissionDenied:
-				stop()
+				end(.permissionDenied)
 				onPermissionDenied()
 				return
-			case .unsupported(let text), .failed(let text):
-				stop()
+			case .unsupported(let text):
+				end(.unsupported)
+				message = text
+				showsMessage = true
+				return
+			case .failed(let text):
+				end(.cameraUnavailable)
 				message = text
 				showsMessage = true
 				return
 			case .retryableFailure(let text):
+				onRetryableFailure(CardScanRetryMetrics(
+					engine: engine.engineID,
+					elapsedMs: Int(Date().timeIntervalSince(startedAt) * 1000),
+					hadCandidate: hadCandidate,
+					isRescan: isRescan,
+					attemptNumber: attemptNumber
+				))
 				candidateLastFour = nil
 				candidateNetwork = nil
 				guidance = text
 			case .scanning(let text):
 				guidance = text
 			case .candidate(let lastFour, let network):
+				hadCandidate = true
 				if panDetectedAt == nil {
 					panDetectedAt = Date()
 				}
@@ -188,11 +226,29 @@ final class CardScannerViewModel: ObservableObject {
 				guidance = "Hold steady…"
 			case .verified(let result):
 				let metrics = metrics(for: result)
-				stop()
+				end(.success)
 				onResult(result, metrics)
 				return
 			}
 		}
+	}
+
+	func end(_ outcome: CardScanEndMetrics.Outcome, backgrounded: Bool = false) {
+		guard !ended else { return }
+		ended = true
+		var metrics = CardScanEndMetrics(
+			engine: engine.engineID,
+			outcome: outcome,
+			elapsedMs: Int(Date().timeIntervalSince(startedAt) * 1000),
+			hadCandidate: hadCandidate,
+			timeToPANMs: panDetectedAt.map { Int($0.timeIntervalSince(startedAt) * 1000) },
+			torchOn: isTorchOn,
+			isRescan: isRescan,
+			attemptNumber: attemptNumber
+		)
+		metrics.backgrounded = backgrounded
+		stop()
+		onEnded?(metrics)
 	}
 
 	func stop() {
