@@ -19,6 +19,11 @@ final class VisionStillVerifierRegressionTests: XCTestCase {
 	private let visa = CardFrameObservation(pan: "4111111111111111", expiry: nil, cardholderName: nil)
 	private let mastercard = CardFrameObservation(pan: "5555555555554444", expiry: nil, cardholderName: nil)
 
+	private var futureExpiry: String {
+		let year = Calendar(identifier: .gregorian).component(.year, from: Date())
+		return String(format: "12/%02d", (year + 2) % 100)
+	}
+
 	@MainActor
 	func testRecognizesPANFromAStillImage() async {
 		let image = UIGraphicsImageRenderer(size: CGSize(width: 1000, height: 630)).image { context in
@@ -46,15 +51,37 @@ final class VisionStillVerifierRegressionTests: XCTestCase {
 		XCTAssertEqual(result, visa)
 	}
 
-	func testExpectedPANCanBeSelectedFromAllOCRCandidates() {
+	func testExpectedPANSelectionDropsMetadataWhenAnotherPANWasPreferred() {
 		let items = [
 			OCRTextItem(text: mastercard.pan!),
-			OCRTextItem(text: visa.pan!)
+			OCRTextItem(text: visa.pan!),
+			OCRTextItem(text: futureExpiry),
+			OCRTextItem(text: "JANE DOE")
+		]
+		let preferred = CardCandidateEngine.observe(items)
+		XCTAssertEqual(preferred.pan, mastercard.pan)
+		XCTAssertEqual(preferred.expiry, futureExpiry)
+		XCTAssertEqual(preferred.cardholderName, "JANE DOE")
+
+		let result = VisionStillVerifier.observation(from: items, expecting: visa.pan!)
+
+		XCTAssertEqual(result?.pan, visa.pan)
+		XCTAssertNil(result?.expiry)
+		XCTAssertNil(result?.cardholderName)
+	}
+
+	func testExpectedPANPreservesMetadataWhenAlreadyPreferred() {
+		let items = [
+			OCRTextItem(text: visa.pan!),
+			OCRTextItem(text: futureExpiry),
+			OCRTextItem(text: "JANE DOE")
 		]
 
 		let result = VisionStillVerifier.observation(from: items, expecting: visa.pan!)
 
 		XCTAssertEqual(result?.pan, visa.pan)
+		XCTAssertEqual(result?.expiry, futureExpiry)
+		XCTAssertEqual(result?.cardholderName, "JANE DOE")
 	}
 
 	func testDetectedConflictingPANIsPreservedWhenOtherImageHasNoPAN() {

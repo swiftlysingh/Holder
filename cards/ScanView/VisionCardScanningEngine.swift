@@ -752,14 +752,12 @@ enum VisionStillVerifier {
 	static func observation(from items: [OCRTextItem], expecting expectedPAN: String) -> CardFrameObservation? {
 		guard !items.isEmpty else { return nil }
 		let observation = CardCandidateEngine.observe(items)
-		guard CardCandidateEngine.reconstructPANs(from: items).contains(expectedPAN) else {
+		guard observation.pan != expectedPAN,
+			  CardCandidateEngine.reconstructPANs(from: items).contains(expectedPAN) else {
 			return observation
 		}
-		return CardFrameObservation(
-			pan: expectedPAN,
-			expiry: observation.expiry,
-			cardholderName: observation.cardholderName
-		)
+		// Metadata selected alongside another PAN cannot be attributed to this card.
+		return CardFrameObservation(pan: expectedPAN, expiry: nil, cardholderName: nil)
 	}
 
 	private static func perspectiveCorrected(_ cgImage: CGImage) -> CGImage? {
