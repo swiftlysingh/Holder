@@ -122,7 +122,7 @@ struct CardView: View {
 			.container,
 			edges: model.isShowingScanner ? .all : []
 		)
-		.safeAreaInset(edge: .bottom, spacing: 0) {
+		.bottomActionBar {
 			if model.isAddNewFlow && isShowingCardForm && !model.isShowingScanner {
 				addCardActionButton
 			}
@@ -181,7 +181,6 @@ struct CardView: View {
 		.disabled(!model.canFinishEditing || model.isShowingScanner || model.isSaving)
 		.padding(.horizontal, 20)
 		.padding(.vertical, 12)
-		.background(.bar)
 		.accessibilityIdentifier("addCardButton")
 		.accessibilityLabel("Add Card")
 	}
@@ -972,3 +971,19 @@ struct CardView: View {
 		}
 	}
 }
+
+#if os(iOS)
+private extension View {
+	/// On iOS 26 and later, a `.bar` background is an opaque slab over the Liquid Glass sheet,
+	/// so the system scroll-edge effect replaces it.
+	@ViewBuilder
+	func bottomActionBar<Content: View>(@ViewBuilder content: () -> Content) -> some View {
+		let bar = content()
+		if #available(iOS 26.0, *) {
+			safeAreaBar(edge: .bottom, spacing: 0) { bar }
+		} else {
+			safeAreaInset(edge: .bottom, spacing: 0) { bar.background(.bar) }
+		}
+	}
+}
+#endif
