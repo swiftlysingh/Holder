@@ -46,7 +46,7 @@ final class VisionCardScanningEngine: NSObject, CardScanningEngine {
 		guard !isStopping, let pan = stablePAN else { return nil }
 
 		if let image = await host.captureStill() {
-			if let verified = await VisionStillVerifier.recognize(in: image) {
+			if let verified = await VisionStillVerifier.recognize(in: image, expecting: pan) {
 				return merge(still: verified, livePAN: pan)
 			}
 		}
@@ -193,7 +193,7 @@ enum CardScannerLayout {
 			return nil
 		}
 
-		let frame = guideFrame(in: bounds)
+		let frame = guideFrame(in: bounds).union(portraitGuideFrame(in: bounds))
 		guard frame.width.isFinite, frame.height.isFinite,
 			  frame.origin.x.isFinite, frame.origin.y.isFinite,
 			  frame.width >= minimumRegionWidth,
@@ -202,6 +202,17 @@ enum CardScannerLayout {
 			return nil
 		}
 		return frame
+	}
+
+	private static func portraitGuideFrame(in bounds: CGRect) -> CGRect {
+		let width = min(bounds.width * 0.42, bounds.height * 0.86 / cardAspect)
+		let height = width * cardAspect
+		return CGRect(
+			x: bounds.midX - width / 2,
+			y: bounds.midY - height / 2,
+			width: width,
+			height: height
+		)
 	}
 
 	static func isSameRegion(_ lhs: CGRect, as rhs: CGRect) -> Bool {
@@ -705,21 +716,56 @@ private final class ScannerOverlayView: UIView {
 }
 
 enum VisionStillVerifier {
-	static func recognize(in image: UIImage) async -> CardFrameObservation? {
+	static func recognize(in image: UIImage, expecting expectedPAN: String) async -> CardFrameObservation? {
 		guard let cgImage = image.cgImage else { return nil }
 
-		let prepared = perspectiveCorrected(cgImage) ?? cgImage
-		let items = await recognizeText(in: prepared, level: .accurate)
+		guard let correctedImage = perspectiveCorrected(cgImage) else {
+			return observation(from: await recognizeText(in: cgImage, level: .accurate), expecting: expectedPAN)
+		}
+
+		let corrected = observation(
+			from: await recognizeText(in: correctedImage, level: .accurate),
+			expecting: expectedPAN
+		)
+		guard let correctedPAN = corrected?.pan, correctedPAN != expectedPAN else { return corrected }
+
+		// A background rectangle can produce a bad crop. Check the original before discarding the live PAN.
+		let original = observation(
+			from: await recognizeText(in: cgImage, level: .accurate),
+			expecting: expectedPAN
+		)
+		return preferredObservation(corrected: corrected, original: original, expecting: expectedPAN)
+	}
+
+	static func preferredObservation(
+		corrected: CardFrameObservation?,
+		original: CardFrameObservation?,
+		expecting expectedPAN: String
+	) -> CardFrameObservation? {
+		if corrected?.pan == expectedPAN { return corrected }
+		if original?.pan == expectedPAN { return original }
+		if corrected?.pan != nil { return corrected }
+		if original?.pan != nil { return original }
+		return corrected ?? original
+	}
+
+	static func observation(from items: [OCRTextItem], expecting expectedPAN: String) -> CardFrameObservation? {
 		guard !items.isEmpty else { return nil }
-		return CardCandidateEngine.observe(items)
+		let observation = CardCandidateEngine.observe(items)
+		guard observation.pan != expectedPAN,
+			  CardCandidateEngine.reconstructPANs(from: items).contains(expectedPAN) else {
+			return observation
+		}
+		// Metadata selected alongside another PAN cannot be attributed to this card.
+		return CardFrameObservation(pan: expectedPAN, expiry: nil, cardholderName: nil)
 	}
 
 	private static func perspectiveCorrected(_ cgImage: CGImage) -> CGImage? {
 		let request = VNDetectRectanglesRequest()
 		request.maximumObservations = 4
 		request.minimumConfidence = 0.6
-		request.minimumAspectRatio = 0.45
-		request.maximumAspectRatio = 2.0
+		request.minimumAspectRatio = 0.5
+		request.maximumAspectRatio = 0.8
 		let handler = VNImageRequestHandler(cgImage: cgImage, options: [:])
 		do {
 			try handler.perform([request])

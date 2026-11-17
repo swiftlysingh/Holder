@@ -194,7 +194,16 @@ final class CardScannerLayoutTests: XCTestCase {
 		XCTAssertGreaterThanOrEqual(roi.width, CardScannerLayout.minimumRegionWidth)
 		XCTAssertGreaterThanOrEqual(roi.height, CardScannerLayout.minimumRegionHeight)
 		XCTAssertTrue(bounds.insetBy(dx: -0.5, dy: -0.5).contains(roi))
-		XCTAssertEqual(roi, CardScannerLayout.guideFrame(in: bounds))
+		XCTAssertTrue(roi.contains(CardScannerLayout.guideFrame(in: bounds)))
+		let portraitWidth = bounds.width * 0.42
+		let portraitHeight = portraitWidth * CardScannerLayout.cardAspect
+		let portraitCard = CGRect(
+			x: bounds.midX - portraitWidth / 2,
+			y: bounds.midY - portraitHeight / 2,
+			width: portraitWidth,
+			height: portraitHeight
+		)
+		XCTAssertTrue(roi.contains(portraitCard))
 	}
 
 	func testIgnoresSubpixelRegionDrift() {
@@ -460,6 +469,92 @@ final class CardScannerViewModelTests: XCTestCase {
 		XCTAssertTrue(receivedResult)
 	}
 
+	func testEndingSessionOnlyEmitsOnceAndPreservesCandidateMetrics() async {
+		let engine = TerminalUpdateCardScanningEngine(updates: [
+			.candidate(lastFour: "1111", network: .visa),
+			.retryableFailure("Try again.")
+		])
+		let model = CardScannerViewModel(isRescan: true, engine: engine)
+		var endings: [CardScanEndMetrics] = []
+		await model.consumeUpdates(
+			onPermissionDenied: { XCTFail("Unexpected permission callback") },
+			onResult: { _, _ in XCTFail("Unexpected result") },
+			onEnded: { endings.append($0) }
+		)
+		model.end(.manualEntry)
+		model.end(.dismissed)
+		XCTAssertEqual(endings.count, 1)
+		XCTAssertEqual(endings.first?.outcome, .manualEntry)
+		XCTAssertEqual(endings.first?.attemptNumber, 1)
+		XCTAssertEqual(endings.first?.hadCandidate, true)
+		XCTAssertNotNil(endings.first?.timeToPANMs)
+		XCTAssertEqual(endings.first?.isRescan, true)
+	}
+
+	func testTerminalFailureEmitsEndingBeforeAlert() async {
+		let engine = TerminalUpdateCardScanningEngine(updates: [.failed("Camera unavailable")])
+		let model = CardScannerViewModel(isRescan: false, engine: engine)
+		var endings: [CardScanEndMetrics] = []
+		await model.consumeUpdates(
+			onPermissionDenied: { XCTFail("Unexpected permission callback") },
+			onResult: { _, _ in XCTFail("Unexpected result") },
+			onEnded: { endings.append($0) }
+		)
+		XCTAssertTrue(model.showsMessage)
+		XCTAssertEqual(endings.map(\.outcome), [.cameraUnavailable])
+	}
+
+	func testEveryExitOutcomeIsEmittedOnce() {
+		let outcomes: [CardScanEndMetrics.Outcome] = [
+			.success, .cancelled, .manualEntry, .permissionDenied,
+			.unsupported, .cameraUnavailable, .dismissed
+		]
+		for outcome in outcomes {
+			let model = CardScannerViewModel(isRescan: false, engine: StreamStartTrackingCardScanningEngine())
+			var endings: [CardScanEndMetrics] = []
+			model.setCallbacks(onEnded: { endings.append($0) }, onRetryableFailure: { _ in })
+			model.end(outcome)
+			model.end(.dismissed)
+			XCTAssertEqual(endings.map(\.outcome), [outcome])
+		}
+	}
+
+	func testRetryableFailureEmitsNonterminalEvent() async {
+		let engine = TerminalUpdateCardScanningEngine(updates: [
+			.candidate(lastFour: "1111", network: .visa),
+			.retryableFailure("Could not confirm the number."),
+			.verified(CardScanResult(pan: "4111111111111111", expiry: nil, cardholderName: nil, network: .visa))
+		])
+		let model = CardScannerViewModel(isRescan: false, engine: engine)
+		var retries: [CardScanRetryMetrics] = []
+		var endings: [CardScanEndMetrics] = []
+		await model.consumeUpdates(
+			onPermissionDenied: { XCTFail("Unexpected permission callback") },
+			onResult: { _, _ in },
+			onEnded: { endings.append($0) },
+			onRetryableFailure: { retries.append($0) }
+		)
+		XCTAssertEqual(retries.count, 1)
+		XCTAssertEqual(retries.first?.hadCandidate, true)
+		XCTAssertEqual(endings.map(\.outcome), [.success])
+	}
+
+	func testPermissionDeniedEmitsTerminalOutcome() async {
+		let model = CardScannerViewModel(
+			isRescan: false,
+			engine: TerminalUpdateCardScanningEngine(updates: [.permissionDenied])
+		)
+		var endings: [CardScanEndMetrics] = []
+		var permissionCallback = false
+		await model.consumeUpdates(
+			onPermissionDenied: { permissionCallback = true },
+			onResult: { _, _ in XCTFail("Unexpected result") },
+			onEnded: { endings.append($0) }
+		)
+		XCTAssertTrue(permissionCallback)
+		XCTAssertEqual(endings.map(\.outcome), [.permissionDenied])
+	}
+
 	func testStopBeforeConsumingDoesNotStartTheEngineStream() async {
 		let engine = StreamStartTrackingCardScanningEngine()
 		let model = CardScannerViewModel(isRescan: false, engine: engine)
@@ -552,8 +647,11 @@ final class CardScanAnalyticsTests: XCTestCase {
 	func testScanEventsNeverIncludeSensitiveCardFields() {
 		let events: [AppAnalyticsEvent] = [
 			.cardScanStarted(engine: "vision"),
-			.cardScanPermissionDenied(engine: "vision"),
-			.cardScanRescanRequested(engine: "vision"),
+			.cardScanEnded(CardScanEndMetrics(
+				engine: "vision", outcome: .cancelled, elapsedMs: 200,
+				hadCandidate: false, timeToPANMs: nil, torchOn: false,
+				isRescan: false, attemptNumber: 1
+			)),
 			.cardScanCompleted(
 				engine: "vision",
 				panSuccess: true,
@@ -579,6 +677,35 @@ final class CardScanAnalyticsTests: XCTestCase {
 				XCTAssertFalse("\(value)".contains("4111"), "\(event.name).\(key) included a PAN")
 			}
 		}
+
+		let ended = AppAnalyticsEvent.cardScanEnded(CardScanEndMetrics(
+			engine: "vision", outcome: .manualEntry, elapsedMs: 1200,
+			hadCandidate: true, timeToPANMs: 400, torchOn: true,
+			isRescan: true, attemptNumber: 2
+		))
+		XCTAssertEqual(ended.name, "card_scan_ended")
+		XCTAssertEqual(ended.properties["outcome"], .string("manual_entry"))
+		XCTAssertEqual(ended.properties["reason"], .string("manual_entry_button"))
+		XCTAssertEqual(ended.properties["elapsed_ms"], .int(1200))
+		XCTAssertEqual(ended.properties["had_candidate"], .bool(true))
+		XCTAssertEqual(ended.properties["time_to_pan_ms"], .int(400))
+		XCTAssertEqual(ended.properties["torch_on"], .bool(true))
+		XCTAssertEqual(ended.properties["is_rescan"], .bool(true))
+		XCTAssertEqual(ended.properties["attempt_number"], .int(2))
+
+		let retry = AppAnalyticsEvent.cardScanRetryableFailure(CardScanRetryMetrics(
+			engine: "vision", elapsedMs: 400, hadCandidate: true,
+			isRescan: false, attemptNumber: 1
+		))
+		XCTAssertEqual(retry.name, "card_scan_retryable_failure")
+		XCTAssertEqual(retry.properties["reason"], .string("verification_conflict"))
+		XCTAssertEqual(retry.properties["had_candidate"], .bool(true))
+		let backgrounded = CardScanEndMetrics(
+			engine: "vision", outcome: .dismissed, elapsedMs: 400,
+			hadCandidate: false, timeToPANMs: nil, torchOn: false,
+			isRescan: false, attemptNumber: 1, backgrounded: true
+		)
+		XCTAssertEqual(backgrounded.reason, "backgrounded")
 
 		let completed = AppAnalyticsEvent.cardScanCompleted(
 			engine: "vision",
