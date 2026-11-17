@@ -279,26 +279,16 @@ enum CardCandidateEngine {
 
 		for item in items {
 			for candidate in item.candidates {
-				if let groups = panGroups(in: candidate) {
-					append(CardPAN.validatedDigits(groups.joined()))
+				for pan in pans(fromTokens: panTokens(in: candidate)) {
+					append(pan)
 				}
 			}
 		}
 
 		for vertical in [false, true] {
-			var fragments: [String] = []
-			for item in orderedItems(items, vertical: vertical) {
-				guard let groups = panGroups(in: item.text),
-					  groups.joined().count < CardPAN.minimumLength,
-					  groups.allSatisfy({ (4...8).contains($0.count) }) else {
-					// Dates, labels, and complete numbers must never extend a partial PAN.
-					fragments.removeAll()
-					continue
-				}
-				fragments.append(contentsOf: groups)
-				for pan in pans(fromConsecutiveGroups: fragments) {
-					append(pan)
-				}
+			let tokens = orderedItems(items, vertical: vertical).flatMap { panTokens(in: $0.text) }
+			for pan in pans(fromTokens: tokens) {
+				append(pan)
 			}
 		}
 
@@ -316,31 +306,70 @@ enum CardCandidateEngine {
 		return nil
 	}
 
-	private static func panGroups(in text: String) -> [String]? {
-		let normalized = CardPAN.normalizeNumericToken(text)
-		guard normalized.allSatisfy({ $0.isNumber || $0.isWhitespace || $0 == "-" }),
-			  normalized.range(of: #"\b(0[1-9]|1[0-2])\s*-\s*((?:20)?[0-9]{2})\b"#, options: .regularExpression) == nil else {
-			return nil
+	// nil is a hard boundary. Punctuation separates runs without breaking a PAN.
+	private static func panTokens(in text: String) -> [String?] {
+		// Explicit non-card identifiers must not be mistaken for a PAN, even if they pass Luhn.
+		let identifier = text.range(of: #"(?i)\b(?:MEMBER\s+ID|ID|CVV|CVC|CID)\b"#, options: .regularExpression)
+		let cardText = identifier.map { String(text[..<$0.lowerBound]) + "/" } ?? text
+		// Remove dates before normalization or digit extraction, including expired dates.
+		let withoutDates = cardText.replacingOccurrences(
+			of: #"(?<![0-9])(?:0[1-9]|1[0-2])\s*[/.-]\s*(?:[0-9]{4}|[0-9]{2})(?![0-9])"#,
+			with: "/", options: .regularExpression
+		)
+		var tokens: [String?] = []
+		var word = ""
+		func flush() {
+			guard !word.isEmpty else { return }
+			// The removable digit anchor allows all-confusion words such as "llll".
+			// Normalize words independently so labels cannot contribute OCR substitutions.
+			let normalized = String(CardPAN.normalizeNumericToken("0 " + word).dropFirst(2))
+			if normalized.allSatisfy(\.isNumber) {
+				tokens.append(normalized)
+			} else {
+				// Attached labels still break runs, without discarding adjacent digits.
+				var digits = ""
+				for character in word {
+					if character.isNumber {
+						digits.append(character)
+					} else {
+						if !digits.isEmpty {
+							tokens.append(digits)
+							digits = ""
+						}
+						tokens.append(nil)
+					}
+				}
+				if !digits.isEmpty { tokens.append(digits) }
+			}
+			word = ""
 		}
-		let groups = normalized.split { !$0.isNumber }.map(String.init)
-		return groups.isEmpty ? nil : groups
+		for character in withoutDates {
+			if character.isLetter || character.isNumber || character == "|" {
+				word.append(character)
+			} else {
+				flush()
+				if character == "/" { tokens.append(nil) }
+			}
+		}
+		flush()
+		return tokens.isEmpty ? [nil] : tokens
 	}
 
-	private static func pans(fromConsecutiveGroups groups: [String]) -> [String] {
-		guard groups.count >= 2 else {
-			return groups.compactMap(CardPAN.validatedDigits)
-		}
-
+	private static func pans(fromTokens tokens: [String?]) -> [String] {
 		var pans: [String] = []
-		for start in 0..<groups.count {
+		for start in tokens.indices {
 			var combined = ""
-			for end in start..<groups.count {
-				combined += groups[end]
+			var matches: [String] = []
+			for end in start..<tokens.count {
+				guard let group = tokens[end] else { break }
+				combined += group
 				if combined.count > CardPAN.maximumLength { break }
 				if let pan = CardPAN.validatedDigits(combined) {
-					pans.append(pan)
+					matches.append(pan)
 				}
 			}
+			// Prefer the full PAN over a coincidentally valid prefix at a run boundary.
+			pans.append(contentsOf: matches.reversed())
 		}
 		return pans
 	}
