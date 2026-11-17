@@ -279,7 +279,7 @@ enum CardCandidateEngine {
 
 		for item in items {
 			for candidate in item.candidates {
-				for pan in pans(fromTokens: panTokens(in: candidate)) {
+				for pan in pans(fromTokens: panTokens(in: candidate), preferLongest: true) {
 					append(pan)
 				}
 			}
@@ -287,7 +287,7 @@ enum CardCandidateEngine {
 
 		for vertical in [false, true] {
 			let tokens = orderedItems(items, vertical: vertical).flatMap { panTokens(in: $0.text) }
-			for pan in pans(fromTokens: tokens) {
+			for pan in pans(fromTokens: tokens, preferLongest: false) {
 				append(pan)
 			}
 		}
@@ -355,7 +355,7 @@ enum CardCandidateEngine {
 		return tokens.isEmpty ? [nil] : tokens
 	}
 
-	private static func pans(fromTokens tokens: [String?]) -> [String] {
+	private static func pans(fromTokens tokens: [String?], preferLongest: Bool) -> [String] {
 		var pans: [String] = []
 		for start in tokens.indices {
 			var combined = ""
@@ -368,8 +368,9 @@ enum CardCandidateEngine {
 					matches.append(pan)
 				}
 			}
-			// Prefer the full PAN over a coincidentally valid prefix at a run boundary.
-			pans.append(contentsOf: matches.reversed())
+			// Within one OCR line, prefer the full PAN over a coincidentally valid prefix.
+			// Across lines, a trailing short number is more likely separate text, so prefer the shorter PAN.
+			pans.append(contentsOf: preferLongest ? matches.reversed() : matches)
 		}
 		return pans
 	}

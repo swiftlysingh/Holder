@@ -178,6 +178,12 @@ final class CardCandidateEngineTests: XCTestCase {
 		}
 	}
 
+	func testSplitPANDoesNotAbsorbTrailingShortNumber() {
+		XCTAssertTrue(CardPAN.isLuhnValid("4111111111111111102"))
+		let items = ["4111 1111", "1111 1111", "102"].map { OCRTextItem(text: $0) }
+		XCTAssertEqual(CardCandidateEngine.reconstructPANs(from: items).first, "4111111111111111")
+	}
+
 	func testInfersNetworksFromIIN() {
 		XCTAssertEqual(CardPAN.network(for: "4111111111111111"), .visa)
 		XCTAssertEqual(CardPAN.network(for: "5555555555554444"), .master)
