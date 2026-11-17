@@ -279,25 +279,28 @@ enum CardCandidateEngine {
 
 		for item in items {
 			for candidate in item.candidates {
-				append(CardPAN.validatedPAN(from: candidate))
+				if let groups = panGroups(in: candidate) {
+					append(CardPAN.validatedDigits(groups.joined()))
+				}
 			}
 		}
 
-		let ordered = orderedItems(items)
-		let digitGroups = ordered.flatMap { tokenizeDigitGroups(in: $0.text) }
-
-		for pan in pans(fromConsecutiveGroups: digitGroups) {
-			append(pan)
+		for vertical in [false, true] {
+			var fragments: [String] = []
+			for item in orderedItems(items, vertical: vertical) {
+				guard let groups = panGroups(in: item.text),
+					  groups.joined().count < CardPAN.minimumLength,
+					  groups.allSatisfy({ (4...8).contains($0.count) }) else {
+					// Dates, labels, and complete numbers must never extend a partial PAN.
+					fragments.removeAll()
+					continue
+				}
+				fragments.append(contentsOf: groups)
+				for pan in pans(fromConsecutiveGroups: fragments) {
+					append(pan)
+				}
+			}
 		}
-
-		let verticalGroups = orderedItems(items, vertical: true).flatMap { tokenizeDigitGroups(in: $0.text) }
-		for pan in pans(fromConsecutiveGroups: verticalGroups) {
-			append(pan)
-		}
-
-		let concatenated = digitGroups.joined()
-		append(longestValidPAN(in: concatenated))
-		append(longestValidPAN(in: ordered.map(\.text).joined()))
 
 		return found
 	}
@@ -313,10 +316,14 @@ enum CardCandidateEngine {
 		return nil
 	}
 
-	private static func tokenizeDigitGroups(in text: String) -> [String] {
+	private static func panGroups(in text: String) -> [String]? {
 		let normalized = CardPAN.normalizeNumericToken(text)
+		guard normalized.allSatisfy({ $0.isNumber || $0.isWhitespace || $0 == "-" }),
+			  normalized.range(of: #"\b(0[1-9]|1[0-2])\s*-\s*((?:20)?[0-9]{2})\b"#, options: .regularExpression) == nil else {
+			return nil
+		}
 		let groups = normalized.split { !$0.isNumber }.map(String.init)
-		return groups.filter { (4...8).contains($0.count) || (13...19).contains($0.count) }
+		return groups.isEmpty ? nil : groups
 	}
 
 	private static func pans(fromConsecutiveGroups groups: [String]) -> [String] {
@@ -336,27 +343,6 @@ enum CardCandidateEngine {
 			}
 		}
 		return pans
-	}
-
-	private static func longestValidPAN(in digitsAndText: String) -> String? {
-		let digits = CardPAN.digits(in: digitsAndText)
-		guard digits.count >= CardPAN.minimumLength else { return nil }
-
-		var best: String?
-		for length in stride(from: min(CardPAN.maximumLength, digits.count), through: CardPAN.minimumLength, by: -1) {
-			guard digits.count >= length else { continue }
-			let maxStart = digits.count - length
-			for start in 0...maxStart {
-				let index = digits.index(digits.startIndex, offsetBy: start)
-				let end = digits.index(index, offsetBy: length)
-				if let pan = CardPAN.validatedDigits(String(digits[index..<end])) {
-					best = pan
-					break
-				}
-			}
-			if best != nil { break }
-		}
-		return best
 	}
 
 	private static func orderedItems(_ items: [OCRTextItem], vertical: Bool = false) -> [OCRTextItem] {
