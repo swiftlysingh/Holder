@@ -3,5 +3,5 @@
   "keywords": "credit,debit,id,membership,loyalty,insurance,scanner,organizer,biometric,private,keeper,storage",
   "promotionalText": "Scan credit or debit cards on supported iPhone and iPad models, review the details, and save. Protect Holder with Face ID, Touch ID, or your device passcode.",
   "supportUrl": "https://twitter.com/swiftlysingh",
-  "whatsNew": "離開掃描器後，現在會開啟新增卡片表單，方便你繼續手動輸入資料。\n\n掃描時，不會填入無法確定屬於該卡片的姓名和有效期限。儲存前，請檢查每個欄位。\n\n新增卡片按鈕現位於表單底部的工具列中。\n\n修正了新增卡片或瀏覽歡迎畫面時，文字動畫可能導致短暫停頓的問題。"
+  "whatsNew": "離開掃描器後，現在會開啟新增卡片表單，方便你繼續手動輸入資料。\n\n修正了掃描時可能將有效期限中的數字混入卡號，導致填入錯誤卡號的問題。\n\n掃描時，不會填入無法確定屬於該卡片的姓名和有效期限。儲存前，請檢查每個欄位。\n\n新增卡片按鈕現位於表單底部的工具列中。\n\n修正了新增卡片或瀏覽歡迎畫面時，文字動畫可能導致短暫停頓的問題。"
 }

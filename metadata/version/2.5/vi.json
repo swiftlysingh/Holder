@@ -3,5 +3,5 @@
   "keywords": "credit,debit,id,membership,loyalty,insurance,scanner,organizer,biometric,private,keeper,storage",
   "promotionalText": "Scan credit or debit cards on supported iPhone and iPad models, review the details, and save. Protect Holder with Face ID, Touch ID, or your device passcode.",
   "supportUrl": "https://twitter.com/swiftlysingh",
-  "whatsNew": "Khi thoát trình quét, bạn sẽ được đưa đến biểu mẫu thêm thẻ để tiếp tục nhập thông tin thủ công.\n\nKết quả quét sẽ bỏ qua tên và ngày hết hạn nếu không thể xác định chắc chắn chúng thuộc về thẻ của bạn. Hãy kiểm tra từng trường trước khi lưu.\n\nNút thêm thẻ hiện nằm ở thanh dưới cùng của biểu mẫu.\n\nĐã sửa lỗi tạm dừng có thể xảy ra trong hiệu ứng chữ khi thêm thẻ hoặc chuyển qua các màn hình chào mừng."
+  "whatsNew": "Khi thoát trình quét, bạn sẽ được đưa đến biểu mẫu thêm thẻ để tiếp tục nhập thông tin thủ công.\n\nĐã sửa lỗi quét có thể điền sai số thẻ do lấy cả các chữ số từ ngày hết hạn.\n\nKết quả quét sẽ bỏ qua tên và ngày hết hạn nếu không thể xác định chắc chắn chúng thuộc về thẻ của bạn. Hãy kiểm tra từng trường trước khi lưu.\n\nNút thêm thẻ hiện nằm ở thanh dưới cùng của biểu mẫu.\n\nĐã sửa lỗi tạm dừng có thể xảy ra trong hiệu ứng chữ khi thêm thẻ hoặc chuyển qua các màn hình chào mừng."
 }

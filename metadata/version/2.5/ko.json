@@ -3,5 +3,5 @@
   "keywords": "credit,debit,id,membership,loyalty,insurance,scanner,organizer,biometric,private,keeper,storage",
   "promotionalText": "Scan credit or debit cards on supported iPhone and iPad models, review the details, and save. Protect Holder with Face ID, Touch ID, or your device passcode.",
   "supportUrl": "https://twitter.com/swiftlysingh",
-  "whatsNew": "스캐너를 종료하면 이제 카드 추가 양식으로 이동하여 정보를 직접 입력할 수 있습니다.\n\n스캔 시 카드와 확실하게 연결할 수 없는 이름과 만료일은 입력하지 않습니다. 저장하기 전에 모든 항목을 확인해 주세요.\n\n카드 추가 버튼이 이제 양식 하단 막대에 표시됩니다.\n\n카드를 추가하거나 시작 안내 화면을 넘길 때 텍스트 애니메이션으로 인해 잠시 멈추는 문제를 수정했습니다."
+  "whatsNew": "스캐너를 종료하면 이제 카드 추가 양식으로 이동하여 정보를 직접 입력할 수 있습니다.\n\n스캔 시 만료일의 숫자가 포함되어 잘못된 카드 번호가 입력될 수 있던 문제를 수정했습니다.\n\n스캔 시 카드와 확실하게 연결할 수 없는 이름과 만료일은 입력하지 않습니다. 저장하기 전에 모든 항목을 확인해 주세요.\n\n카드 추가 버튼이 이제 양식 하단 막대에 표시됩니다.\n\n카드를 추가하거나 시작 안내 화면을 넘길 때 텍스트 애니메이션으로 인해 잠시 멈추는 문제를 수정했습니다."
 }

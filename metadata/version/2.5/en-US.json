@@ -3,5 +3,5 @@
   "keywords": "credit,debit,id,membership,loyalty,insurance,scanner,organizer,biometric,private,keeper,storage",
   "promotionalText": "Scan credit or debit cards on supported iPhone and iPad models, review the details, and save. Protect Holder with Face ID, Touch ID, or your device passcode.",
   "supportUrl": "https://twitter.com/swiftlysingh",
-  "whatsNew": "Leaving the scanner now takes you to the Add Card form, so you can keep entering details manually.\n\nScans leave out names and expiry dates that cannot be matched confidently to your card. Review every field before saving.\n\nThe Add Card button now sits in the sheet's bottom bar.\n\nFixed pauses that could happen during text animations when adding a card or moving through the welcome screens."
+  "whatsNew": "Leaving the scanner now takes you to the Add Card form, so you can keep entering details manually.\n\nFixed a scanning bug that could fill in the wrong card number by picking up digits from the expiry date.\n\nScans leave out names and expiry dates that cannot be matched confidently to your card. Review every field before saving.\n\nThe Add Card button now sits in the sheet's bottom bar.\n\nFixed pauses that could happen during text animations when adding a card or moving through the welcome screens."
 }
