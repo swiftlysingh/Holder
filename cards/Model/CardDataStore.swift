@@ -379,6 +379,8 @@ final class CardDataStore {
 		findCard(by: id) ?? archivedCards.first { $0.id == id }
 	}
 
+	var savedCardCount: Int { allStoredCards.count }
+
 	private var allStoredCards: [CardData] {
 		CardType.allCases.flatMap { cardsByType[$0] ?? [] } + archivedCards
 	}

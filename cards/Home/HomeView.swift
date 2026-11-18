@@ -1,3 +1,4 @@
+import StoreKit
 import SwiftUI
 import SinghDevKit
 
@@ -6,16 +7,28 @@ struct HomeView: View {
 	@ObservedObject private var model: HomeViewModel
 	@ObservedObject private var appFlow: HolderAppFlow
 	@EnvironmentObject private var authenticationSession: AuthenticationSession
+	@Environment(\.payments) private var payments
+	@Environment(\.requestReview) private var requestReview
+	@Environment(\.scenePhase) private var scenePhase
+	@Environment(\.supportPromptPolicy) private var supportPromptPolicy
 	@Environment(\.analytics) private var analytics
 	@Environment(\.sdk) private var sdk
 	@Environment(\.accessibilityReduceTransparency) private var reduceTransparency
 	private let privacyPolicyURL: URL?
+	@State private var automaticTip: SupportPromptPolicy.TipSource?
+	@State private var paymentsReady = false
+	@State private var isShowingArchivedCards = false
+	@State private var isOnboardingPresented = false
+	@State private var isAddCardPresented = false
 	@State private var cardPendingDeletion: CardData?
 	@State private var hasAttemptedInitialCardLoad = false
 	@State private var initialCardLoadSucceeded = false
 	@State private var pendingOnboardingAddMode: CardEditorStartMode?
-	#if !os(macOS)
+	#if os(macOS)
+	@Environment(\.appearsActive) private var isMainWindowActive
+	#else
 	@State private var isShowingSettings = false
+	@State private var isSettingsPresented = false
 	#endif
 	#if os(iOS)
 	@State private var addCardSheetDetent: PresentationDetent = .height(430)
@@ -76,6 +89,8 @@ struct HomeView: View {
 						Section {
 							NavigationLink {
 								ArchivedCardsView(model: model)
+									.onAppear { isShowingArchivedCards = true }
+									.onDisappear { isShowingArchivedCards = false }
 							} label: {
 								HStack {
 									Image(systemName: "archivebox")
@@ -125,6 +140,10 @@ struct HomeView: View {
 									await model.cardDataStore.updateCard(card)
 								}))
 					.id(card.id)
+					.onAppear { model.savedTipDetailsDidAppear(for: card.id) }
+					#if os(macOS)
+					.onExitCommand { model.selectedCard = nil }
+					#endif
 			} 
 			else {
 				Text("Tap on a Card to view details")
@@ -142,8 +161,10 @@ struct HomeView: View {
 					await model.cardDataStore.updateCard(card)
 				}))
 			.id(card.id)
+			.onAppear { model.savedTipDetailsDidAppear(for: card.id) }
 		}
 		.sheet(isPresented: $model.isAddingCard, onDismiss: {
+			isAddCardPresented = false
 			model.revealPendingCardSelection()
 		}) {
 			let cardViewModel = CardViewModel(
@@ -159,13 +180,19 @@ struct HomeView: View {
 				addNewFlow: true,
 				startMode: model.addCardStartMode,
 				addUpdateCard: { card in
-					let succeeded = await model.cardDataStore.addCard(card)
-					if succeeded {
-						model.finishAddingCard(
-							selecting: model.cardDataStore.findCard(by: card.id) ?? card
-						)
+					await model.cardDataStore.addCard(card)
+				},
+				onSaved: { card, scanNumberUnedited in
+					let count = model.cardDataStore.savedCardCount
+					if supportPromptPolicy?.recordNewCardSaved(
+						scanNumberUnedited: scanNumberUnedited,
+						savedCardCount: count
+					) == true {
+						model.awaitSavedTipDetails(for: card.id)
 					}
-					return succeeded
+					model.finishAddingCard(
+						selecting: model.cardDataStore.findCard(by: card.id) ?? card
+					)
 				}
 			)
 			#if os(iOS)
@@ -196,9 +223,13 @@ struct HomeView: View {
 			Text("This cannot be undone.")
 		}
 		#if !os(macOS)
-		.sheet(isPresented: $isShowingSettings, onDismiss: presentPendingOnboardingReplayIfPossible) {
+		.sheet(isPresented: $isShowingSettings, onDismiss: {
+			isSettingsPresented = false
+			presentPendingOnboardingReplayIfPossible()
+		}) {
 			NavigationStack {
 				sdk.settingsView()
+					.onAppear { isSettingsPresented = true }
 					.sdkScreen(AppAnalyticsScreen.settings)
 					.environment(
 						\.holderOnboardingReplayAction,
@@ -231,6 +262,7 @@ struct HomeView: View {
 			hasStoredCards: initialCardLoadSucceeded ? hasStoredCards : nil,
 			privacyPolicyURL: privacyPolicyURL,
 			onPresented: { audience in
+				isOnboardingPresented = true
 				track(.onboardingShown(audience: audience))
 			},
 			onSkip: { audience in
@@ -243,7 +275,96 @@ struct HomeView: View {
 			},
 			onDismiss: onboardingDidDismiss
 		)
+		.onChange(of: model.isAddingCard) { _, isPresented in
+			if isPresented { isAddCardPresented = true }
+		}
+		.onChange(of: model.selectedCard?.id) { _, current in
+			if current == nil && model.consumeSavedTipDetailsReturn() {
+				supportPromptPolicy?.returnedFromSavedDetails()
+			}
+		}
+		.sheet(item: $automaticTip) { source in
+			SDKPaywallView(
+				displayCloseButton: true,
+				analyticsContext: SDKPaywallContext(source: source.rawValue)
+			)
+		}
+		.onReceive(sdk.$configurationState) { state in
+			paymentsReady = state == .configured
+		}
+		.task(id: listPrompt) {
+			guard let prompt = listPrompt else { return }
+			// Let the cards list settle after navigation or a sheet dismissal.
+			try? await Task.sleep(for: .milliseconds(350))
+			await presentListPrompt(prompt)
+		}
 		.sdkScreen(AppAnalyticsScreen.home)
+	}
+
+	private enum ListPrompt: Equatable {
+		case tip(SupportPromptPolicy.TipSource)
+		case review
+	}
+
+	private var reviewVersion: String {
+		Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? ""
+	}
+
+	private var promptContext: SupportPromptPolicy.PresentationContext {
+		#if os(macOS)
+		let hasSettingsSheet = false
+		let isWindowActive = isMainWindowActive
+		#else
+		let hasSettingsSheet = isShowingSettings || isSettingsPresented
+		let isWindowActive = true
+		#endif
+		return .init(
+			isVaultUnlocked: authenticationSession.isVaultUnlocked,
+			isActive: isWindowActive && scenePhase == .active && !authenticationSession.isPrivacyCurtainVisible,
+			isUnlocking: authenticationSession.isAuthenticating,
+			isOnboarding: isOnboardingPresented || appFlow.onboardingAudience != nil || appFlow.isOnboardingReplayPending
+				|| pendingOnboardingAddMode != nil,
+			isOnCardList: initialCardLoadSucceeded && model.selectedCard == nil && !isShowingArchivedCards,
+			isAddingOrScanning: model.isAddingCard || isAddCardPresented || model.hasPendingCardSelection,
+			hasModal: hasSettingsSheet || cardPendingDeletion != nil || automaticTip != nil
+		)
+	}
+
+	private var listPrompt: ListPrompt? {
+		guard let supportPromptPolicy else { return nil }
+		if paymentsReady, let tip = supportPromptPolicy.eligibleTip(in: promptContext) {
+			return .tip(tip)
+		}
+		if supportPromptPolicy.canRequestReview(version: reviewVersion, in: promptContext) {
+			return .review
+		}
+		return nil
+	}
+
+	private func presentListPrompt(_ prompt: ListPrompt) async {
+		guard let supportPromptPolicy, !Task.isCancelled, listPrompt == prompt else { return }
+		if case let .tip(source) = prompt {
+			let purchaseStatus = await tipPurchaseStatus()
+			guard !Task.isCancelled, listPrompt == prompt else { return }
+			if supportPromptPolicy.claimTip(source, purchaseStatus: purchaseStatus, in: promptContext) {
+				automaticTip = source
+				return
+			}
+		}
+		if supportPromptPolicy.claimReview(version: reviewVersion, in: promptContext) {
+			requestReview()
+		}
+	}
+
+	private func tipPurchaseStatus() async -> SupportPromptPolicy.TipPurchaseStatus {
+		guard await payments.isConfigured else { return .unknown }
+		do {
+			// Holder's tips grant permanent entitlements, including past purchases.
+			let entitlements = try await payments.activeEntitlements()
+			return entitlements.isEmpty ? .notPurchased : .purchased
+		} catch {
+			return .unknown
+		}
 	}
 
 	private var homeBackground: some View {
@@ -360,6 +481,7 @@ struct HomeView: View {
 	}
 
 	private func onboardingDidDismiss() {
+		isOnboardingPresented = false
 		presentPendingOnboardingAddCard()
 		#if os(macOS)
 		presentPendingOnboardingReplayIfPossible()

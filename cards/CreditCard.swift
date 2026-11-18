@@ -150,6 +150,7 @@ struct CreditCard: App {
     #endif
 
     @State private var cardDataStore: CardDataStore
+    @State private var supportPromptPolicy = SupportPromptPolicy()
     @State private var sdk: SinghDevKit
     @StateObject private var homeViewModel: HomeViewModel
     @StateObject private var authenticationSession = AuthenticationSession()
@@ -208,6 +209,7 @@ struct CreditCard: App {
                 }
         }
         .environmentObject(authenticationSession)
+        .environment(\.supportPromptPolicy, supportPromptPolicy)
         .withSDK(sdk)
     }
 
@@ -216,6 +218,7 @@ struct CreditCard: App {
         MenuBarExtra("Holder", systemImage: "creditcard.fill", isInserted: $keepInMenuBar) {
             MenuBarView(cardStore: cardDataStore)
                 .environmentObject(authenticationSession)
+                .environment(\.supportPromptPolicy, supportPromptPolicy)
                 .withSDK(sdk)
         }
         .menuBarExtraStyle(.window)
@@ -226,6 +229,7 @@ struct CreditCard: App {
             sdk.settingsView()
                 .sdkScreen(AppAnalyticsScreen.settings)
                 .environmentObject(authenticationSession)
+                .environment(\.supportPromptPolicy, supportPromptPolicy)
                 .environment(
                     \.holderOnboardingReplayAction,
                     HolderOnboardingReplayAction {

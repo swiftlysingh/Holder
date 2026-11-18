@@ -1,3 +1,4 @@
+import CoreTransferable
 import SinghDevKit
 import SwiftUI
 import UniformTypeIdentifiers
@@ -13,6 +14,7 @@ struct CardView: View {
 
 	@StateObject private var model: CardViewModel
 	@EnvironmentObject private var authenticationSession: AuthenticationSession
+	@Environment(\.supportPromptPolicy) private var supportPromptPolicy
 	@Environment(\.analytics) private var analytics
 	#if os(iOS)
 	@Environment(\.dismiss) private var dismiss
@@ -555,11 +557,11 @@ struct CardView: View {
 	private var sensitiveShareMenu: some View {
 		if authenticationSession.isSensitiveAccessFresh {
 			Menu {
-				ShareLink(item: model.card.toShareString(includeSecurityCode: false)) {
+				ShareLink(item: shareItem(includeSecurityCode: false), preview: SharePreview("Card Details")) {
 					Label("Share without Security Code", systemImage: "square.and.arrow.up")
 				}
 				if !model.card.cvv.isEmpty {
-					ShareLink(item: model.card.toShareString(includeSecurityCode: true)) {
+					ShareLink(item: shareItem(includeSecurityCode: true), preview: SharePreview("Card Details")) {
 						Label("Share with Security Code", systemImage: "lock.open.fill")
 					}
 				}
@@ -576,6 +578,13 @@ struct CardView: View {
 			}
 			.disabled(authenticationSession.isAuthenticating)
 		}
+	}
+
+	private func shareItem(includeSecurityCode: Bool) -> CardShareItem {
+		CardShareItem(
+			text: model.card.toShareString(includeSecurityCode: includeSecurityCode),
+			supportPromptPolicy: supportPromptPolicy
+		)
 	}
 
 	#if os(macOS)
@@ -960,15 +969,27 @@ struct CardView: View {
 
 	private func copyToClipboard(_ value: String, field: String) {
 		guard model.copyAction(with: value) else { return }
-		#if os(iOS)
-		UserSettings.shared.requestReview()
-		#endif
+		supportPromptPolicy?.recordCopy()
 		copiedField = field
 		DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
 			if copiedField == field {
 				copiedField = nil
 			}
 		}
+	}
+}
+
+private struct CardShareItem: Transferable {
+	let text: String
+	let supportPromptPolicy: SupportPromptPolicy?
+
+	static var transferRepresentation: some TransferRepresentation {
+		ProxyRepresentation(exporting: { item in
+			Task { @MainActor in
+				item.supportPromptPolicy?.recordShare()
+			}
+			return item.text
+		})
 	}
 }
 

@@ -4,6 +4,7 @@ import SwiftUI
 struct AppSettingsView: View {
     @ObservedObject private var settings = UserSettings.shared
     @EnvironmentObject private var authenticationSession: AuthenticationSession
+    @Environment(\.supportPromptPolicy) private var supportPromptPolicy
     @Environment(\.analytics) private var analytics
     @Environment(\.holderOnboardingReplayAction) private var replayOnboarding
     @AppStorage("isAuthEnabled") private var isVaultLockEnabled = true
@@ -29,6 +30,7 @@ struct AppSettingsView: View {
         Toggle("Keep in Menu Bar", isOn: $settings.keepInMenuBar)
         #endif
         Button {
+            supportPromptPolicy?.recordTipPresented()
             showsTipJar = true
         } label: {
             Label("Support Holder", systemImage: "heart.fill")
