@@ -47,6 +47,54 @@ final class CardCandidateEngineTests: XCTestCase {
 		XCTAssertEqual(CardCandidateEngine.reconstructPANs(from: items), [])
 	}
 
+	func testInvalidPANDoesNotAbsorbExpiryDigits() {
+		let invalid = "4111 1111 1111 1112"
+		for expiry in ["12/28", "VALID THRU 12/28", "05/2027", "05-2027", "05.2027"] {
+			for texts in [[invalid], [invalid, expiry], [expiry, invalid], [invalid + " " + expiry]] {
+				XCTAssertEqual(CardCandidateEngine.reconstructPANs(from: texts.map { OCRTextItem(text: $0) }), [], "\(texts)")
+			}
+		}
+	}
+
+	func testRejectsDatesInsideAnOtherwiseLuhnValidCandidate() {
+		// The joined digits pass Luhn, but the last four digits are a date.
+		XCTAssertTrue(CardPAN.isLuhnValid("44222222222221228"))
+		for date in ["12/28", "12-28", "12.28"] {
+			XCTAssertEqual(CardCandidateEngine.reconstructPANs(from: [OCRTextItem(text: "4422222222222 " + date)]), [])
+		}
+	}
+
+	func testDoesNotSearchInsideLongMemberOrIDNumbers() {
+		for number in ["999941111111111111119999", "MEMBER ID 999941111111111111119999", "ID 4111111111111111"] {
+			let items = [OCRTextItem(text: number), OCRTextItem(text: "12/28")]
+			XCTAssertEqual(CardCandidateEngine.reconstructPANs(from: items), [], number)
+		}
+	}
+
+	func testValidPANNextToExpiryRemainsIntact() {
+		for number in ["4111111111111111", "4111 1111 1111 1111", "4111-1111-1111-1111"] {
+			for expiry in ["12/28", "VALID THRU 12/28", "05/2027"] {
+				for texts in [[number, expiry], [expiry, number]] {
+					XCTAssertEqual(CardCandidateEngine.reconstructPANs(from: texts.map { OCRTextItem(text: $0) }), ["4111111111111111"])
+				}
+			}
+		}
+	}
+
+	func testSplitPANKeepsExpiryAndOtherTextAsBoundaries() {
+		for separator in ["12/28", "VALID THRU 12/28", "05/2027", "MEMBER ID 1111", "CVV 123"] {
+			let texts = ["4111", "1111", separator, "1111", "1111"]
+			XCTAssertEqual(CardCandidateEngine.reconstructPANs(from: texts.map { OCRTextItem(text: $0) }), [], separator)
+		}
+		for texts in [
+			["12/28", "4111", "1111", "1111", "1111", "05/2027"],
+			["VALID THRU 12/28", "3782", "822463", "10005", "05/2027"]
+		] {
+			let expected = texts.contains("3782") ? "378282246310005" : "4111111111111111"
+			XCTAssertEqual(CardCandidateEngine.reconstructPANs(from: texts.map { OCRTextItem(text: $0) }), [expected])
+		}
+	}
+
 	func testRejectsLuhnValidUnknownIIN() {
 		let items = [OCRTextItem(text: "0000000000000000")]
 		XCTAssertEqual(CardCandidateEngine.reconstructPANs(from: items), [])
@@ -61,6 +109,79 @@ final class CardCandidateEngineTests: XCTestCase {
 		]
 
 		XCTAssertEqual(CardCandidateEngine.reconstructPANs(from: items), ["4111111111111111"])
+	}
+
+	func testKeepsPANWithOCRPunctuationAndLabels() {
+		for text in [
+			"4111 1111 1111 1111.", "4111 1111 1111 1111'",
+			"• 4111 1111 1111 1111", "4111 1111, 1111 1111",
+			"4111 1111 1111 1111 VISA", "Card No 4111 1111 1111 1111",
+			"4lll llll llll llll", "Card No 4111 1111 111l 1111 VISA",
+			"4111111111111111VISA", "CardNo4111111111111111",
+			"4111 1111 1111 1111 CVV 123", "4111 1111 1111 1111 MEMBER ID 9876"
+		] {
+			XCTAssertEqual(CardCandidateEngine.reconstructPANs(from: [OCRTextItem(text: text)]), ["4111111111111111"], text)
+		}
+	}
+
+	func testDateTokensBreakPANsWithoutDiscardingSameLineNumbers() {
+		for date in ["12/28", "12/2028", "12-28", "12-2028", "12.28", "12 / 2028", "01/20"] {
+			for text in ["4111 1111 1111 111  " + date, "4422222222222 " + date, "4111 1111 " + date + " 1111 1111"] {
+				XCTAssertEqual(CardCandidateEngine.reconstructPANs(from: [OCRTextItem(text: text)]), [], text)
+			}
+			for text in ["4111 1111 1111 1111 " + date, date + " 4111 1111 1111 1111"] {
+				XCTAssertEqual(CardCandidateEngine.reconstructPANs(from: [OCRTextItem(text: text)]), ["4111111111111111"], text)
+			}
+		}
+	}
+
+	func testReconstructsOddSplitsWithNoise() {
+		for texts in [["411111", "1111111111"], ["Card No 411111,", "1111111111."], ["4111 11", "1111 111111"]] {
+			XCTAssertEqual(CardCandidateEngine.reconstructPANs(from: texts.map { OCRTextItem(text: $0) }), ["4111111111111111"], "\(texts)")
+		}
+	}
+
+	func testReconstructsAmexOnOneLineAndSplitWithExpiry() {
+		for texts in [["3782 822463 10005"], ["3782 822463 10005 12/2028"], ["3782", "822463", "10005", "12/2028"], ["3782 822463", "10005"]] {
+			XCTAssertEqual(CardCandidateEngine.reconstructPANs(from: texts.map { OCRTextItem(text: $0) }), ["378282246310005"], "\(texts)")
+		}
+	}
+
+	func testDoesNotJoinAcrossLettersOrMemberIdentifiers() {
+		for texts in [["4111 1111 VISA 1111 1111"], ["4111", "1111", "VISA", "1111", "1111"], ["4111 1111 1111 1112", "MEMBER ID 9876 5432"], ["4111 1111 1111 1112 MEMBER ID 9876 5432"]] {
+			XCTAssertEqual(CardCandidateEngine.reconstructPANs(from: texts.map { OCRTextItem(text: $0) }), [], "\(texts)")
+		}
+	}
+
+	func testDoesNotTrimWholeDigitRunsToFindPAN() {
+		for text in ["94111111111111111", "41111111111111119", "999941111111111111119999", "99994 111111111111111"] {
+			XCTAssertEqual(CardCandidateEngine.reconstructPANs(from: [OCRTextItem(text: text)]), [], text)
+		}
+	}
+
+	func testVerticalAmexWithDateAndShuffledItems() {
+		let items = [
+			OCRTextItem(text: "10005.", boundingBox: CGRect(x: 0.20, y: 0.30, width: 0.12, height: 0.08)),
+			OCRTextItem(text: "12/2028", boundingBox: CGRect(x: 0.60, y: 0.80, width: 0.12, height: 0.08)),
+			OCRTextItem(text: "3782", boundingBox: CGRect(x: 0.20, y: 0.72, width: 0.12, height: 0.08)),
+			OCRTextItem(text: "822463", boundingBox: CGRect(x: 0.20, y: 0.50, width: 0.12, height: 0.08))
+		]
+		XCTAssertEqual(CardCandidateEngine.reconstructPANs(from: items), ["378282246310005"])
+	}
+
+	func testPrefersFullPANOverLuhnValidPrefix() {
+		let full = "4111111111111111003"
+		XCTAssertTrue(CardPAN.isLuhnValid(full))
+		XCTAssertTrue(CardPAN.isLuhnValid(String(full.prefix(16))))
+		for text in [full, "4111 1111 1111 1111 003", "4111 1111 1111 1111 003 12/28"] {
+			XCTAssertEqual(CardCandidateEngine.reconstructPANs(from: [OCRTextItem(text: text)]).first, full, text)
+		}
+	}
+
+	func testSplitPANDoesNotAbsorbTrailingShortNumber() {
+		XCTAssertTrue(CardPAN.isLuhnValid("4111111111111111102"))
+		let items = ["4111 1111", "1111 1111", "102"].map { OCRTextItem(text: $0) }
+		XCTAssertEqual(CardCandidateEngine.reconstructPANs(from: items).first, "4111111111111111")
 	}
 
 	func testInfersNetworksFromIIN() {
