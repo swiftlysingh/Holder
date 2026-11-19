@@ -18,7 +18,7 @@ struct SettingsViewModel: SettingsViewModelProtocol {
     }
 
     var privacyPolicyURL: URL? {
-        URL(string: "https://docs.google.com/document/d/1OD3foirDwAsmZ8Mp6cYJlDpUjAyDpvgX7rvzosnNQes")
+        URL(string: "https://holder.promptside.studio/privacy")
     }
 
     var sourceCodeURL: URL? {
