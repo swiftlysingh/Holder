@@ -1,11 +1,11 @@
-# Holder: A Secure Card Vault
+# Holder: Offline Card Vault
 
 Welcome to Holder: Your Trusted, Secure Card Vault. In a world transitioning rapidly to digital transactions, Holder emerges as a vital tool, especially for those in countries without Apple Pay. Designed to ease the burden of online transactions, Holder is a beacon of convenience and security.
 
 ![Component 2 (1)](https://github.com/swiftlysingh/Holder/assets/47032662/e18b663a-73a2-43ff-8d10-f1aa24af82c2)
 
 <p align="center">
-<a href="https://apps.apple.com/us/app/holder-a-secure-card-vault/id6475649492?itsct=apps_box_badge&amp;itscg=30200" style="display: inline-block; overflow: hidden; border-radius: 13px; width: 250px; height: 83px;"><img src="https://tools.applemediaservices.com/api/badges/download-on-the-app-store/black/en-us?size=250x83&amp;releaseDate=1706313600" alt="Download on the App Store" style="border-radius: 13px; width: 75%; height: 83px;"></a>
+<a href="https://apps.apple.com/app/offline-card-vault-holder/id6475649492?itsct=apps_box_badge&amp;itscg=30200" style="display: inline-block; overflow: hidden; border-radius: 13px; width: 250px; height: 83px;"><img src="https://tools.applemediaservices.com/api/badges/download-on-the-app-store/black/en-us?size=250x83&amp;releaseDate=1706313600" alt="Download on the App Store" style="border-radius: 13px; width: 75%; height: 83px;"></a>
 </p>
 
 <p align="center"><a href="https://holder.promptside.studio">holder.promptside.studio</a> · <a href="https://holder.promptside.studio/security">How Holder protects your data</a> · <a href="https://holder.promptside.studio/privacy">Privacy policy</a></p>
