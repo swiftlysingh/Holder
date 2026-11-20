@@ -424,7 +424,8 @@ private final class SimulatorVisionScannerViewController: UIViewController {
 		guard let self, !self.isStopping else { return }
 		self.delegate?.scannerHostDidFailUnsupported()
 	}
-	private var previewLayer: AVCaptureVideoPreviewLayer?
+	private var previewLayer: CALayer?
+	private var previewTask: Task<Void, Never>?
 	private var startTask: Task<Void, Never>?
 	private var didStart = false
 	private var isStopping = false
@@ -451,15 +452,20 @@ private final class SimulatorVisionScannerViewController: UIViewController {
 			return
 		}
 		#endif
-		startTask = Task { [weak self] in
-			guard let self, !Task.isCancelled, !self.isStopping else { return }
-			let previewLayer = await self.capture.makePreviewLayer()
-			guard !Task.isCancelled, !self.isStopping else { return }
-			previewLayer.videoGravity = .resizeAspectFill
-			previewLayer.frame = self.view.bounds
-			self.view.layer.addSublayer(previewLayer)
-			self.previewLayer = previewLayer
-			await self.capture.start()
+		let previewLayer = CALayer()
+		previewLayer.contentsGravity = .resizeAspectFill
+		previewLayer.frame = view.bounds
+		view.layer.addSublayer(previewLayer)
+		self.previewLayer = previewLayer
+		previewTask = Task { [weak self, frames = capture.previewFrames] in
+			for await image in frames {
+				guard let self, !Task.isCancelled, !self.isStopping else { return }
+				self.previewLayer?.contents = image
+			}
+		}
+		startTask = Task { [capture] in
+			guard !Task.isCancelled else { return }
+			await capture.start()
 		}
 	}
 
@@ -467,6 +473,9 @@ private final class SimulatorVisionScannerViewController: UIViewController {
 		isStopping = true
 		startTask?.cancel()
 		startTask = nil
+		previewTask?.cancel()
+		previewTask = nil
+		previewLayer?.contents = nil
 		Task { await capture.stop() }
 	}
 
@@ -494,6 +503,8 @@ private final class SimulatorVisionScannerViewController: UIViewController {
 private actor SimulatorCaptureWorker {
 	nonisolated let executor = DispatchSerialQueue(label: "com.swiftlysingh.cards.simulator-scanner")
 	nonisolated var unownedExecutor: UnownedSerialExecutor { executor.asUnownedSerialExecutor() }
+	nonisolated let previewFrames: AsyncStream<CGImage>
+	private let previewContinuation: AsyncStream<CGImage>.Continuation
 
 	private let session = AVCaptureSession()
 	private let output = AVCaptureVideoDataOutput()
@@ -505,12 +516,11 @@ private actor SimulatorCaptureWorker {
 
 	init(onRecognition: @escaping @MainActor @Sendable ([OCRTextItem]) -> Void,
 	     onFailure: @escaping @MainActor @Sendable () -> Void) {
+		let preview = AsyncStream<CGImage>.makeStream(bufferingPolicy: .bufferingNewest(1))
+		previewFrames = preview.stream
+		previewContinuation = preview.continuation
 		self.onRecognition = onRecognition
 		self.onFailure = onFailure
-	}
-
-	func makePreviewLayer() -> sending AVCaptureVideoPreviewLayer {
-		AVCaptureVideoPreviewLayer(session: session)
 	}
 
 	func start() {
@@ -532,7 +542,7 @@ private actor SimulatorCaptureWorker {
 		output.videoSettings = [
 			kCVPixelBufferPixelFormatTypeKey as String: kCVPixelFormatType_32BGRA
 		]
-		let frameDelegate = SimulatorFrameDelegate { [weak self] image in
+		let frameDelegate = SimulatorFrameDelegate(previewFrames: previewContinuation) { [weak self] image in
 			await self?.process(image)
 		}
 		self.frameDelegate = frameDelegate
@@ -548,6 +558,7 @@ private actor SimulatorCaptureWorker {
 		if session.isRunning { session.stopRunning() }
 		frameDelegate = nil
 		latestImage = nil
+		previewContinuation.finish()
 	}
 
 	var latestImageForCapture: CGImage? { latestImage }
@@ -579,15 +590,22 @@ private nonisolated final class SimulatorFrameDelegate: NSObject, AVCaptureVideo
 	}
 
 	private let onFrame: @Sendable (CGImage) async -> Void
+	private let previewFrames: AsyncStream<CGImage>.Continuation
 	private let frameState = OSAllocatedUnfairLock(initialState: FrameState())
 	private let context = CIContext(options: nil)
 
-	init(onFrame: @escaping @Sendable (CGImage) async -> Void) {
+	init(previewFrames: AsyncStream<CGImage>.Continuation,
+	     onFrame: @escaping @Sendable (CGImage) async -> Void) {
+		self.previewFrames = previewFrames
 		self.onFrame = onFrame
 	}
 
 	func captureOutput(_ output: AVCaptureOutput, didOutput sampleBuffer: CMSampleBuffer,
 	                   from connection: AVCaptureConnection) {
+		guard let pixelBuffer = CMSampleBufferGetImageBuffer(sampleBuffer) else { return }
+		let image = CIImage(cvPixelBuffer: pixelBuffer)
+		guard let cgImage = context.createCGImage(image, from: image.extent) else { return }
+		previewFrames.yield(cgImage)
 		let now = CACurrentMediaTime()
 		guard frameState.withLock({ state in
 			guard !state.isProcessing, now - state.lastFrameTime >= 0.25 else { return false }
@@ -595,15 +613,6 @@ private nonisolated final class SimulatorFrameDelegate: NSObject, AVCaptureVideo
 			state.isProcessing = true
 			return true
 		}) else { return }
-		guard let pixelBuffer = CMSampleBufferGetImageBuffer(sampleBuffer) else {
-			frameState.withLock { $0.isProcessing = false }
-			return
-		}
-		let image = CIImage(cvPixelBuffer: pixelBuffer)
-		guard let cgImage = context.createCGImage(image, from: image.extent) else {
-			frameState.withLock { $0.isProcessing = false }
-			return
-		}
 		Task {
 			await onFrame(cgImage)
 			frameState.withLock { $0.isProcessing = false }
