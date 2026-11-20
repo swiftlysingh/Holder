@@ -154,7 +154,7 @@ private struct HolderOnboardingPresentationModifier: ViewModifier {
 		#else
 		content.sheet(item: $audience, onDismiss: onDismiss) { presentedAudience in
 			onboardingView(for: presentedAudience)
-				.frame(minWidth: 560, minHeight: 680)
+				.frame(width: 520, height: 540)
 				.interactiveDismissDisabled()
 		}
 		#endif
@@ -386,9 +386,18 @@ struct HolderOnboardingView: View {
 		.frame(maxWidth: 560)
 		.padding(.horizontal, 24)
 		.padding(.top, 8)
-		.padding(.bottom, 12)
+		.padding(.bottom, actionsBottomPadding)
 		.frame(maxWidth: .infinity)
 		.id(page)
+	}
+
+	private var actionsBottomPadding: CGFloat {
+		#if os(macOS)
+		// A sheet has no bottom safe area, so the last line needs its own margin.
+		return 20
+		#else
+		return 12
+		#endif
 	}
 
 	private var welcomeReassurance: some View {

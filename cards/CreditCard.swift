@@ -181,8 +181,11 @@ struct CreditCard: App {
         #if os(macOS)
         Window("Holder", id: MainWindowScene.id) {
             rootContent
+                // Tall enough that the onboarding sheet never hangs below the window.
+                .frame(minWidth: 760, minHeight: 620)
                 .background(MainWindowRegistrar(authenticationSession: authenticationSession))
         }
+        .defaultSize(width: 1040, height: 720)
         menuBarScene
         settingsScene
         #else

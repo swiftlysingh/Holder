@@ -87,6 +87,9 @@ struct HomeView: View {
 				}
 				.scrollContentBackground(.hidden)
 			}
+			#if os(macOS)
+			.navigationSplitViewColumnWidth(min: 240, ideal: 280, max: 400)
+			#endif
 			.navigationTitle("Holder")
 			.toolbarTitleDisplayMode(.inlineLarge)
 			.task {
