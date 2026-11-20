@@ -6,8 +6,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/PostHog/posthog-ios.git",
       "state" : {
-        "revision" : "8db6e5dcaa52365257d2f443cf50bfc438f3dd6d",
-        "version" : "3.97.2"
+        "revision" : "a4deb7222130189d7cab89682fd3475ee0ed6e2d",
+        "version" : "3.98.2"
       }
     },
     {
@@ -15,8 +15,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/RevenueCat/purchases-ios.git",
       "state" : {
-        "revision" : "7276de1d6f8b2cd1fe184c1239a6389a53383600",
-        "version" : "5.103.0"
+        "revision" : "a835ead7b1b0439864e2450e17c08be193aec473",
+        "version" : "5.103.2"
       }
     },
     {
@@ -24,8 +24,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/getsentry/sentry-cocoa.git",
       "state" : {
-        "revision" : "aa91bcf6bd6f383dbc49f38bf785d1d775c4f751",
-        "version" : "9.34.0"
+        "revision" : "485e0622e00d60d71eb6b519822188e2eb7c29e3",
+        "version" : "9.35.0"
       }
     },
     {
