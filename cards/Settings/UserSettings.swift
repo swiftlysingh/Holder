@@ -5,8 +5,4 @@ class UserSettings : ObservableObject {
 	private init (){}
 
     @AppStorage("keepInMenuBar") var keepInMenuBar = false
-
-    func requestReview() {
-        ReviewService.requestReview()
-    }
 }
