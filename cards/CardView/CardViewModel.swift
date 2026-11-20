@@ -164,7 +164,7 @@ final class CardViewModel: ObservableObject {
 	}
 }
 
-enum CardEditorStartMode: Equatable {
+nonisolated enum CardEditorStartMode: Equatable, Sendable {
 	case scanner
 	case manual
 }

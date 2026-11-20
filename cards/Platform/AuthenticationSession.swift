@@ -3,7 +3,7 @@ import SwiftUI
 
 protocol DeviceAuthenticating: AnyObject {
     func canEvaluateDeviceOwnerAuthentication() -> Bool
-    func evaluateDeviceOwnerAuthentication(reason: String, reply: @escaping (Bool) -> Void)
+    func evaluateDeviceOwnerAuthentication(reason: String, reply: @escaping @Sendable (Bool) -> Void)
     func invalidate()
 }
 
@@ -11,11 +11,11 @@ protocol DeviceAuthenticatorFactory {
     func makeAuthenticator() -> DeviceAuthenticating
 }
 
-protocol AsyncSleeper {
+nonisolated protocol AsyncSleeper: Sendable {
     func sleep(for duration: Duration) async throws
 }
 
-struct TaskAsyncSleeper: AsyncSleeper {
+nonisolated struct TaskAsyncSleeper: AsyncSleeper {
     func sleep(for duration: Duration) async throws {
         try await Task.sleep(for: duration)
     }
@@ -29,7 +29,7 @@ final class LADeviceAuthenticator: DeviceAuthenticating {
         return context.canEvaluatePolicy(.deviceOwnerAuthentication, error: &error)
     }
 
-    func evaluateDeviceOwnerAuthentication(reason: String, reply: @escaping (Bool) -> Void) {
+    func evaluateDeviceOwnerAuthentication(reason: String, reply: @escaping @Sendable (Bool) -> Void) {
         context.evaluatePolicy(.deviceOwnerAuthentication, localizedReason: reason) { success, _ in
             reply(success)
         }
@@ -61,6 +61,7 @@ final class AuthenticationSession: ObservableObject {
     private let sleeper: AsyncSleeper
     private var activeAuthenticator: DeviceAuthenticating?
     private var authenticationAttemptID: UInt64 = 0
+    private var authenticationCompletion: ((Bool) -> Void)?
     private var backgroundedAt: ContinuousClock.Instant?
     private var sensitiveExpiryTask: Task<Void, Never>?
 
@@ -72,7 +73,7 @@ final class AuthenticationSession: ObservableObject {
         self.sleeper = sleeper
     }
 
-    deinit {
+    isolated deinit {
         activeAuthenticator?.invalidate()
         sensitiveExpiryTask?.cancel()
     }
@@ -175,6 +176,7 @@ final class AuthenticationSession: ObservableObject {
     private func authenticate(reason: String, completion: @escaping (Bool) -> Void) {
         invalidateAuthenticationAttempt()
         authenticationMessage = nil
+        authenticationCompletion = completion
 
         let authenticator = authenticatorFactory.makeAuthenticator()
         activeAuthenticator = authenticator
@@ -186,7 +188,7 @@ final class AuthenticationSession: ObservableObject {
             activeAuthenticator = nil
             isAuthenticating = false
             authenticationMessage = "Authentication isn’t available on this device."
-            completion(false)
+            finishAuthentication(success: false)
             return
         }
 
@@ -196,9 +198,15 @@ final class AuthenticationSession: ObservableObject {
                 self.activeAuthenticator = nil
                 self.isAuthenticating = false
                 self.authenticationMessage = success ? nil : "Authentication wasn’t completed. Try again when you’re ready."
-                completion(success)
+                self.finishAuthentication(success: success)
             }
         }
+    }
+
+    private func finishAuthentication(success: Bool) {
+        let completion = authenticationCompletion
+        authenticationCompletion = nil
+        completion?(success)
     }
 
     private func beginSensitiveAccessWindow() {
@@ -223,6 +231,7 @@ final class AuthenticationSession: ObservableObject {
         activeAuthenticator?.invalidate()
         activeAuthenticator = nil
         isAuthenticating = false
+        authenticationCompletion = nil
     }
 }
 

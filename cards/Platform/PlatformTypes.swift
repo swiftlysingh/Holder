@@ -9,7 +9,7 @@ import UIKit
 public typealias PlatformImage = UIImage
 #endif
 
-enum CardImageData {
+nonisolated enum CardImageData {
 	/// Longest edge stored and decoded for card photos. Camera-roll images can
 	/// be tens of megapixels; `UIImage(data:)` / `NSImage(data:)` leave that
 	/// decode until first draw, which hangs the main thread in malloc.
@@ -53,11 +53,8 @@ enum CardImageData {
 		return jpegData(from: cgImage, compressionQuality: compressionQuality)
 	}
 
-	private static let sourceOptions: CFDictionary = [
-		kCGImageSourceShouldCache: false
-	] as CFDictionary
-
 	private static func thumbnailCGImage(from data: Data, maxPixelSize: Int = maxPixelSize) -> CGImage? {
+		let sourceOptions = [kCGImageSourceShouldCache: false] as CFDictionary
 		guard let source = CGImageSourceCreateWithData(data as CFData, sourceOptions) else {
 			return nil
 		}

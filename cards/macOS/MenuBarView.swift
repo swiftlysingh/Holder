@@ -3,7 +3,7 @@ import AppKit
 import SinghDevKit
 import SwiftUI
 
-enum MenuBarContentState: Equatable {
+nonisolated enum MenuBarContentState: Equatable {
     case unavailable
     case empty
     case cards
@@ -38,6 +38,7 @@ private struct MenuBarPanelObserver: NSViewRepresentable {
         view.onDisappear = onDisappear
     }
 
+    @MainActor
     private final class PanelObserverView: NSView {
         var onAppear: (() -> Void)?
         var onDisappear: (() -> Void)?
@@ -53,14 +54,18 @@ private struct MenuBarPanelObserver: NSViewRepresentable {
                 object: window,
                 queue: .main
             ) { [weak self] _ in
-                self?.onAppear?()
+                Task { @MainActor in
+                    self?.onAppear?()
+                }
             })
             observers.append(NotificationCenter.default.addObserver(
                 forName: NSWindow.didResignKeyNotification,
                 object: window,
                 queue: .main
             ) { [weak self] _ in
-                self?.onDisappear?()
+                Task { @MainActor in
+                    self?.onDisappear?()
+                }
             })
 
             if window.isKeyWindow {
@@ -68,7 +73,7 @@ private struct MenuBarPanelObserver: NSViewRepresentable {
             }
         }
 
-        deinit {
+        isolated deinit {
             removeObservers()
         }
 

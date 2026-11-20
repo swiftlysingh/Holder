@@ -1,6 +1,6 @@
 import Foundation
 
-struct CardData : Identifiable, Codable, Hashable {
+nonisolated struct CardData : Identifiable, Codable, Hashable, Sendable {
 	var id: UUID
 	var number : String
 	var cvv : String
@@ -82,7 +82,7 @@ struct CardData : Identifiable, Codable, Hashable {
 	}
 }
 
-enum CardType: String, CaseIterable, Identifiable, Codable {
+nonisolated enum CardType: String, CaseIterable, Identifiable, Codable, Sendable {
 	var id: Self {
 		return self
 	}
@@ -115,7 +115,7 @@ enum CardType: String, CaseIterable, Identifiable, Codable {
 
 }
 
-enum CardNetwork: String, CaseIterable, Identifiable, Codable {
+nonisolated enum CardNetwork: String, CaseIterable, Identifiable, Codable, Sendable {
 	var id: Self {
 		return self
 	}
@@ -132,7 +132,7 @@ enum CardNetwork: String, CaseIterable, Identifiable, Codable {
 
 }
 
-extension CardData {
+nonisolated extension CardData {
 	func toData() throws -> Data {
 		let encoder = JSONEncoder()
 		return try encoder.encode(self)

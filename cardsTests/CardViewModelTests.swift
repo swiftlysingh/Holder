@@ -1,4 +1,5 @@
 import XCTest
+import os
 @testable import Holder
 
 #if os(macOS)
@@ -7,20 +8,22 @@ import AppKit
 import UIKit
 #endif
 
-@MainActor
 final class CardViewModelTests: XCTestCase {
-	func testManualStartModeIsStoredForTheAddCardFlow() {
+	@MainActor
+	func testManualStartModeIsStoredForTheAddCardFlow() async {
 		let model = makeAddCardModel(startMode: .manual)
 
 		XCTAssertEqual(model.startMode, .manual)
 	}
 
-	func testScannerRemainsTheDefaultAddCardStartMode() {
+	@MainActor
+	func testScannerRemainsTheDefaultAddCardStartMode() async {
 		let model = makeAddCardModel()
 
 		XCTAssertEqual(model.startMode, .scanner)
 	}
 
+	@MainActor
 	func testInitDoesNotWaitForCardImageLoad() async {
 		let imageStore = GatedCardImageStore()
 		let model = makeModel(imageStore: imageStore)
@@ -35,7 +38,8 @@ final class CardViewModelTests: XCTestCase {
 		XCTAssertNil(model.cardImage)
 	}
 
-	func testImageDataNormalizerConvertsPNGToJPEG() throws {
+	@MainActor
+	func testImageDataNormalizerConvertsPNGToJPEG() async throws {
 		let png = try makePNGData()
 
 		let jpeg = try XCTUnwrap(CardImageData.normalizedJPEG(from: png))
@@ -45,6 +49,7 @@ final class CardViewModelTests: XCTestCase {
 		XCTAssertNotNil(PlatformImage(data: jpeg))
 	}
 
+	@MainActor
 	func testLoadingExistingImageDoesNotRewriteItsData() async throws {
 		let directory = FileManager.default.temporaryDirectory
 			.appendingPathComponent("holder-existing-image-\(UUID().uuidString)", isDirectory: true)
@@ -63,6 +68,7 @@ final class CardViewModelTests: XCTestCase {
 		XCTAssertEqual(try Data(contentsOf: imageURL), existingData)
 	}
 
+	@MainActor
 	func testICloudDirectoryRetriesAndNormalizesAfterTransientUnavailability() async throws {
 		let directory = FileManager.default.temporaryDirectory
 			.appendingPathComponent("holder-icloud-test-\(UUID().uuidString)", isDirectory: true)
@@ -96,7 +102,8 @@ final class CardViewModelTests: XCTestCase {
 		XCTAssertFalse(resolver.didResolveOnMainThread)
 	}
 
-	func testCopyActionWritesNonEmptyValueToPasteboard() {
+	@MainActor
+	func testCopyActionWritesNonEmptyValueToPasteboard() async {
 		let model = makeModel(imageStore: EmptyCardImageStore())
 		let value = "4111111111111111"
 
@@ -108,7 +115,8 @@ final class CardViewModelTests: XCTestCase {
 		#endif
 	}
 
-	func testCopyActionRejectsEmptyValueWithoutChangingPasteboard() {
+	@MainActor
+	func testCopyActionRejectsEmptyValueWithoutChangingPasteboard() async {
 		let model = makeModel(imageStore: EmptyCardImageStore())
 		let existing = "keep-me"
 		PasteboardService.copy(existing)
@@ -121,6 +129,7 @@ final class CardViewModelTests: XCTestCase {
 		#endif
 	}
 
+	@MainActor
 	func testSaveCardPreventsReentryAndOnlyLeavesEditingAfterSuccess() async {
 		let saver = GatedCardSaveAction()
 		let model = CardViewModel(
@@ -161,6 +170,7 @@ final class CardViewModelTests: XCTestCase {
 		XCTAssertEqual(finalSaveCount, 2)
 	}
 
+	@MainActor
 	private func makeModel(imageStore: CardImageStore) -> CardViewModel {
 		CardViewModel(
 			card: CardData(
@@ -177,6 +187,7 @@ final class CardViewModelTests: XCTestCase {
 		)
 	}
 
+	@MainActor
 	private func makeAddCardModel(startMode: CardEditorStartMode? = nil) -> CardViewModel {
 		let card = CardData(
 			id: UUID(),
@@ -206,6 +217,7 @@ final class CardViewModelTests: XCTestCase {
 		)
 	}
 
+	@MainActor
 	private func makePNGData() throws -> Data {
 		#if os(macOS)
 		let bitmap = try XCTUnwrap(NSBitmapImageRep(
@@ -300,29 +312,32 @@ private actor GatedCardSaveAction {
 	}
 }
 
-private final class SequentialDirectoryResolver: @unchecked Sendable {
-	private let lock = NSLock()
-	private var results: [URL?]
-	private var callCountStorage = 0
-	private var didResolveOnMainThreadStorage = false
+private final class SequentialDirectoryResolver: Sendable {
+	private struct State: Sendable {
+		var results: [URL?]
+		var callCount = 0
+		var didResolveOnMainThread = false
+	}
+
+	private let state: OSAllocatedUnfairLock<State>
 
 	init(results: [URL?]) {
-		self.results = results
+		state = OSAllocatedUnfairLock(initialState: State(results: results))
 	}
 
 	func resolve() -> URL? {
-		lock.withLock {
-			callCountStorage += 1
-			didResolveOnMainThreadStorage = didResolveOnMainThreadStorage || Thread.isMainThread
-			return results.isEmpty ? nil : results.removeFirst()
+		state.withLock {
+			$0.callCount += 1
+			$0.didResolveOnMainThread = $0.didResolveOnMainThread || Thread.isMainThread
+			return $0.results.isEmpty ? nil : $0.results.removeFirst()
 		}
 	}
 
 	var callCount: Int {
-		lock.withLock { callCountStorage }
+		state.withLock { $0.callCount }
 	}
 
 	var didResolveOnMainThread: Bool {
-		lock.withLock { didResolveOnMainThreadStorage }
+		state.withLock { $0.didResolveOnMainThread }
 	}
 }

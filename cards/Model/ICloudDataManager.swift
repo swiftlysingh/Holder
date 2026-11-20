@@ -1,18 +1,26 @@
 import Foundation
 
-protocol CardImageStore: AnyObject, Sendable {
+nonisolated protocol CardImageStore: AnyObject, Sendable {
 	func loadImageData(for uuid: UUID) async -> Data?
 	func saveImageData(_ data: Data, for uuid: UUID) async -> Bool
 	func deleteImage(for uuid: UUID) async -> Bool
 }
 
-/// `ioQueue` serializes all mutable state and every resolver/file operation.
-final class ICloudDataManager: CardImageStore, @unchecked Sendable {
+/// A dedicated serial executor keeps blocking image I/O off the main actor.
+actor ICloudDataManager: CardImageStore {
 
 	static let shared = ICloudDataManager()
 
+	nonisolated private let ioQueue = DispatchSerialQueue(
+		label: "com.swiftlysingh.holder.icloud",
+		qos: .userInitiated
+	)
+
+	nonisolated var unownedExecutor: UnownedSerialExecutor {
+		ioQueue.asUnownedSerialExecutor()
+	}
+
 	private let fileManager = FileManager.default
-	private let ioQueue = DispatchQueue(label: "com.swiftlysingh.holder.icloud", qos: .userInitiated)
 	private let directoryResolver: @Sendable () -> URL?
 	private var cachedDirectory: URL?
 
@@ -27,38 +35,9 @@ final class ICloudDataManager: CardImageStore, @unchecked Sendable {
 		self.directoryResolver = directoryResolver
 	}
 
-	func loadImageData(for uuid: UUID) async -> Data? {
-		await performOnIOQueue { manager in
-			manager.loadImageDataOnIOQueue(for: uuid)
-		}
-	}
-
-	func saveImageData(_ data: Data, for uuid: UUID) async -> Bool {
-		await performOnIOQueue { manager in
-			manager.saveImageDataOnIOQueue(data, for: uuid)
-		}
-	}
-
-	func deleteImage(for uuid: UUID) async -> Bool {
-		await performOnIOQueue { manager in
-			manager.deleteImageOnIOQueue(for: uuid)
-		}
-	}
-
-	private func performOnIOQueue<Value: Sendable>(
-		_ operation: @escaping @Sendable (ICloudDataManager) -> Value
-	) async -> Value {
-		await withCheckedContinuation { continuation in
-			ioQueue.async {
-				continuation.resume(returning: operation(self))
-			}
-		}
-	}
-
 	/// Apple documents `url(forUbiquityContainerIdentifier:)` as unsafe on the main
-	/// thread because it can take several seconds. Always resolve it on `ioQueue`.
-	private func directoryOnIOQueue() -> URL? {
-		dispatchPrecondition(condition: .onQueue(ioQueue))
+	/// thread because it can take several seconds. Resolve it on this actor.
+	private func directory() -> URL? {
 		if let cachedDirectory {
 			return cachedDirectory
 		}
@@ -78,12 +57,12 @@ final class ICloudDataManager: CardImageStore, @unchecked Sendable {
 		}
 	}
 
-	private func getImageURLOnIOQueue(for uuid: UUID) -> URL? {
-		directoryOnIOQueue()?.appendingPathComponent("\(uuid.uuidString).jpg")
+	private func imageURL(for uuid: UUID) -> URL? {
+		directory()?.appendingPathComponent("\(uuid.uuidString).jpg")
 	}
 
-	private func saveImageDataOnIOQueue(_ data: Data, for uuid: UUID) -> Bool {
-		guard let imageURL = getImageURLOnIOQueue(for: uuid) else {
+	func saveImageData(_ data: Data, for uuid: UUID) async -> Bool {
+		guard let imageURL = imageURL(for: uuid) else {
 			print("Error: Cannot save image - iCloud is not available")
 			return false
 		}
@@ -102,8 +81,8 @@ final class ICloudDataManager: CardImageStore, @unchecked Sendable {
 		}
 	}
 
-	private func loadImageDataOnIOQueue(for uuid: UUID) -> Data? {
-		guard let imageURL = getImageURLOnIOQueue(for: uuid) else { return nil }
+	func loadImageData(for uuid: UUID) async -> Data? {
+		guard let imageURL = imageURL(for: uuid) else { return nil }
 		do {
 			return try Data(contentsOf: imageURL)
 		} catch {
@@ -114,8 +93,8 @@ final class ICloudDataManager: CardImageStore, @unchecked Sendable {
 		}
 	}
 
-	private func deleteImageOnIOQueue(for uuid: UUID) -> Bool {
-		guard let imageURL = getImageURLOnIOQueue(for: uuid) else { return false }
+	func deleteImage(for uuid: UUID) async -> Bool {
+		guard let imageURL = imageURL(for: uuid) else { return false }
 		do {
 			try fileManager.removeItem(at: imageURL)
 			return true
