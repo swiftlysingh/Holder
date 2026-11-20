@@ -454,6 +454,7 @@ private final class SimulatorVisionScannerViewController: UIViewController {
 		#endif
 		let previewLayer = CALayer()
 		previewLayer.contentsGravity = .resizeAspectFill
+		previewLayer.masksToBounds = true
 		previewLayer.frame = view.bounds
 		view.layer.addSublayer(previewLayer)
 		self.previewLayer = previewLayer
@@ -508,6 +509,7 @@ private actor SimulatorCaptureWorker {
 
 	private let session = AVCaptureSession()
 	private let output = AVCaptureVideoDataOutput()
+	private let frameQueue = DispatchQueue(label: "com.swiftlysingh.cards.simulator-frames")
 	private var frameDelegate: SimulatorFrameDelegate?
 	private var latestImage: CGImage?
 	private var isStopping = false
@@ -546,7 +548,7 @@ private actor SimulatorCaptureWorker {
 			await self?.process(image)
 		}
 		self.frameDelegate = frameDelegate
-		output.setSampleBufferDelegate(frameDelegate, queue: executor)
+		output.setSampleBufferDelegate(frameDelegate, queue: frameQueue)
 		session.addOutput(output)
 		session.commitConfiguration()
 		if !isStopping { session.startRunning() }
@@ -585,6 +587,7 @@ private actor SimulatorCaptureWorker {
 
 private nonisolated final class SimulatorFrameDelegate: NSObject, AVCaptureVideoDataOutputSampleBufferDelegate, Sendable {
 	private struct FrameState: Sendable {
+		var lastPreviewTime: CFTimeInterval = 0
 		var lastFrameTime: CFTimeInterval = 0
 		var isProcessing = false
 	}
@@ -602,11 +605,17 @@ private nonisolated final class SimulatorFrameDelegate: NSObject, AVCaptureVideo
 
 	func captureOutput(_ output: AVCaptureOutput, didOutput sampleBuffer: CMSampleBuffer,
 	                   from connection: AVCaptureConnection) {
+		let now = CACurrentMediaTime()
+		// Bound full-resolution conversion to 15 fps before allocating preview images.
+		guard frameState.withLock({ state in
+			guard now - state.lastPreviewTime >= 1.0 / 15 else { return false }
+			state.lastPreviewTime = now
+			return true
+		}) else { return }
 		guard let pixelBuffer = CMSampleBufferGetImageBuffer(sampleBuffer) else { return }
 		let image = CIImage(cvPixelBuffer: pixelBuffer)
 		guard let cgImage = context.createCGImage(image, from: image.extent) else { return }
 		previewFrames.yield(cgImage)
-		let now = CACurrentMediaTime()
 		guard frameState.withLock({ state in
 			guard !state.isProcessing, now - state.lastFrameTime >= 0.25 else { return false }
 			state.lastFrameTime = now
