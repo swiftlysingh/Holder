@@ -2,6 +2,7 @@
 import AVFoundation
 import CoreImage
 import CoreImage.CIFilterBuiltins
+import os
 import SwiftUI
 import Vision
 import VisionKit
@@ -292,7 +293,7 @@ private final class VisionScannerHostViewController: UIViewController {
 
 	func captureStill() async -> UIImage? {
 		#if targetEnvironment(simulator)
-		return simulatorScanner?.captureStill()
+		return await simulatorScanner?.captureStill()
 		#else
 		guard wantsScanning, let scanner, scanner.isScanning else { return nil }
 		return try? await scanner.capturePhoto()
@@ -414,31 +415,26 @@ private final class VisionScannerHostViewController: UIViewController {
 
 #if targetEnvironment(simulator)
 /// VisionKit's live scanner is unavailable on Simulator.
-private final class SimulatorVisionScannerViewController: UIViewController, AVCaptureVideoDataOutputSampleBufferDelegate {
+private final class SimulatorVisionScannerViewController: UIViewController {
 	weak var delegate: VisionScannerHostDelegate?
-
-	private let captureSession = AVCaptureSession()
-	private let captureQueue = DispatchQueue(label: "com.swiftlysingh.cards.simulator-scanner")
-	private let videoOutput = AVCaptureVideoDataOutput()
-	private let imageContext = CIContext(options: nil)
-	private let imageLock = NSLock()
-	private var latestImage: UIImage?
+	private lazy var capture = SimulatorCaptureWorker { [weak self] items in
+		guard let self, !self.isStopping else { return }
+		self.delegate?.scannerHostDidRecognize(items)
+	} onFailure: { [weak self] in
+		guard let self, !self.isStopping else { return }
+		self.delegate?.scannerHostDidFailUnsupported()
+	}
 	private var previewLayer: AVCaptureVideoPreviewLayer?
+	private var startTask: Task<Void, Never>?
+	private var didStart = false
+	private var isStopping = false
 	#if DEBUG
 	private var screenshotFixtureView: ScreenshotScannerFixtureView?
 	#endif
-	private var lastRecognitionTime: CFTimeInterval = 0
-	private var didStart = false
-	private var isStopping = false
 
 	override func viewDidLoad() {
 		super.viewDidLoad()
 		view.backgroundColor = .black
-
-		let previewLayer = AVCaptureVideoPreviewLayer(session: captureSession)
-		previewLayer.videoGravity = .resizeAspectFill
-		view.layer.addSublayer(previewLayer)
-		self.previewLayer = previewLayer
 	}
 
 	override func viewDidLayoutSubviews() {
@@ -447,36 +443,36 @@ private final class SimulatorVisionScannerViewController: UIViewController, AVCa
 	}
 
 	func startScanning() {
-		guard !didStart else { return }
+		guard !didStart, !isStopping else { return }
 		didStart = true
-
 		#if DEBUG
 		if Self.isScreenshotFixtureEnabled {
 			installScreenshotFixture()
 			return
 		}
 		#endif
-
-		captureQueue.async { [weak self] in
-			self?.configureAndStart()
+		startTask = Task { [weak self] in
+			guard let self, !Task.isCancelled, !self.isStopping else { return }
+			let previewLayer = await self.capture.makePreviewLayer()
+			guard !Task.isCancelled, !self.isStopping else { return }
+			previewLayer.videoGravity = .resizeAspectFill
+			previewLayer.frame = self.view.bounds
+			self.view.layer.addSublayer(previewLayer)
+			self.previewLayer = previewLayer
+			await self.capture.start()
 		}
 	}
 
 	func stopScanning() {
-		captureQueue.async { [weak self] in
-			guard let self else { return }
-			self.isStopping = true
-			self.videoOutput.setSampleBufferDelegate(nil, queue: nil)
-			if self.captureSession.isRunning {
-				self.captureSession.stopRunning()
-			}
-		}
+		isStopping = true
+		startTask?.cancel()
+		startTask = nil
+		Task { await capture.stop() }
 	}
 
-	func captureStill() -> UIImage? {
-		imageLock.lock()
-		defer { imageLock.unlock() }
-		return latestImage
+	func captureStill() async -> UIImage? {
+		guard !isStopping, let image = await capture.latestImageForCapture else { return nil }
+		return UIImage(cgImage: image)
 	}
 
 	#if DEBUG
@@ -493,85 +489,124 @@ private final class SimulatorVisionScannerViewController: UIViewController, AVCa
 		screenshotFixtureView = fixtureView
 	}
 	#endif
+}
 
-	private func configureAndStart() {
+private actor SimulatorCaptureWorker {
+	nonisolated let executor = DispatchSerialQueue(label: "com.swiftlysingh.cards.simulator-scanner")
+	nonisolated var unownedExecutor: UnownedSerialExecutor { executor.asUnownedSerialExecutor() }
+
+	private let session = AVCaptureSession()
+	private let output = AVCaptureVideoDataOutput()
+	private var frameDelegate: SimulatorFrameDelegate?
+	private var latestImage: CGImage?
+	private var isStopping = false
+	private let onRecognition: @MainActor @Sendable ([OCRTextItem]) -> Void
+	private let onFailure: @MainActor @Sendable () -> Void
+
+	init(onRecognition: @escaping @MainActor @Sendable ([OCRTextItem]) -> Void,
+	     onFailure: @escaping @MainActor @Sendable () -> Void) {
+		self.onRecognition = onRecognition
+		self.onFailure = onFailure
+	}
+
+	func makePreviewLayer() -> sending AVCaptureVideoPreviewLayer {
+		AVCaptureVideoPreviewLayer(session: session)
+	}
+
+	func start() {
 		guard !isStopping else { return }
 		guard let device = AVCaptureDevice.default(for: .video),
 			  let input = try? AVCaptureDeviceInput(device: device) else {
-			failUnsupported()
+			Task { @MainActor in onFailure() }
 			return
 		}
-
-		captureSession.beginConfiguration()
-		captureSession.sessionPreset = .hd1920x1080
-
-		guard captureSession.canAddInput(input), captureSession.canAddOutput(videoOutput) else {
-			captureSession.commitConfiguration()
-			failUnsupported()
+		session.beginConfiguration()
+		session.sessionPreset = .hd1920x1080
+		guard session.canAddInput(input), session.canAddOutput(output) else {
+			session.commitConfiguration()
+			Task { @MainActor in onFailure() }
 			return
 		}
-
-		captureSession.addInput(input)
-		videoOutput.alwaysDiscardsLateVideoFrames = true
-		videoOutput.videoSettings = [
+		session.addInput(input)
+		output.alwaysDiscardsLateVideoFrames = true
+		output.videoSettings = [
 			kCVPixelBufferPixelFormatTypeKey as String: kCVPixelFormatType_32BGRA
 		]
-		videoOutput.setSampleBufferDelegate(self, queue: captureQueue)
-		captureSession.addOutput(videoOutput)
-		captureSession.commitConfiguration()
-
-		guard !isStopping else { return }
-		captureSession.startRunning()
+		let frameDelegate = SimulatorFrameDelegate { [weak self] image in
+			await self?.process(image)
+		}
+		self.frameDelegate = frameDelegate
+		output.setSampleBufferDelegate(frameDelegate, queue: executor)
+		session.addOutput(output)
+		session.commitConfiguration()
+		if !isStopping { session.startRunning() }
 	}
 
-	func captureOutput(
-		_ output: AVCaptureOutput,
-		didOutput sampleBuffer: CMSampleBuffer,
-		from connection: AVCaptureConnection
-	) {
+	func stop() {
+		isStopping = true
+		output.setSampleBufferDelegate(nil, queue: nil)
+		if session.isRunning { session.stopRunning() }
+		frameDelegate = nil
+		latestImage = nil
+	}
+
+	var latestImageForCapture: CGImage? { latestImage }
+
+	private func process(_ image: CGImage) {
 		guard !isStopping else { return }
-		let now = CACurrentMediaTime()
-		guard now - lastRecognitionTime >= 0.25 else { return }
-		lastRecognitionTime = now
-
-		guard let pixelBuffer = CMSampleBufferGetImageBuffer(sampleBuffer) else { return }
-		let image = CIImage(cvPixelBuffer: pixelBuffer)
-		guard let cgImage = imageContext.createCGImage(image, from: image.extent) else { return }
-
-		imageLock.lock()
-		latestImage = UIImage(cgImage: cgImage)
-		imageLock.unlock()
-
+		latestImage = image
 		let request = VNRecognizeTextRequest()
 		request.recognitionLevel = .fast
 		request.usesLanguageCorrection = false
 		request.minimumTextHeight = 0.015
-
 		do {
-			try VNImageRequestHandler(cgImage: cgImage, orientation: .up, options: [:]).perform([request])
-		} catch {
-			return
-		}
-
+			try VNImageRequestHandler(cgImage: image, orientation: .up, options: [:]).perform([request])
+		} catch { return }
 		let items = (request.results ?? []).compactMap { observation -> OCRTextItem? in
 			let candidates = observation.topCandidates(5).map(\.string)
 			guard let text = candidates.first, !text.isEmpty else { return nil }
-			return OCRTextItem(
-				text: text,
-				candidates: candidates,
-				boundingBox: observation.boundingBox
-			)
+			return OCRTextItem(text: text, candidates: candidates, boundingBox: observation.boundingBox)
 		}
-		guard !items.isEmpty else { return }
+		guard !items.isEmpty, !isStopping else { return }
+		Task { @MainActor in onRecognition(items) }
+	}
+}
 
-		DispatchQueue.main.async { [weak self] in
-			self?.delegate?.scannerHostDidRecognize(items)
-		}
+private nonisolated final class SimulatorFrameDelegate: NSObject, AVCaptureVideoDataOutputSampleBufferDelegate, Sendable {
+	private struct FrameState: Sendable {
+		var lastFrameTime: CFTimeInterval = 0
+		var isProcessing = false
 	}
 
-	private func failUnsupported() {
-		DispatchQueue.main.async { [weak self] in
-			self?.delegate?.scannerHostDidFailUnsupported()
+	private let onFrame: @Sendable (CGImage) async -> Void
+	private let frameState = OSAllocatedUnfairLock(initialState: FrameState())
+	private let context = CIContext(options: nil)
+
+	init(onFrame: @escaping @Sendable (CGImage) async -> Void) {
+		self.onFrame = onFrame
+	}
+
+	func captureOutput(_ output: AVCaptureOutput, didOutput sampleBuffer: CMSampleBuffer,
+	                   from connection: AVCaptureConnection) {
+		let now = CACurrentMediaTime()
+		guard frameState.withLock({ state in
+			guard !state.isProcessing, now - state.lastFrameTime >= 0.25 else { return false }
+			state.lastFrameTime = now
+			state.isProcessing = true
+			return true
+		}) else { return }
+		guard let pixelBuffer = CMSampleBufferGetImageBuffer(sampleBuffer) else {
+			frameState.withLock { $0.isProcessing = false }
+			return
+		}
+		let image = CIImage(cvPixelBuffer: pixelBuffer)
+		guard let cgImage = context.createCGImage(image, from: image.extent) else {
+			frameState.withLock { $0.isProcessing = false }
+			return
+		}
+		Task {
+			await onFrame(cgImage)
+			frameState.withLock { $0.isProcessing = false }
 		}
 	}
 }
@@ -715,9 +750,13 @@ private final class ScannerOverlayView: UIView {
 	}
 }
 
-enum VisionStillVerifier {
+nonisolated enum VisionStillVerifier {
 	static func recognize(in image: UIImage, expecting expectedPAN: String) async -> CardFrameObservation? {
 		guard let cgImage = image.cgImage else { return nil }
+		return await recognize(cgImage: cgImage, expecting: expectedPAN)
+	}
+
+	@concurrent private static func recognize(cgImage: CGImage, expecting expectedPAN: String) async -> CardFrameObservation? {
 
 		guard let correctedImage = perspectiveCorrected(cgImage) else {
 			return observation(from: await recognizeText(in: cgImage, level: .accurate), expecting: expectedPAN)

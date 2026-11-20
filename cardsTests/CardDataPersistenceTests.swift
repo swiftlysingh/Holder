@@ -1,4 +1,5 @@
 import XCTest
+import os
 @testable import Holder
 
 final class CardDataPersistenceTests: XCTestCase {
@@ -351,17 +352,16 @@ final class CardDataPersistenceTests: XCTestCase {
 
 }
 
-private final class CardPayloadRetrievalStub: @unchecked Sendable {
-	private let lock = NSLock()
-	private var resultStorage: CardPayloadRetrievalResult
+private final class CardPayloadRetrievalStub: Sendable {
+	private let resultStorage: OSAllocatedUnfairLock<CardPayloadRetrievalResult>
 
 	init(result: CardPayloadRetrievalResult) {
-		resultStorage = result
+		resultStorage = OSAllocatedUnfairLock(initialState: result)
 	}
 
 	var result: CardPayloadRetrievalResult {
-		get { lock.withLock { resultStorage } }
-		set { lock.withLock { resultStorage = newValue } }
+		get { resultStorage.withLock { $0 } }
+		set { resultStorage.withLock { $0 = newValue } }
 	}
 }
 
@@ -381,45 +381,51 @@ private actor TestCardImageStore: CardImageStore {
 	}
 }
 
-private final class MutationCallRecorder: @unchecked Sendable {
-	private let lock = NSLock()
-	private var saves = 0
-	private var deletes = 0
+private final class MutationCallRecorder: Sendable {
+	private struct State: Sendable {
+		var saves = 0
+		var deletes = 0
+	}
+
+	private let state = OSAllocatedUnfairLock(initialState: State())
 
 	func recordSave() {
-		lock.withLock { saves += 1 }
+		state.withLock { $0.saves += 1 }
 	}
 
 	func recordDelete() {
-		lock.withLock { deletes += 1 }
+		state.withLock { $0.deletes += 1 }
 	}
 
-	var saveCount: Int { lock.withLock { saves } }
-	var deleteCount: Int { lock.withLock { deletes } }
+	var saveCount: Int { state.withLock { $0.saves } }
+	var deleteCount: Int { state.withLock { $0.deletes } }
 }
 
-private final class BlockingDeletePersistence: @unchecked Sendable {
-	private let lock = NSLock()
+private final class BlockingDeletePersistence: Sendable {
+	private struct State: Sendable {
+		var payload: Data?
+		var saves = 0
+	}
+
+	private let state: OSAllocatedUnfairLock<State>
 	private let deleteStarted = DispatchGroup()
 	private let finishDelete = DispatchSemaphore(value: 0)
-	private var payload: Data?
-	private var saves = 0
 
 	init(payload: Data) {
-		self.payload = payload
+		state = OSAllocatedUnfairLock(initialState: State(payload: payload))
 		deleteStarted.enter()
 	}
 
 	func retrieve() -> CardPayloadRetrievalResult {
-		lock.withLock {
-			payload.map { .success([$0]) } ?? .empty
+		state.withLock {
+			$0.payload.map { .success([$0]) } ?? .empty
 		}
 	}
 
 	func save(_ data: Data) -> Bool {
-		lock.withLock {
-			saves += 1
-			payload = data
+		state.withLock {
+			$0.saves += 1
+			$0.payload = data
 		}
 		return true
 	}
@@ -427,7 +433,7 @@ private final class BlockingDeletePersistence: @unchecked Sendable {
 	func delete() -> Bool {
 		deleteStarted.leave()
 		finishDelete.wait()
-		lock.withLock { payload = nil }
+		state.withLock { $0.payload = nil }
 		return true
 	}
 
@@ -443,7 +449,7 @@ private final class BlockingDeletePersistence: @unchecked Sendable {
 		finishDelete.signal()
 	}
 
-	var saveCount: Int { lock.withLock { saves } }
+	var saveCount: Int { state.withLock { $0.saves } }
 }
 
 private actor LoadCommitGate {

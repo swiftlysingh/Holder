@@ -53,11 +53,8 @@ nonisolated enum CardImageData {
 		return jpegData(from: cgImage, compressionQuality: compressionQuality)
 	}
 
-	private static let sourceOptions: CFDictionary = [
-		kCGImageSourceShouldCache: false
-	] as CFDictionary
-
 	private static func thumbnailCGImage(from data: Data, maxPixelSize: Int = maxPixelSize) -> CGImage? {
+		let sourceOptions = [kCGImageSourceShouldCache: false] as CFDictionary
 		guard let source = CGImageSourceCreateWithData(data as CFData, sourceOptions) else {
 			return nil
 		}

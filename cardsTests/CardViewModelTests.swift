@@ -1,4 +1,5 @@
 import XCTest
+import os
 @testable import Holder
 
 #if os(macOS)
@@ -311,29 +312,32 @@ private actor GatedCardSaveAction {
 	}
 }
 
-private final class SequentialDirectoryResolver: @unchecked Sendable {
-	private let lock = NSLock()
-	private var results: [URL?]
-	private var callCountStorage = 0
-	private var didResolveOnMainThreadStorage = false
+private final class SequentialDirectoryResolver: Sendable {
+	private struct State: Sendable {
+		var results: [URL?]
+		var callCount = 0
+		var didResolveOnMainThread = false
+	}
+
+	private let state: OSAllocatedUnfairLock<State>
 
 	init(results: [URL?]) {
-		self.results = results
+		state = OSAllocatedUnfairLock(initialState: State(results: results))
 	}
 
 	func resolve() -> URL? {
-		lock.withLock {
-			callCountStorage += 1
-			didResolveOnMainThreadStorage = didResolveOnMainThreadStorage || Thread.isMainThread
-			return results.isEmpty ? nil : results.removeFirst()
+		state.withLock {
+			$0.callCount += 1
+			$0.didResolveOnMainThread = $0.didResolveOnMainThread || Thread.isMainThread
+			return $0.results.isEmpty ? nil : $0.results.removeFirst()
 		}
 	}
 
 	var callCount: Int {
-		lock.withLock { callCountStorage }
+		state.withLock { $0.callCount }
 	}
 
 	var didResolveOnMainThread: Bool {
-		lock.withLock { didResolveOnMainThreadStorage }
+		state.withLock { $0.didResolveOnMainThread }
 	}
 }

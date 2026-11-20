@@ -1,9 +1,9 @@
 import XCTest
 @testable import Holder
 
-@MainActor
 final class HomeViewModelTests: XCTestCase {
-	func testSelectingACardWhileAddingDoesNotNavigateUntilTheSheetDismisses() {
+	@MainActor
+	func testSelectingACardWhileAddingDoesNotNavigateUntilTheSheetDismisses() async {
 		let model = HomeViewModel(cardDataStore: emptyCardStore())
 		let card = makeCard()
 
@@ -19,7 +19,8 @@ final class HomeViewModelTests: XCTestCase {
 		XCTAssertEqual(model.selectedCard?.id, card.id)
 	}
 
-	func testSelectingACardWhenTheAddSheetIsClosedNavigatesImmediately() {
+	@MainActor
+	func testSelectingACardWhenTheAddSheetIsClosedNavigatesImmediately() async {
 		let model = HomeViewModel(cardDataStore: emptyCardStore())
 		let card = makeCard()
 
@@ -28,7 +29,8 @@ final class HomeViewModelTests: XCTestCase {
 		XCTAssertEqual(model.selectedCard?.id, card.id)
 	}
 
-	func testFinishingAddCardDefersDetailsUntilSheetDismissCompletes() {
+	@MainActor
+	func testFinishingAddCardDefersDetailsUntilSheetDismissCompletes() async {
 		let model = HomeViewModel(cardDataStore: emptyCardStore())
 		let card = makeCard()
 
@@ -43,7 +45,8 @@ final class HomeViewModelTests: XCTestCase {
 		XCTAssertEqual(model.selectedCard?.id, card.id)
 	}
 
-	func testDismissingTheAddSheetWithoutAPendingCardDoesNotChangeSelection() {
+	@MainActor
+	func testDismissingTheAddSheetWithoutAPendingCardDoesNotChangeSelection() async {
 		let model = HomeViewModel(cardDataStore: emptyCardStore())
 		let existing = makeCard()
 		model.selectedCard = existing
@@ -54,7 +57,8 @@ final class HomeViewModelTests: XCTestCase {
 		XCTAssertEqual(model.selectedCard?.id, existing.id)
 	}
 
-	func testFinishingAddCardReplacesAQueuedDeepLinkSelection() {
+	@MainActor
+	func testFinishingAddCardReplacesAQueuedDeepLinkSelection() async {
 		let model = HomeViewModel(cardDataStore: emptyCardStore())
 		let deepLinked = makeCard()
 		let created = makeCard()
@@ -67,7 +71,8 @@ final class HomeViewModelTests: XCTestCase {
 		XCTAssertEqual(model.selectedCard?.id, created.id)
 	}
 
-	func testSelectionDuringSaveDismissalWaitsForOnDismiss() {
+	@MainActor
+	func testSelectionDuringSaveDismissalWaitsForOnDismiss() async {
 		let model = HomeViewModel(cardDataStore: emptyCardStore())
 		let created = makeCard()
 		let deepLinked = makeCard()
@@ -84,10 +89,12 @@ final class HomeViewModelTests: XCTestCase {
 		XCTAssertNil(model.selectedCard, "Dismissal must consume the pending selection")
 	}
 
+	@MainActor
 	private func emptyCardStore() -> CardDataStore {
 		CardDataStore(retrievePayloads: { _ in .empty })
 	}
 
+	@MainActor
 	private func makeCard() -> CardData {
 		CardData(
 			id: UUID(),

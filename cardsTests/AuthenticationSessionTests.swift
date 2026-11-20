@@ -88,6 +88,7 @@ final class AuthenticationSessionTests: XCTestCase {
             name: NSWindow.willCloseNotification,
             object: window
         )
+        await settle()
 
         XCTAssertTrue(session.isVaultUnlocked)
         XCTAssertFalse(session.isSensitiveAccessFresh)

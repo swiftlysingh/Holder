@@ -11,11 +11,11 @@ protocol DeviceAuthenticatorFactory {
     func makeAuthenticator() -> DeviceAuthenticating
 }
 
-protocol AsyncSleeper {
+nonisolated protocol AsyncSleeper: Sendable {
     func sleep(for duration: Duration) async throws
 }
 
-struct TaskAsyncSleeper: AsyncSleeper {
+nonisolated struct TaskAsyncSleeper: AsyncSleeper {
     func sleep(for duration: Duration) async throws {
         try await Task.sleep(for: duration)
     }
@@ -73,7 +73,8 @@ final class AuthenticationSession: ObservableObject {
         self.sleeper = sleeper
     }
 
-    deinit {
+    isolated deinit {
+        activeAuthenticator?.invalidate()
         sensitiveExpiryTask?.cancel()
     }
 

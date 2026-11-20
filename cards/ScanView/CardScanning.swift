@@ -25,7 +25,7 @@ nonisolated struct CardScanMetrics: Equatable, Sendable {
 	var wasRescan: Bool
 }
 
-struct CardScanEndMetrics: Equatable, Sendable {
+nonisolated struct CardScanEndMetrics: Equatable, Sendable {
 	enum Outcome: String, Sendable {
 		case success
 		case cancelled
@@ -59,7 +59,7 @@ struct CardScanEndMetrics: Equatable, Sendable {
 	}
 }
 
-struct CardScanRetryMetrics: Equatable, Sendable {
+nonisolated struct CardScanRetryMetrics: Equatable, Sendable {
 	var engine: String
 	var elapsedMs: Int
 	var hadCandidate: Bool

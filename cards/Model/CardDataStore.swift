@@ -7,7 +7,7 @@ nonisolated enum CardPayloadRetrievalResult: Sendable {
 	case failure
 }
 
-private final class CardKeychainPersistence: @unchecked Sendable {
+nonisolated private final class CardKeychainPersistence: Sendable {
 	typealias RetrievePayloads = @Sendable (String) -> CardPayloadRetrievalResult
 	typealias SavePayload = @Sendable (Data, String, String) -> Bool
 	typealias DeletePayload = @Sendable (String, String) -> Bool

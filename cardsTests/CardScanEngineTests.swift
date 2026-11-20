@@ -294,7 +294,8 @@ final class CardCandidateEngineTests: XCTestCase {
 
 #if os(iOS)
 final class CardScannerLayoutTests: XCTestCase {
-	func testRejectsEmptyOrTinyBoundsThatWouldAbortVisionKit() {
+	@MainActor
+	func testRejectsEmptyOrTinyBoundsThatWouldAbortVisionKit() async {
 		XCTAssertNil(CardScannerLayout.regionOfInterest(in: .zero))
 		XCTAssertNil(CardScannerLayout.regionOfInterest(in: CGRect(x: 0, y: 0, width: 8, height: 430)))
 		XCTAssertNil(CardScannerLayout.regionOfInterest(in: CGRect(x: 0, y: 0, width: 390, height: 8)))
@@ -306,7 +307,8 @@ final class CardScannerLayoutTests: XCTestCase {
 		)))
 	}
 
-	func testReturnsAGuideInsideTypicalAddCardSheetBounds() {
+	@MainActor
+	func testReturnsAGuideInsideTypicalAddCardSheetBounds() async {
 		let bounds = CGRect(x: 0, y: 0, width: 390, height: 430)
 		guard let roi = CardScannerLayout.regionOfInterest(in: bounds) else {
 			return XCTFail("Expected a region of interest for a laid-out add-card sheet")
@@ -327,7 +329,8 @@ final class CardScannerLayoutTests: XCTestCase {
 		XCTAssertTrue(roi.contains(portraitCard))
 	}
 
-	func testIgnoresSubpixelRegionDrift() {
+	@MainActor
+	func testIgnoresSubpixelRegionDrift() async {
 		let lhs = CGRect(x: 52.1, y: 120.2, width: 286.4, height: 180.6)
 		let rhs = CGRect(x: 52.3, y: 120.4, width: 286.2, height: 180.4)
 		XCTAssertTrue(CardScannerLayout.isSameRegion(lhs, as: rhs))
@@ -335,9 +338,9 @@ final class CardScannerLayoutTests: XCTestCase {
 	}
 }
 
-@MainActor
 final class CardScannerTorchTests: XCTestCase {
-	func testTorchToggleAndScannerStopTurnTorchOff() {
+	@MainActor
+	func testTorchToggleAndScannerStopTurnTorchOff() async {
 		let engine = TorchSpyCardScanningEngine()
 		let model = CardScannerViewModel(isRescan: false, engine: engine)
 
@@ -377,9 +380,9 @@ private final class TorchSpyCardScanningEngine: CardScanningEngine {
 }
 #endif
 
-@MainActor
 final class CardScanSessionTests: XCTestCase {
-	func testScanAttemptDoesNotCarryMetadataAcrossPANs() {
+	@MainActor
+	func testScanAttemptDoesNotCarryMetadataAcrossPANs() async {
 		var attempt = CardScanAttempt()
 		attempt.record(CardFrameObservation(
 			pan: "4111111111111111",
@@ -398,7 +401,8 @@ final class CardScanSessionTests: XCTestCase {
 		XCTAssertNil(attempt.latestObservation.cardholderName)
 	}
 
-	func testScanAttemptMergesMetadataOnlyFramesForTheCurrentPAN() {
+	@MainActor
+	func testScanAttemptMergesMetadataOnlyFramesForTheCurrentPAN() async {
 		var attempt = CardScanAttempt()
 		attempt.record(CardFrameObservation(
 			pan: "4111111111111111",
@@ -416,7 +420,8 @@ final class CardScanSessionTests: XCTestCase {
 		XCTAssertEqual(attempt.latestObservation.cardholderName, "JANE DOE")
 	}
 
-	func testScanAttemptResetDropsMetadataFromFailedCandidate() {
+	@MainActor
+	func testScanAttemptResetDropsMetadataFromFailedCandidate() async {
 		var attempt = CardScanAttempt()
 		attempt.record(CardFrameObservation(
 			pan: "4111111111111111",
@@ -429,7 +434,8 @@ final class CardScanSessionTests: XCTestCase {
 		XCTAssertEqual(attempt.latestObservation, CardFrameObservation())
 	}
 
-	func testApplyScanFillsPANAndNetwork() {
+	@MainActor
+	func testApplyScanFillsPANAndNetwork() async {
 		var card = makeBlankCard()
 		let result = CardScanResult(
 			pan: "4111111111111111",
@@ -446,7 +452,8 @@ final class CardScanSessionTests: XCTestCase {
 		XCTAssertEqual(card.network, .visa)
 	}
 
-	func testMissingExpiryAndNameDoNotEraseExistingValues() {
+	@MainActor
+	func testMissingExpiryAndNameDoNotEraseExistingValues() async {
 		var card = makeBlankCard()
 		card.expiration = "11/29"
 		card.name = "EXISTING NAME"
@@ -462,7 +469,8 @@ final class CardScanSessionTests: XCTestCase {
 		XCTAssertEqual(card.network, .master)
 	}
 
-	func testCardViewModelApplyScanLeavesManualFieldsIntact() {
+	@MainActor
+	func testCardViewModelApplyScanLeavesManualFieldsIntact() async {
 		let model = CardViewModel(
 			card: CardData(
 				id: UUID(),
@@ -495,7 +503,8 @@ final class CardScanSessionTests: XCTestCase {
 		XCTAssertFalse(model.isShowingScanner)
 	}
 
-	func testAddNewCardStartsWithoutSelectedType() {
+	@MainActor
+	func testAddNewCardStartsWithoutSelectedType() async {
 		let model = CardViewModel(
 			card: CardData(
 				id: UUID(),
@@ -514,7 +523,8 @@ final class CardScanSessionTests: XCTestCase {
 		XCTAssertFalse(model.canFinishEditing)
 	}
 
-	func testScanDoesNotGuessAnUnselectedCardType() {
+	@MainActor
+	func testScanDoesNotGuessAnUnselectedCardType() async {
 		let model = CardViewModel(
 			card: makeBlankCard(),
 			isEditing: true,
@@ -540,6 +550,8 @@ final class CardScanSessionTests: XCTestCase {
 		XCTAssertTrue(model.canFinishEditing)
 		XCTAssertEqual(model.card.type, .credit)
 	}
+
+	@MainActor
 	private func makeBlankCard() -> CardData {
 		CardData(
 			id: UUID(),
@@ -554,16 +566,18 @@ final class CardScanSessionTests: XCTestCase {
 }
 
 #if os(iOS)
-@MainActor
 final class CardScannerViewModelTests: XCTestCase {
+	@MainActor
 	func testFailedUpdateStopsBeforeAlertAndIgnoresBufferedResult() async {
 		await assertTerminalUpdateStops(.failed("The camera is unavailable."))
 	}
 
+	@MainActor
 	func testUnsupportedUpdateStopsBeforeAlertAndIgnoresBufferedResult() async {
 		await assertTerminalUpdateStops(.unsupported("Card scanning is unavailable."))
 	}
 
+	@MainActor
 	func testRetryableFailureClearsCandidateAndContinuesScanning() async {
 		let engine = TerminalUpdateCardScanningEngine(updates: [
 			.candidate(lastFour: "1111", network: .visa),
@@ -590,6 +604,7 @@ final class CardScannerViewModelTests: XCTestCase {
 		XCTAssertTrue(receivedResult)
 	}
 
+	@MainActor
 	func testEndingSessionOnlyEmitsOnceAndPreservesCandidateMetrics() async {
 		let engine = TerminalUpdateCardScanningEngine(updates: [
 			.candidate(lastFour: "1111", network: .visa),
@@ -612,6 +627,7 @@ final class CardScannerViewModelTests: XCTestCase {
 		XCTAssertEqual(endings.first?.isRescan, true)
 	}
 
+	@MainActor
 	func testTerminalFailureEmitsEndingBeforeAlert() async {
 		let engine = TerminalUpdateCardScanningEngine(updates: [.failed("Camera unavailable")])
 		let model = CardScannerViewModel(isRescan: false, engine: engine)
@@ -625,7 +641,8 @@ final class CardScannerViewModelTests: XCTestCase {
 		XCTAssertEqual(endings.map(\.outcome), [.cameraUnavailable])
 	}
 
-	func testEveryExitOutcomeIsEmittedOnce() {
+	@MainActor
+	func testEveryExitOutcomeIsEmittedOnce() async {
 		let outcomes: [CardScanEndMetrics.Outcome] = [
 			.success, .cancelled, .manualEntry, .permissionDenied,
 			.unsupported, .cameraUnavailable, .dismissed
@@ -640,6 +657,7 @@ final class CardScannerViewModelTests: XCTestCase {
 		}
 	}
 
+	@MainActor
 	func testRetryableFailureEmitsNonterminalEvent() async {
 		let engine = TerminalUpdateCardScanningEngine(updates: [
 			.candidate(lastFour: "1111", network: .visa),
@@ -660,6 +678,7 @@ final class CardScannerViewModelTests: XCTestCase {
 		XCTAssertEqual(endings.map(\.outcome), [.success])
 	}
 
+	@MainActor
 	func testPermissionDeniedEmitsTerminalOutcome() async {
 		let model = CardScannerViewModel(
 			isRescan: false,
@@ -676,6 +695,7 @@ final class CardScannerViewModelTests: XCTestCase {
 		XCTAssertEqual(endings.map(\.outcome), [.permissionDenied])
 	}
 
+	@MainActor
 	func testStopBeforeConsumingDoesNotStartTheEngineStream() async {
 		let engine = StreamStartTrackingCardScanningEngine()
 		let model = CardScannerViewModel(isRescan: false, engine: engine)
@@ -690,6 +710,7 @@ final class CardScannerViewModelTests: XCTestCase {
 		XCTAssertFalse(engine.didStartStream)
 	}
 
+	@MainActor
 	private func assertTerminalUpdateStops(_ terminalUpdate: CardScanUpdate) async {
 		let engine = TerminalUpdateCardScanningEngine(updates: [
 			terminalUpdate,
@@ -765,7 +786,8 @@ private final class StreamStartTrackingCardScanningEngine: CardScanningEngine {
 #endif
 
 final class CardScanAnalyticsTests: XCTestCase {
-	func testScanEventsNeverIncludeSensitiveCardFields() {
+	@MainActor
+	func testScanEventsNeverIncludeSensitiveCardFields() async {
 		let events: [AppAnalyticsEvent] = [
 			.cardScanStarted(engine: "vision"),
 			.cardScanEnded(CardScanEndMetrics(
