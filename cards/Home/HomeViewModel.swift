@@ -15,6 +15,9 @@ final class HomeViewModel: ObservableObject {
 	@Bindable var cardDataStore: CardDataStore
 	var addCardStartMode: CardEditorStartMode = .scanner
 	private var deepLinkTask: Task<Void, Never>?
+	/// Held until the add-card sheet finishes dismissing so the details
+	/// navigation does not overlap its presentation transition (#117).
+	private var pendingCardSelection: CardData?
 
 	init(cardDataStore: CardDataStore? = nil) {
 		self.cardDataStore = cardDataStore ?? CardDataStore()
@@ -29,7 +32,7 @@ final class HomeViewModel: ObservableObject {
 	}
 
 	/// Handles deep link URL from widget (holder://card/{uuid})
-	/// - Parameter onOpenedFromWidget: Invoked only after a matching card is selected.
+	/// - Parameter onOpenedFromWidget: Invoked when a matching card is found and selected or queued.
 	func handleDeepLink(_ url: URL, onOpenedFromWidget: (() -> Void)? = nil) {
 		guard url.scheme == "holder",
 			  url.host == "card",
@@ -65,7 +68,7 @@ final class HomeViewModel: ObservableObject {
 		let baseDelay: UInt64 = 50_000_000 // 50ms
 
 		if let card = cardDataStore.findCard(by: cardID) {
-			selectedCard = card
+			selectCard(card)
 			onOpenedFromWidget?()
 			return
 		}
@@ -84,5 +87,28 @@ final class HomeViewModel: ObservableObject {
 				onOpenedFromWidget: onOpenedFromWidget
 			)
 		}
+	}
+
+	/// Defers navigation while the add-card sheet is presented or a saved
+	/// card is waiting for its dismissal to finish.
+	func selectCard(_ card: CardData) {
+		if isAddingCard || pendingCardSelection != nil {
+			pendingCardSelection = card
+			return
+		}
+		selectedCard = card
+	}
+
+	/// Dismisses the add-card sheet and reveals `card` only after that
+	/// presentation has finished tearing down.
+	func finishAddingCard(selecting card: CardData) {
+		pendingCardSelection = card
+		isAddingCard = false
+	}
+
+	func revealPendingCardSelection() {
+		guard let card = pendingCardSelection else { return }
+		pendingCardSelection = nil
+		selectedCard = card
 	}
 }

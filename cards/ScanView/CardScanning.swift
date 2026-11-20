@@ -1,18 +1,9 @@
-//
-//  CardScanning.swift
-//  cards
-//
-//  Engine boundary for Holder's on-device card scanning. Keeping the camera
-//  lifecycle behind a protocol makes the app-owned flow testable.
-//
-
 import SwiftUI
 
 #if os(iOS)
 import VisionKit
 #endif
 
-/// Recognized payment-card fields. PAN is required; expiry and name are best-effort.
 nonisolated struct CardScanResult: Equatable, Sendable {
 	var pan: String
 	var expiry: String?
@@ -24,7 +15,6 @@ nonisolated struct CardScanResult: Equatable, Sendable {
 	}
 }
 
-/// Non-sensitive scan timing used for analytics. Never include PAN, name, expiry, CVV, OCR, or images.
 nonisolated struct CardScanMetrics: Equatable, Sendable {
 	var engine: String
 	var timeToPANMs: Int?
@@ -33,6 +23,48 @@ nonisolated struct CardScanMetrics: Equatable, Sendable {
 	var expirySuccess: Bool
 	var holderSuccess: Bool
 	var wasRescan: Bool
+}
+
+struct CardScanEndMetrics: Equatable, Sendable {
+	enum Outcome: String, Sendable {
+		case success
+		case cancelled
+		case manualEntry = "manual_entry"
+		case permissionDenied = "permission_denied"
+		case unsupported
+		case cameraUnavailable = "camera_unavailable"
+		case dismissed
+	}
+
+	var engine: String
+	var outcome: Outcome
+	var elapsedMs: Int
+	var hadCandidate: Bool
+	var timeToPANMs: Int?
+	var torchOn: Bool
+	var isRescan: Bool
+	var attemptNumber: Int
+	var backgrounded = false
+
+	var reason: String {
+		switch outcome {
+		case .success: "verified_pan"
+		case .cancelled: "cancel_button"
+		case .manualEntry: "manual_entry_button"
+		case .permissionDenied: "camera_permission_denied"
+		case .unsupported: "scanner_unsupported"
+		case .cameraUnavailable: "camera_unavailable"
+		case .dismissed: backgrounded ? "backgrounded" : "view_disappeared"
+		}
+	}
+}
+
+struct CardScanRetryMetrics: Equatable, Sendable {
+	var engine: String
+	var elapsedMs: Int
+	var hadCandidate: Bool
+	var isRescan: Bool
+	var attemptNumber: Int
 }
 
 nonisolated enum CardScanUpdate: Sendable {

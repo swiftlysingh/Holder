@@ -1,10 +1,3 @@
-//
-//  MenuBarView.swift
-//  cards
-//
-//  Menu bar extra view for quick card access on macOS
-//
-
 #if os(macOS)
 import AppKit
 import SinghDevKit
@@ -280,7 +273,7 @@ struct MenuBarCardRow: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
             Button {
-                withAnimation(.easeInOut(duration: 0.2)) {
+                HangSafeUI.withoutTextAnimation {
                     isExpanded.toggle()
                 }
             } label: {
@@ -293,9 +286,11 @@ struct MenuBarCardRow: View {
                             .font(.system(size: 13, weight: .semibold))
                             .foregroundStyle(.primary)
                             .lineLimit(1)
+                            .withoutInterpolatingText()
                         Text(card.number.maskedCardNumber())
                             .font(.system(size: 11, design: .monospaced))
                             .foregroundStyle(.secondary)
+                            .withoutInterpolatingText()
                     }
 
                     Spacer()
@@ -393,11 +388,13 @@ struct MenuBarCardRow: View {
                     Label("Copied!", systemImage: "checkmark")
                         .font(.system(size: 12, weight: .medium))
                         .foregroundStyle(.green)
+                        .withoutInterpolatingText()
                 } else {
                     Text(displayValue)
                         .font(.system(size: 12, design: .monospaced))
                         .foregroundStyle(.primary)
                         .lineLimit(1)
+                        .withoutInterpolatingText()
                 }
             }
             .padding(.vertical, 6)

@@ -1,10 +1,3 @@
-//
-//  AuthenticationSession.swift
-//  cards
-//
-//  Shared vault and sensitive-access authentication state.
-//
-
 import LocalAuthentication
 import SwiftUI
 

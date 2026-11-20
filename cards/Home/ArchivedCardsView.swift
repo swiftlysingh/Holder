@@ -1,10 +1,3 @@
-//
-//  ArchivedCardsView.swift
-//  cards
-//
-//  View for displaying and managing archived cards
-//
-
 import SinghDevKit
 import SwiftUI
 
@@ -117,11 +110,14 @@ struct ArchivedCardsView: View {
 			VStack(alignment: .leading) {
 				if !card.description.isEmpty {
 					Text(card.description)
+						.withoutInterpolatingText()
 				} else {
 					Text(card.name)
+						.withoutInterpolatingText()
 				}
 				Text(card.number.maskedCardNumber())
 					.foregroundStyle(.secondary)
+					.withoutInterpolatingText()
 			}
 		}
 	}

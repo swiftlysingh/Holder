@@ -1,0 +1,7 @@
+{
+  "description": "Keep the card details you need close on your Mac, even when the card isn't with you.\n\nHolder keeps credit and debit cards, IDs, memberships, loyalty cards, insurance cards, and more in one private place. Stop digging through notes, photos, and messages when you need a number for checkout, travel, or a form.\n\nReady from the menu bar\n\nTurn on Keep in Menu Bar to find a card without opening the main window.\n\nFind the right card fast\n\nCard art and groups make the right card easy to spot. Open it and copy the detail you need.\n\nPrivate by default\n\nHolder works offline, with no account to create and no bank to link. Card details are stored in Apple Keychain and can sync through iCloud Keychain if you use it. Optional card images are stored in iCloud Documents.\n\nLocked when you want it\n\nLock Holder with Touch ID or your Mac login password. Showing a security code, sharing a card, or deleting one can ask you to confirm it's you again.",
+  "keywords": "credit,debit,manager,keeper,storage,biometric,faceid,touchid,private,password,notes,id,loyalty",
+  "promotionalText": "Keep credit cards, IDs, and loyalty cards on your Mac, and find one from the menu bar. Lock Holder with Touch ID or your login password.",
+  "supportUrl": "https://twitter.com/swiftlysingh",
+  "whatsNew": "Fixed brief freezes when expanding a card in the menu bar or going through the welcome screens."
+}

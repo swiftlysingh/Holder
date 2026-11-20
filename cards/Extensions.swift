@@ -1,10 +1,3 @@
-//
-//  Extensions.swift
-//  credit-card
-//
-//  Created by Pushpinder Pal Singh on 09/12/23.
-//
-
 import SwiftUI
 
 extension String {
@@ -80,17 +73,34 @@ extension UInt {
 	}
 
 }
+
+enum HangSafeUI {
+	/// Use when publishing stored cards or swapping Text-heavy trees so layout
+	/// does not run through SwiftUI's text animation provider on the main thread.
+	static func dataCommitTransaction() -> Transaction {
+		var transaction = Transaction()
+		transaction.disablesAnimations = true
+		return transaction
+	}
+
+	static func withoutTextAnimation(_ updates: () -> Void) {
+		withTransaction(dataCommitTransaction(), updates)
+	}
+}
+
 extension View {
-	/// Applies the given transform if the given condition evaluates to `true`.
-	/// - Parameters:
-	///   - condition: The condition to evaluate.
-	///   - transform: The transform to apply to the source `View`.
-	/// - Returns: Either the original `View` or the modified `View` if the condition is `true`.
 	@ViewBuilder func `if`<Content: View>(_ condition: Bool, transform: (Self) -> Content) -> some View {
 		if condition {
 			transform(self)
 		} else {
 			self
 		}
+	}
+
+	/// Skip glyph interpolation. Animating `Text` through
+	/// `SwiftUITextAnimationProvider` / `SwiftUICoreTextAnimationProvider`
+	/// can block the main thread for seconds.
+	func withoutInterpolatingText() -> some View {
+		contentTransition(.identity)
 	}
 }

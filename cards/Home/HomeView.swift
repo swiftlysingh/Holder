@@ -1,10 +1,3 @@
-//
-//  ContentView.swift
-//  credit-card
-//
-//  Created by Pushpinder Pal Singh on 08/12/23.
-//
-
 import SwiftUI
 import SinghDevKit
 
@@ -26,7 +19,6 @@ struct HomeView: View {
 	#endif
 	#if os(iOS)
 	@State private var addCardSheetDetent: PresentationDetent = .height(430)
-	@Namespace private var addCardTransition
 	#endif
 
 	init(
@@ -47,38 +39,39 @@ struct HomeView: View {
 				List(selection: $model.selectedCard) {
 					ForEach(CardType.allCases) { type in
 						let cards = model.cardDataStore.cardsByType[type] ?? []
-						Section(header: sectionHeader(for: type, count: cards.count)) {
-							ForEach(cards, id: \.id) { card in
-								getRowforCards(with: card)
-									.swipeActions(edge: .trailing, allowsFullSwipe: false) {
-										Button(role: .destructive) {
-											cardPendingDeletion = card
-										} label: {
-											Label("Delete", systemImage: "trash")
+						if !cards.isEmpty {
+							Section(header: sectionHeader(for: type, count: cards.count)) {
+								ForEach(cards, id: \.id) { card in
+									getRowforCards(with: card)
+										.swipeActions(edge: .trailing, allowsFullSwipe: false) {
+											Button(role: .destructive) {
+												cardPendingDeletion = card
+											} label: {
+												Label("Delete", systemImage: "trash")
+											}
+											Button {
+												archiveCard(card)
+											} label: {
+												Label("Archive", systemImage: "archivebox")
+											}
+											.tint(.orange)
 										}
-										Button {
-											archiveCard(card)
-										} label: {
-											Label("Archive", systemImage: "archivebox")
+										.contextMenu {
+											Button {
+												archiveCard(card)
+											} label: {
+												Label("Archive", systemImage: "archivebox")
+											}
+											Button(role: .destructive) {
+												cardPendingDeletion = card
+											} label: {
+												Label("Delete", systemImage: "trash")
+											}
 										}
-										.tint(.orange)
-									}
-									.contextMenu {
-										Button {
-											archiveCard(card)
-										} label: {
-											Label("Archive", systemImage: "archivebox")
-										}
-										Button(role: .destructive) {
-											cardPendingDeletion = card
-										} label: {
-											Label("Delete", systemImage: "trash")
-										}
-									}
+								}
 							}
 						}
 					}
-					// Archived Cards Link
 					if !model.cardDataStore.archivedCards.isEmpty {
 						Section {
 							NavigationLink {
@@ -150,7 +143,9 @@ struct HomeView: View {
 				}))
 			.id(card.id)
 		}
-		.sheet(isPresented: $model.isAddingCard) {
+		.sheet(isPresented: $model.isAddingCard, onDismiss: {
+			model.revealPendingCardSelection()
+		}) {
 			let cardViewModel = CardViewModel(
 				card: .init(id: UUID(),
 						number: "",
@@ -164,31 +159,22 @@ struct HomeView: View {
 				addNewFlow: true,
 				startMode: model.addCardStartMode,
 				addUpdateCard: { card in
-					// Keep the sheet open on failure so the entered form is preserved for retry.
 					let succeeded = await model.cardDataStore.addCard(card)
 					if succeeded {
-						model.selectedCard = model.cardDataStore.findCard(by: card.id) ?? card
-						model.isAddingCard = false
+						model.finishAddingCard(
+							selecting: model.cardDataStore.findCard(by: card.id) ?? card
+						)
 					}
 					return succeeded
 				}
 			)
 			#if os(iOS)
-			Group {
-				if #available(iOS 18.0, *) {
-					addCardSheetContent(cardViewModel)
-						.navigationTransition(
-							.zoom(sourceID: "add-card", in: addCardTransition)
-						)
-				} else {
-					addCardSheetContent(cardViewModel)
-				}
-			}
-			.presentationDetents(
-				[.fraction(0.5), .height(430), .large],
-				selection: $addCardSheetDetent
-			)
-			.presentationDragIndicator(.visible)
+			addCardSheetContent(cardViewModel)
+				.presentationDetents(
+					[.fraction(0.5), .height(430), .large],
+					selection: $addCardSheetDetent
+				)
+				.presentationDragIndicator(.visible)
 			#else
 			NavigationView {
 				CardView(model: cardViewModel)
@@ -308,11 +294,6 @@ struct HomeView: View {
 		if #available(iOS 26.0, *) {
 			button
 				.buttonStyle(.glassProminent)
-				.matchedTransitionSource(id: "add-card", in: addCardTransition)
-		} else if #available(iOS 18.0, *) {
-			button
-				.buttonStyle(.borderedProminent)
-				.matchedTransitionSource(id: "add-card", in: addCardTransition)
 		} else {
 			button
 				.buttonStyle(.borderedProminent)
@@ -433,11 +414,13 @@ struct HomeView: View {
 						.font(.body.weight(.semibold))
 						.foregroundStyle(.primary)
 						.lineLimit(2)
+						.withoutInterpolatingText()
 
 					Text(card.number.maskedCardNumber())
 						.font(.footnote)
 						.foregroundStyle(.secondary)
 						.monospacedDigit()
+						.withoutInterpolatingText()
 				}
 			}
 			.padding(.vertical, 2)

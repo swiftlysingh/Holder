@@ -1,10 +1,3 @@
-//
-//  PasteboardService.swift
-//  cards
-//
-//  Cross-platform clipboard access
-//
-
 import Foundation
 
 #if os(macOS)

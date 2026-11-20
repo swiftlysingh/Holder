@@ -1,10 +1,3 @@
-//
-//  ReviewService.swift
-//  cards
-//
-//  Cross-platform App Store review request
-//
-
 import StoreKit
 
 #if os(iOS)

@@ -1,10 +1,3 @@
-//
-//  WidgetsBundle.swift
-//  Widgets
-//
-//  Created by Pushpinder on 1/5/26.
-//
-
 import WidgetKit
 import SwiftUI
 

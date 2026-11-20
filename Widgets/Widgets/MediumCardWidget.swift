@@ -1,14 +1,5 @@
-//
-//  MediumCardWidget.swift
-//  HolderWidgets
-//
-//  Medium home screen widget displaying up to 4 cards
-//
-
 import WidgetKit
 import SwiftUI
-
-// MARK: - Timeline Provider
 
 struct MediumCardProvider: AppIntentTimelineProvider {
     func placeholder(in context: Context) -> MediumCardEntry {
@@ -35,15 +26,11 @@ struct MediumCardProvider: AppIntentTimelineProvider {
     }
 }
 
-// MARK: - Timeline Entry
-
 struct MediumCardEntry: TimelineEntry {
     let date: Date
     let cards: [WidgetCardData]
     let configuration: SelectMultipleCardsIntent
 }
-
-// MARK: - Widget View
 
 struct MediumCardWidgetView: View {
     var entry: MediumCardEntry
@@ -81,8 +68,6 @@ struct MediumCardWidgetView: View {
     }
 }
 
-// MARK: - Card Cell View
-
 struct CardCellView: View {
     let card: WidgetCardData
 
@@ -105,8 +90,6 @@ struct CardCellView: View {
     }
 }
 
-// MARK: - Widget Configuration
-
 struct MediumCardWidget: Widget {
     let kind: String = "MediumCardWidget"
 
@@ -124,8 +107,6 @@ struct MediumCardWidget: Widget {
         .supportedFamilies([.systemMedium])
     }
 }
-
-// MARK: - Preview
 
 #Preview(as: .systemMedium) {
     MediumCardWidget()

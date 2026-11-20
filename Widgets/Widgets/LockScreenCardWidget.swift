@@ -1,15 +1,6 @@
-//
-//  LockScreenCardWidget.swift
-//  HolderWidgets
-//
-//  Lock screen widget displaying a single card
-//
-
 #if os(iOS)
 import WidgetKit
 import SwiftUI
-
-// MARK: - Timeline Provider
 
 struct LockScreenCardProvider: AppIntentTimelineProvider {
     func placeholder(in context: Context) -> LockScreenCardEntry {
@@ -32,15 +23,11 @@ struct LockScreenCardProvider: AppIntentTimelineProvider {
     }
 }
 
-// MARK: - Timeline Entry
-
 struct LockScreenCardEntry: TimelineEntry {
     let date: Date
     let card: WidgetCardData?
     let configuration: SelectCardIntent
 }
-
-// MARK: - Widget View
 
 struct LockScreenCardWidgetView: View {
     var entry: LockScreenCardEntry
@@ -59,8 +46,6 @@ struct LockScreenCardWidgetView: View {
         }
     }
 
-    // MARK: - Circular View
-
     private var accessoryCircularView: some View {
         ZStack {
             AccessoryWidgetBackground()
@@ -77,8 +62,6 @@ struct LockScreenCardWidgetView: View {
         }
         .widgetURL(entry.card.map { URL(string: "holder://card/\($0.id.uuidString)") } ?? nil)
     }
-
-    // MARK: - Rectangular View
 
     private var accessoryRectangularView: some View {
         HStack(spacing: 8) {
@@ -105,8 +88,6 @@ struct LockScreenCardWidgetView: View {
         .widgetURL(entry.card.map { URL(string: "holder://card/\($0.id.uuidString)") } ?? nil)
     }
 
-    // MARK: - Inline View
-
     @ViewBuilder
     private var accessoryInlineView: some View {
         if let card = entry.card {
@@ -117,8 +98,6 @@ struct LockScreenCardWidgetView: View {
         }
     }
 }
-
-// MARK: - Widget Configuration
 
 struct LockScreenCardWidget: Widget {
     let kind: String = "LockScreenCardWidget"
@@ -137,8 +116,6 @@ struct LockScreenCardWidget: Widget {
         .supportedFamilies([.accessoryCircular, .accessoryRectangular, .accessoryInline])
     }
 }
-
-// MARK: - Preview
 
 #Preview(as: .accessoryRectangular) {
     LockScreenCardWidget()

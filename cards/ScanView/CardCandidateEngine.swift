@@ -1,12 +1,3 @@
-//
-//  CardCandidateEngine.swift
-//  cards
-//
-//  Reconstructs PANs from split/multi-line OCR, votes across frames, and
-//  parses expiry / cardholder name. PAN acceptance requires 13–19 digits,
-//  Luhn, and a known network/IIN.
-//
-
 import CoreGraphics
 import Foundation
 
@@ -26,7 +17,6 @@ nonisolated enum CardPAN {
 	static let minimumLength = 13
 	static let maximumLength = 19
 
-	/// Safe numeric OCR substitutions, applied only to tokens that already look numeric.
 	private static let substitutions: [Character: Character] = [
 		"O": "0", "o": "0", "Q": "0",
 		"I": "1", "l": "1", "|": "1",
@@ -89,7 +79,6 @@ nonisolated enum CardPAN {
 		return chunks.joined(separator: " ")
 	}
 
-	/// String IIN matching so 19-digit PANs are not truncated by `UInt`.
 	static func network(for digits: String) -> CardNetwork {
 		guard !digits.isEmpty, digits.allSatisfy(\.isNumber) else { return .other }
 
@@ -290,25 +279,18 @@ nonisolated enum CardCandidateEngine {
 
 		for item in items {
 			for candidate in item.candidates {
-				append(CardPAN.validatedPAN(from: candidate))
+				for pan in pans(fromTokens: panTokens(in: candidate), preferLongest: true) {
+					append(pan)
+				}
 			}
 		}
 
-		let ordered = orderedItems(items)
-		let digitGroups = ordered.flatMap { tokenizeDigitGroups(in: $0.text) }
-
-		for pan in pans(fromConsecutiveGroups: digitGroups) {
-			append(pan)
+		for vertical in [false, true] {
+			let tokens = orderedItems(items, vertical: vertical).flatMap { panTokens(in: $0.text) }
+			for pan in pans(fromTokens: tokens, preferLongest: false) {
+				append(pan)
+			}
 		}
-
-		let verticalGroups = orderedItems(items, vertical: true).flatMap { tokenizeDigitGroups(in: $0.text) }
-		for pan in pans(fromConsecutiveGroups: verticalGroups) {
-			append(pan)
-		}
-
-		let concatenated = digitGroups.joined()
-		append(longestValidPAN(in: concatenated))
-		append(longestValidPAN(in: ordered.map(\.text).joined()))
 
 		return found
 	}
@@ -324,50 +306,73 @@ nonisolated enum CardCandidateEngine {
 		return nil
 	}
 
-	private static func tokenizeDigitGroups(in text: String) -> [String] {
-		let normalized = CardPAN.normalizeNumericToken(text)
-		let groups = normalized.split { !$0.isNumber }.map(String.init)
-		return groups.filter { (4...8).contains($0.count) || (13...19).contains($0.count) }
+	// nil is a hard boundary. Punctuation separates runs without breaking a PAN.
+	private static func panTokens(in text: String) -> [String?] {
+		// Explicit non-card identifiers must not be mistaken for a PAN, even if they pass Luhn.
+		let identifier = text.range(of: #"(?i)\b(?:MEMBER\s+ID|ID|CVV|CVC|CID)\b"#, options: .regularExpression)
+		let cardText = identifier.map { String(text[..<$0.lowerBound]) + "/" } ?? text
+		// Remove dates before normalization or digit extraction, including expired dates.
+		let withoutDates = cardText.replacingOccurrences(
+			of: #"(?<![0-9])(?:0[1-9]|1[0-2])\s*[/.-]\s*(?:[0-9]{4}|[0-9]{2})(?![0-9])"#,
+			with: "/", options: .regularExpression
+		)
+		var tokens: [String?] = []
+		var word = ""
+		func flush() {
+			guard !word.isEmpty else { return }
+			// The removable digit anchor allows all-confusion words such as "llll".
+			// Normalize words independently so labels cannot contribute OCR substitutions.
+			let normalized = String(CardPAN.normalizeNumericToken("0 " + word).dropFirst(2))
+			if normalized.allSatisfy(\.isNumber) {
+				tokens.append(normalized)
+			} else {
+				// Attached labels still break runs, without discarding adjacent digits.
+				var digits = ""
+				for character in word {
+					if character.isNumber {
+						digits.append(character)
+					} else {
+						if !digits.isEmpty {
+							tokens.append(digits)
+							digits = ""
+						}
+						tokens.append(nil)
+					}
+				}
+				if !digits.isEmpty { tokens.append(digits) }
+			}
+			word = ""
+		}
+		for character in withoutDates {
+			if character.isLetter || character.isNumber || character == "|" {
+				word.append(character)
+			} else {
+				flush()
+				if character == "/" { tokens.append(nil) }
+			}
+		}
+		flush()
+		return tokens.isEmpty ? [nil] : tokens
 	}
 
-	private static func pans(fromConsecutiveGroups groups: [String]) -> [String] {
-		guard groups.count >= 2 else {
-			return groups.compactMap(CardPAN.validatedDigits)
-		}
-
+	private static func pans(fromTokens tokens: [String?], preferLongest: Bool) -> [String] {
 		var pans: [String] = []
-		for start in 0..<groups.count {
+		for start in tokens.indices {
 			var combined = ""
-			for end in start..<groups.count {
-				combined += groups[end]
+			var matches: [String] = []
+			for end in start..<tokens.count {
+				guard let group = tokens[end] else { break }
+				combined += group
 				if combined.count > CardPAN.maximumLength { break }
 				if let pan = CardPAN.validatedDigits(combined) {
-					pans.append(pan)
+					matches.append(pan)
 				}
 			}
+			// Within one OCR line, prefer the full PAN over a coincidentally valid prefix.
+			// Across lines, a trailing short number is more likely separate text, so prefer the shorter PAN.
+			pans.append(contentsOf: preferLongest ? matches.reversed() : matches)
 		}
 		return pans
-	}
-
-	private static func longestValidPAN(in digitsAndText: String) -> String? {
-		let digits = CardPAN.digits(in: digitsAndText)
-		guard digits.count >= CardPAN.minimumLength else { return nil }
-
-		var best: String?
-		for length in stride(from: min(CardPAN.maximumLength, digits.count), through: CardPAN.minimumLength, by: -1) {
-			guard digits.count >= length else { continue }
-			let maxStart = digits.count - length
-			for start in 0...maxStart {
-				let index = digits.index(digits.startIndex, offsetBy: start)
-				let end = digits.index(index, offsetBy: length)
-				if let pan = CardPAN.validatedDigits(String(digits[index..<end])) {
-					best = pan
-					break
-				}
-			}
-			if best != nil { break }
-		}
-		return best
 	}
 
 	private static func orderedItems(_ items: [OCRTextItem], vertical: Bool = false) -> [OCRTextItem] {
@@ -390,7 +395,6 @@ nonisolated enum CardCandidateEngine {
 	}
 }
 
-/// Rolling-window vote so a single high-confidence OCR miss does not become the PAN.
 nonisolated struct TemporalPANVoter: Sendable {
 	var windowSize: Int
 	var requiredVotes: Int

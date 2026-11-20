@@ -187,7 +187,6 @@ struct HolderOnboardingView: View {
 		case getStarted
 	}
 
-	@Environment(\.accessibilityReduceMotion) private var reduceMotion
 	@Environment(\.dynamicTypeSize) private var dynamicTypeSize
 	@AccessibilityFocusState private var isPageHeadingFocused: Bool
 	@State private var page = Self.initialPage
@@ -285,7 +284,6 @@ struct HolderOnboardingView: View {
 				}
 			}
 			.id(page)
-			.transition(pageTransition)
 		}
 	}
 
@@ -296,17 +294,20 @@ struct HolderOnboardingView: View {
 					Text(welcomeEyebrow)
 						.font(.caption.weight(.semibold))
 						.foregroundStyle(Color.accentColor)
+						.withoutInterpolatingText()
 				}
 				Text(welcomeTitle)
 					.font(.title2.bold())
 					.multilineTextAlignment(.center)
 					.accessibilityAddTraits(.isHeader)
 					.accessibilityFocused($isPageHeadingFocused)
+					.withoutInterpolatingText()
 				Text(welcomeSubtitle)
 					.font(.body)
 					.foregroundStyle(.secondary)
 					.multilineTextAlignment(.center)
 					.fixedSize(horizontal: false, vertical: true)
+					.withoutInterpolatingText()
 			}
 		}
 	}
@@ -318,11 +319,13 @@ struct HolderOnboardingView: View {
 				.multilineTextAlignment(.center)
 				.accessibilityAddTraits(.isHeader)
 				.accessibilityFocused($isPageHeadingFocused)
+				.withoutInterpolatingText()
 			Text(getStartedSubtitle)
 				.font(.body)
 				.foregroundStyle(.secondary)
 				.multilineTextAlignment(.center)
 				.fixedSize(horizontal: false, vertical: true)
+				.withoutInterpolatingText()
 		}
 	}
 
@@ -385,6 +388,7 @@ struct HolderOnboardingView: View {
 		.padding(.top, 8)
 		.padding(.bottom, 12)
 		.frame(maxWidth: .infinity)
+		.id(page)
 	}
 
 	private var welcomeReassurance: some View {
@@ -393,6 +397,7 @@ struct HolderOnboardingView: View {
 				.foregroundStyle(.secondary)
 				.multilineTextAlignment(.center)
 				.fixedSize(horizontal: false, vertical: true)
+				.withoutInterpolatingText()
 
 			if let privacyPolicyURL {
 				Link(destination: privacyPolicyURL) {
@@ -413,20 +418,13 @@ struct HolderOnboardingView: View {
 			.foregroundStyle(.secondary)
 			.multilineTextAlignment(.center)
 			.fixedSize(horizontal: false, vertical: true)
+			.withoutInterpolatingText()
 			.frame(maxWidth: 420)
-	}
-
-	private var pageTransition: AnyTransition {
-		guard !reduceMotion else { return .opacity }
-		return .asymmetric(
-			insertion: .offset(y: 12).combined(with: .opacity),
-			removal: .opacity
-		)
 	}
 
 	private func move(to newPage: Page) {
 		isPageHeadingFocused = false
-		withAnimation(reduceMotion ? .easeOut(duration: 0.2) : .snappy(duration: 0.4)) {
+		HangSafeUI.withoutTextAnimation {
 			page = newPage
 		}
 		Task { @MainActor in
@@ -555,10 +553,6 @@ private struct OnboardingCardArtwork: View {
 				.scaleEffect(0.82)
 				.frame(width: 230, height: 124)
 		}
-		.animation(
-			reduceMotion ? .easeOut(duration: 0.18) : .snappy(duration: 0.42),
-			value: showsScanner
-		)
 		.accessibilityHidden(true)
 	}
 
@@ -587,10 +581,12 @@ private struct OnboardingCardArtwork: View {
 					VStack(alignment: .leading, spacing: 5) {
 						Text("•••• 4821")
 							.font(.system(size: 16, weight: .semibold, design: .monospaced))
+							.withoutInterpolatingText()
 						Text("YOUR CARD")
 							.font(.system(size: 9, weight: .bold))
 							.tracking(1)
 							.foregroundStyle(.secondary)
+							.withoutInterpolatingText()
 					}
 					.padding(17)
 				}
@@ -604,11 +600,6 @@ private struct OnboardingCardArtwork: View {
 					.background(.thinMaterial, in: RoundedRectangle(cornerRadius: 17, style: .continuous))
 					.shadow(color: .black.opacity(0.09), radius: 10, y: 5)
 					.offset(x: 78, y: 46)
-					.transition(
-						reduceMotion
-							? .opacity
-							: .scale(scale: 0.82).combined(with: .opacity)
-					)
 			}
 		}
 		.frame(width: 280, height: 150)
