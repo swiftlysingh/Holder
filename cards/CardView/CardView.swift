@@ -16,8 +16,10 @@ struct CardView: View {
 	@EnvironmentObject private var authenticationSession: AuthenticationSession
 	@Environment(\.supportPromptPolicy) private var supportPromptPolicy
 	@Environment(\.analytics) private var analytics
+	private let onClose: (() -> Void)?
 	#if os(iOS)
 	@Environment(\.dismiss) private var dismiss
+	@Environment(\.horizontalSizeClass) private var horizontalSizeClass
 	@Binding private var cardSheetDetent: PresentationDetent
 	@State private var isShowingCardForm = false
 	@State private var scanAttemptNumber = 0
@@ -28,14 +30,17 @@ struct CardView: View {
 	#if os(iOS)
 	init(
 		model: CardViewModel,
-		cardSheetDetent: Binding<PresentationDetent> = .constant(.large)
+		cardSheetDetent: Binding<PresentationDetent> = .constant(.large),
+		onClose: (() -> Void)? = nil
 	) {
 		_model = StateObject(wrappedValue: model)
 		_cardSheetDetent = cardSheetDetent
+		self.onClose = onClose
 	}
 	#else
-	init(model: CardViewModel) {
+	init(model: CardViewModel, onClose: (() -> Void)? = nil) {
 		_model = StateObject(wrappedValue: model)
+		self.onClose = onClose
 	}
 	#endif
 
@@ -70,6 +75,22 @@ struct CardView: View {
 				: AppAnalyticsScreen.cardDetails
 		)
 		.disabled(model.isSaving)
+		#if os(macOS)
+		.if(onClose != nil) { view in
+			view.onExitCommand(perform: closeDetails)
+		}
+		#endif
+	}
+
+	private func closeDetails() {
+		guard !model.isEditing, !model.isSaving else { return }
+		onClose?()
+	}
+
+	private var closeDetailsButton: some View {
+		Button("Close Card Details", systemImage: "xmark", action: closeDetails)
+			.labelStyle(.iconOnly)
+			.disabled(model.isEditing)
 	}
 
 	#if os(iOS)
@@ -498,8 +519,17 @@ struct CardView: View {
 		})
 		.toolbar {
 			if !model.isAddNewFlow {
-				sensitiveShareMenu
-				editToolbarButton
+				#if os(iOS)
+				if horizontalSizeClass == .regular, onClose != nil {
+					ToolbarItem(placement: .navigation) {
+						closeDetailsButton
+					}
+				}
+				#endif
+				ToolbarItemGroup {
+					sensitiveShareMenu
+					editToolbarButton
+				}
 			}
 		}
 	}
@@ -631,8 +661,15 @@ struct CardView: View {
 		.scrollContentBackground(.hidden)
 		.contentMargins(0)
 		.toolbar {
-			sensitiveShareMenu
-			editToolbarButton
+			if onClose != nil {
+				ToolbarItem(placement: .navigation) {
+					closeDetailsButton
+				}
+			}
+			ToolbarItemGroup {
+				sensitiveShareMenu
+				editToolbarButton
+			}
 		}
 	}
 

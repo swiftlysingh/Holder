@@ -15,7 +15,6 @@ struct HomeView: View {
 	@Environment(\.sdk) private var sdk
 	@Environment(\.accessibilityReduceTransparency) private var reduceTransparency
 	private let privacyPolicyURL: URL?
-	@State private var automaticTip: SupportPromptPolicy.TipSource?
 	@State private var paymentsReady = false
 	@State private var isShowingArchivedCards = false
 	@State private var isOnboardingPresented = false
@@ -134,18 +133,8 @@ struct HomeView: View {
 			#endif
 		} detail: {
 			if let card = model.selectedCard {
-				CardView(model: CardViewModel(
-								card: card,
-								addUpdateCard: { card in
-									await model.cardDataStore.updateCard(card)
-								}))
-					.id(card.id)
-					.onAppear { model.savedTipDetailsDidAppear(for: card.id) }
-					#if os(macOS)
-					.onExitCommand { model.selectedCard = nil }
-					#endif
-			} 
-			else {
+				detailView(for: card, onClose: { model.selectedCard = nil })
+			} else {
 				Text("Tap on a Card to view details")
 			}
 		}
@@ -155,13 +144,7 @@ struct HomeView: View {
 			})
 		}
 		.navigationDestination(item: $model.selectedCard) { card in
-			CardView(model: CardViewModel(
-				card: card,
-				addUpdateCard: { card in
-					await model.cardDataStore.updateCard(card)
-				}))
-			.id(card.id)
-			.onAppear { model.savedTipDetailsDidAppear(for: card.id) }
+			detailView(for: card)
 		}
 		.sheet(isPresented: $model.isAddingCard, onDismiss: {
 			isAddCardPresented = false
@@ -183,13 +166,11 @@ struct HomeView: View {
 					await model.cardDataStore.addCard(card)
 				},
 				onSaved: { card, scanNumberUnedited in
-					let count = model.cardDataStore.savedCardCount
-					if supportPromptPolicy?.recordNewCardSaved(
+					supportPromptPolicy?.recordNewCardSaved(
+						id: card.id,
 						scanNumberUnedited: scanNumberUnedited,
-						savedCardCount: count
-					) == true {
-						model.awaitSavedTipDetails(for: card.id)
-					}
+						activeCardCount: model.cardDataStore.activeCardCount
+					)
 					model.finishAddingCard(
 						selecting: model.cardDataStore.findCard(by: card.id) ?? card
 					)
@@ -278,17 +259,21 @@ struct HomeView: View {
 		.onChange(of: model.isAddingCard) { _, isPresented in
 			if isPresented { isAddCardPresented = true }
 		}
-		.onChange(of: model.selectedCard?.id) { _, current in
-			if current == nil && model.consumeSavedTipDetailsReturn() {
-				supportPromptPolicy?.returnedFromSavedDetails()
+		.onChange(of: model.selectedCard?.id) { previous, current in
+			guard let previous, current == nil, promptContext.permitsPrompt,
+				  model.cardDataStore.findCard(by: previous) != nil else { return }
+			supportPromptPolicy?.returnedFromCardDetails()
+		}
+		.onChange(of: promptContext.canStayOnCardList) { _, canStay in
+			if !canStay { supportPromptPolicy?.leftCardList() }
+		}
+		.onChange(of: promptContext.isActive) { _, isActive in
+			if !isActive, supportPromptPolicy?.automaticTip == nil {
+				supportPromptPolicy?.leftCardList()
 			}
 		}
-		.sheet(item: $automaticTip) { source in
-			SDKPaywallView(
-				displayCloseButton: true,
-				analyticsContext: SDKPaywallContext(source: source.rawValue)
-			)
-		}
+		.onDisappear { supportPromptPolicy?.leftCardList() }
+		.background { automaticTipPresenter }
 		.onReceive(sdk.$configurationState) { state in
 			paymentsReady = state == .configured
 		}
@@ -306,8 +291,38 @@ struct HomeView: View {
 		case review
 	}
 
-	private var reviewVersion: String {
-		Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? ""
+	private let reviewVersion = Bundle.main.versionNumber
+
+	private func detailView(for card: CardData, onClose: (() -> Void)? = nil) -> some View {
+		CardView(
+			model: CardViewModel(
+				card: card,
+				addUpdateCard: { card in await model.cardDataStore.updateCard(card) }
+			),
+			onClose: onClose
+		)
+		.id(card.id)
+		.onAppear { supportPromptPolicy?.showedCardDetails(id: card.id) }
+	}
+
+	@ViewBuilder
+	private var automaticTipPresenter: some View {
+		if let supportPromptPolicy, let attempt = supportPromptPolicy.automaticTip {
+			Color.clear
+				// All tip entitlements have already been checked by tipPurchaseStatus.
+				// The SDK fetches the offering before presenting it.
+				.presentSDKPaywallIfNeeded(
+					requiredEntitlement: "",
+					presentationMode: .sheet,
+					analyticsContext: SDKPaywallContext(source: attempt.source.rawValue),
+					callbacks: SDKPaywallCallbacks(
+						onPurchaseStarted: { supportPromptPolicy.confirmAutomaticTip(attempt) },
+						onRestoreStarted: { supportPromptPolicy.confirmAutomaticTip(attempt) }
+					),
+					onDismiss: { supportPromptPolicy.dismissAutomaticTip(attempt) }
+				)
+				.id(attempt.id)
+		}
 	}
 
 	private var promptContext: SupportPromptPolicy.PresentationContext {
@@ -325,15 +340,15 @@ struct HomeView: View {
 			isOnboarding: isOnboardingPresented || appFlow.onboardingAudience != nil || appFlow.isOnboardingReplayPending
 				|| pendingOnboardingAddMode != nil,
 			isOnCardList: initialCardLoadSucceeded && model.selectedCard == nil && !isShowingArchivedCards,
-			isAddingOrScanning: model.isAddingCard || isAddCardPresented || model.hasPendingCardSelection,
-			hasModal: hasSettingsSheet || cardPendingDeletion != nil || automaticTip != nil
+			isAddingOrScanning: model.isAddingCard || isAddCardPresented,
+			hasModal: hasSettingsSheet || cardPendingDeletion != nil
 		)
 	}
 
 	private var listPrompt: ListPrompt? {
 		guard let supportPromptPolicy else { return nil }
-		if paymentsReady, let tip = supportPromptPolicy.eligibleTip(in: promptContext) {
-			return .tip(tip)
+		if let tip = supportPromptPolicy.eligibleTip(in: promptContext), sdk.configuration?.payments != .disabled {
+			return paymentsReady ? .tip(tip) : nil
 		}
 		if supportPromptPolicy.canRequestReview(version: reviewVersion, in: promptContext) {
 			return .review
@@ -343,16 +358,15 @@ struct HomeView: View {
 
 	private func presentListPrompt(_ prompt: ListPrompt) async {
 		guard let supportPromptPolicy, !Task.isCancelled, listPrompt == prompt else { return }
-		if case let .tip(source) = prompt {
+		switch prompt {
+		case let .tip(source):
 			let purchaseStatus = await tipPurchaseStatus()
 			guard !Task.isCancelled, listPrompt == prompt else { return }
-			if supportPromptPolicy.claimTip(source, purchaseStatus: purchaseStatus, in: promptContext) {
-				automaticTip = source
-				return
+			supportPromptPolicy.beginAutomaticTip(source, purchaseStatus: purchaseStatus, in: promptContext)
+		case .review:
+			if supportPromptPolicy.claimReview(version: reviewVersion, in: promptContext) {
+				requestReview()
 			}
-		}
-		if supportPromptPolicy.claimReview(version: reviewVersion, in: promptContext) {
-			requestReview()
 		}
 	}
 

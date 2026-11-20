@@ -18,30 +18,9 @@ final class HomeViewModel: ObservableObject {
 	/// Held until the add-card sheet finishes dismissing so the details
 	/// navigation does not overlap its presentation transition (#117).
 	private var pendingCardSelection: CardData?
-	var hasPendingCardSelection: Bool { pendingCardSelection != nil }
-	private var tipCardAwaitingDetails: UUID?
-	private var didSeeTipCardDetails = false
 
 	init(cardDataStore: CardDataStore? = nil) {
 		self.cardDataStore = cardDataStore ?? CardDataStore()
-	}
-
-	func awaitSavedTipDetails(for id: UUID) {
-		tipCardAwaitingDetails = id
-		didSeeTipCardDetails = false
-	}
-
-	func savedTipDetailsDidAppear(for id: UUID) {
-		if tipCardAwaitingDetails == id {
-			didSeeTipCardDetails = true
-		}
-	}
-
-	func consumeSavedTipDetailsReturn() -> Bool {
-		guard didSeeTipCardDetails else { return false }
-		tipCardAwaitingDetails = nil
-		didSeeTipCardDetails = false
-		return true
 	}
 
 	deinit {

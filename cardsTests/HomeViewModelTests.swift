@@ -84,35 +84,6 @@ final class HomeViewModelTests: XCTestCase {
 		XCTAssertNil(model.selectedCard, "Dismissal must consume the pending selection")
 	}
 
-	func testTipWaitsForTheQualifyingSavedDetailsAndConsumesItsReturnOnce() {
-		let model = HomeViewModel(cardDataStore: emptyCardStore())
-		let saved = makeCard()
-		model.awaitSavedTipDetails(for: saved.id)
-
-		XCTAssertFalse(model.consumeSavedTipDetailsReturn())
-		model.savedTipDetailsDidAppear(for: UUID())
-		XCTAssertFalse(model.consumeSavedTipDetailsReturn())
-
-		model.savedTipDetailsDidAppear(for: saved.id)
-		XCTAssertTrue(model.consumeSavedTipDetailsReturn())
-		XCTAssertFalse(model.consumeSavedTipDetailsReturn())
-	}
-
-	func testTipReturnSurvivesSwitchingToAnotherCardBeforeTheList() {
-		let model = HomeViewModel(cardDataStore: emptyCardStore())
-		let saved = makeCard()
-		model.awaitSavedTipDetails(for: saved.id)
-		model.selectedCard = saved
-		model.savedTipDetailsDidAppear(for: saved.id)
-
-		let other = makeCard()
-		model.selectedCard = other
-		model.savedTipDetailsDidAppear(for: other.id)
-		model.selectedCard = nil
-
-		XCTAssertTrue(model.consumeSavedTipDetailsReturn())
-	}
-
 	private func emptyCardStore() -> CardDataStore {
 		CardDataStore(retrievePayloads: { _ in .empty })
 	}
