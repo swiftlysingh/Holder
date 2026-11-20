@@ -455,6 +455,7 @@ private final class SimulatorVisionScannerViewController: UIViewController {
 		let previewLayer = CALayer()
 		previewLayer.contentsGravity = .resizeAspectFill
 		previewLayer.masksToBounds = true
+		previewLayer.actions = ["contents": NSNull()]
 		previewLayer.frame = view.bounds
 		view.layer.addSublayer(previewLayer)
 		self.previewLayer = previewLayer
