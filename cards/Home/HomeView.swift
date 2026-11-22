@@ -260,14 +260,14 @@ struct HomeView: View {
 			if isPresented { isAddCardPresented = true }
 		}
 		.onChange(of: model.selectedCard?.id) { previous, current in
-			guard let previous, current == nil, promptContext.permitsPrompt,
+			guard let previous, current == nil, canPresentPrompt,
 				  model.cardDataStore.findCard(by: previous) != nil else { return }
 			supportPromptPolicy?.returnedFromCardDetails()
 		}
-		.onChange(of: promptContext.canStayOnCardList) { _, canStay in
+		.onChange(of: isCardListAvailable) { _, canStay in
 			if !canStay { supportPromptPolicy?.leftCardList() }
 		}
-		.onChange(of: promptContext.isActive) { _, isActive in
+		.onChange(of: isPromptWindowActive) { _, isActive in
 			if !isActive, supportPromptPolicy?.automaticTip == nil {
 				supportPromptPolicy?.leftCardList()
 			}
@@ -284,11 +284,6 @@ struct HomeView: View {
 			await presentListPrompt(prompt)
 		}
 		.sdkScreen(AppAnalyticsScreen.home)
-	}
-
-	private enum ListPrompt: Equatable {
-		case tip(SupportPromptPolicy.TipSource)
-		case review
 	}
 
 	private let reviewVersion = Bundle.main.versionNumber
@@ -325,59 +320,48 @@ struct HomeView: View {
 		}
 	}
 
-	private var promptContext: SupportPromptPolicy.PresentationContext {
+	private var isPromptWindowActive: Bool {
 		#if os(macOS)
-		let hasSettingsSheet = false
-		let isWindowActive = isMainWindowActive
-		#else
-		let hasSettingsSheet = isShowingSettings || isSettingsPresented
-		let isWindowActive = true
+		guard isMainWindowActive else { return false }
 		#endif
-		return .init(
-			isVaultUnlocked: authenticationSession.isVaultUnlocked,
-			isActive: isWindowActive && scenePhase == .active && !authenticationSession.isPrivacyCurtainVisible,
-			isUnlocking: authenticationSession.isAuthenticating,
-			isOnboarding: isOnboardingPresented || appFlow.onboardingAudience != nil || appFlow.isOnboardingReplayPending
-				|| pendingOnboardingAddMode != nil,
-			isOnCardList: initialCardLoadSucceeded && model.selectedCard == nil && !isShowingArchivedCards,
-			isAddingOrScanning: model.isAddingCard || isAddCardPresented,
-			hasModal: hasSettingsSheet || cardPendingDeletion != nil
-		)
+		return scenePhase == .active && !authenticationSession.isPrivacyCurtainVisible
 	}
 
-	private var listPrompt: ListPrompt? {
-		guard let supportPromptPolicy else { return nil }
-		if let tip = supportPromptPolicy.eligibleTip(in: promptContext), sdk.configuration?.payments != .disabled {
-			return paymentsReady ? .tip(tip) : nil
-		}
-		if supportPromptPolicy.canRequestReview(version: reviewVersion, in: promptContext) {
-			return .review
-		}
-		return nil
+	private var isCardListAvailable: Bool {
+		#if !os(macOS)
+		guard !isShowingSettings && !isSettingsPresented else { return false }
+		#endif
+		return initialCardLoadSucceeded && model.selectedCard == nil && !isShowingArchivedCards
+			&& authenticationSession.isVaultUnlocked && !authenticationSession.isAuthenticating
+			&& !isOnboardingPresented && appFlow.onboardingAudience == nil && !appFlow.isOnboardingReplayPending
+			&& pendingOnboardingAddMode == nil && !model.isAddingCard && !isAddCardPresented
+			&& cardPendingDeletion == nil
 	}
 
-	private func presentListPrompt(_ prompt: ListPrompt) async {
+	private var canPresentPrompt: Bool { isCardListAvailable && isPromptWindowActive }
+
+	private var listPrompt: SupportPromptPolicy.Prompt? {
+		guard let prompt = supportPromptPolicy?.nextPrompt(
+			version: reviewVersion,
+			canPresent: canPresentPrompt,
+			tipsEnabled: sdk.configuration?.payments != .disabled
+		) else { return nil }
+		if case .tip = prompt, !paymentsReady { return nil }
+		return prompt
+	}
+
+	private func presentListPrompt(_ prompt: SupportPromptPolicy.Prompt) async {
 		guard let supportPromptPolicy, !Task.isCancelled, listPrompt == prompt else { return }
-		switch prompt {
-		case let .tip(source):
-			let purchaseStatus = await tipPurchaseStatus()
-			guard !Task.isCancelled, listPrompt == prompt else { return }
-			supportPromptPolicy.beginAutomaticTip(source, purchaseStatus: purchaseStatus, in: promptContext)
-		case .review:
-			if supportPromptPolicy.claimReview(version: reviewVersion, in: promptContext) {
-				requestReview()
-			}
+		var hasPurchasedTip: Bool?
+		if case .tip = prompt, await payments.isConfigured {
+			// Holder's permanent tip entitlements include past purchases.
+			let entitlements = try? await payments.activeEntitlements()
+			hasPurchasedTip = entitlements.map { !$0.isEmpty }
 		}
-	}
-
-	private func tipPurchaseStatus() async -> SupportPromptPolicy.TipPurchaseStatus {
-		guard await payments.isConfigured else { return .unknown }
-		do {
-			// Holder's tips grant permanent entitlements, including past purchases.
-			let entitlements = try await payments.activeEntitlements()
-			return entitlements.isEmpty ? .notPurchased : .purchased
-		} catch {
-			return .unknown
+		guard !Task.isCancelled, listPrompt == prompt else { return }
+		if supportPromptPolicy.claim(prompt, version: reviewVersion, hasPurchasedTip: hasPurchasedTip),
+		   prompt == .review {
+			requestReview()
 		}
 	}
 

@@ -9,38 +9,19 @@ final class SupportPromptPolicy {
         case thirdCardSaved = "third_card_saved"
     }
 
+    enum Prompt: Equatable {
+        case tip(TipSource)
+        case review
+    }
+
     struct AutomaticTip: Identifiable, Equatable {
         let id = UUID()
         let source: TipSource
     }
 
-    enum TipPurchaseStatus {
-        case unknown
-        case purchased
-        case notPurchased
-    }
-
-    struct PresentationContext {
-        var isVaultUnlocked: Bool
-        var isActive: Bool
-        var isUnlocking: Bool
-        var isOnboarding: Bool
-        var isOnCardList: Bool
-        var isAddingOrScanning: Bool
-        var hasModal: Bool
-
-        var permitsPrompt: Bool { isActive && canStayOnCardList }
-
-        var canStayOnCardList: Bool {
-            isVaultUnlocked && !isUnlocking && !isOnboarding && isOnCardList
-                && !isAddingOrScanning && !hasModal
-        }
-    }
-
     private enum Key {
         static let tip = "supportPrompt.tip"
         static let tipDetailsSeen = "supportPrompt.tipDetailsSeen"
-        /// Identifies which details screen still has to appear. This is not the card number.
         static let tipCardID = "supportPrompt.tipCardID"
         static let copyDays = "supportPrompt.copyDays"
         static let reviewedVersions = "supportPrompt.reviewedVersions"
@@ -50,18 +31,11 @@ final class SupportPromptPolicy {
     private let now: () -> Date
     private let calendar: Calendar
     private var pendingTip: TipSource?
-    private var tipWasConsumed: Bool
-    /// Card whose details must appear before the tip can be offered. Nil once they have.
-    private var savedTipCardID: UUID?
-    private var detailsPrerequisiteCompleted: Bool
-    /// True when a previous launch already showed the saved card, so this launch can offer the tip from the list.
-    private var detailsCompletedBeforeSession: Bool
+    private let resumedTip: Bool
     private var returnedToCardList = false
+    private var suppressedThisSession = false
     private var copyDays: [String]
     private var reviewedVersions: [String]
-    private var usedCardDetailsThisSession = false
-    private var attemptedTipThisSession = false
-    private var requestedReviewThisSession = false
     private(set) var automaticTip: AutomaticTip?
 
     init(
@@ -72,36 +46,20 @@ final class SupportPromptPolicy {
         self.storage = storage
         self.now = now
         self.calendar = calendar
-
-        let tip = storage.string(forKey: Key.tip)
-        let pendingTip = tip.flatMap(TipSource.init(rawValue:))
-        let detailsSeen = pendingTip != nil && storage.bool(forKey: Key.tipDetailsSeen)
+        let pendingTip = storage.string(forKey: Key.tip).flatMap(TipSource.init(rawValue:))
         self.pendingTip = pendingTip
-        tipWasConsumed = tip == "consumed"
-        detailsPrerequisiteCompleted = detailsSeen
-        detailsCompletedBeforeSession = detailsSeen
-        savedTipCardID = detailsSeen ? nil : storage.string(forKey: Key.tipCardID).flatMap(UUID.init(uuidString:))
+        resumedTip = pendingTip != nil && storage.bool(forKey: Key.tipDetailsSeen)
         copyDays = storage.stringArray(forKey: Key.copyDays) ?? []
         reviewedVersions = storage.stringArray(forKey: Key.reviewedVersions) ?? []
     }
 
     @discardableResult
     func recordNewCardSaved(id: UUID, scanNumberUnedited: Bool, activeCardCount: Int) -> Bool {
-        guard !tipWasConsumed, pendingTip == nil else { return false }
-        let source: TipSource
-        if scanNumberUnedited {
-            source = .firstScanSaved
-        } else if activeCardCount >= 3 {
-            source = .thirdCardSaved
-        } else {
-            return false
-        }
-
-        savedTipCardID = id
-        detailsPrerequisiteCompleted = false
-        detailsCompletedBeforeSession = false
-        returnedToCardList = false
+        guard pendingTip == nil, storage.string(forKey: Key.tip) != "consumed",
+              scanNumberUnedited || activeCardCount >= 3 else { return false }
+        let source: TipSource = scanNumberUnedited ? .firstScanSaved : .thirdCardSaved
         pendingTip = source
+        returnedToCardList = false
         storage.set(source.rawValue, forKey: Key.tip)
         storage.set(false, forKey: Key.tipDetailsSeen)
         storage.set(id.uuidString, forKey: Key.tipCardID)
@@ -109,12 +67,11 @@ final class SupportPromptPolicy {
     }
 
     func showedCardDetails(id: UUID) {
-        guard savedTipCardID == id else { return }
+        guard !storage.bool(forKey: Key.tipDetailsSeen),
+              storage.string(forKey: Key.tipCardID).flatMap(UUID.init(uuidString:)) == id else { return }
+        returnedToCardList = false
         storage.set(true, forKey: Key.tipDetailsSeen)
         storage.removeObject(forKey: Key.tipCardID)
-        savedTipCardID = nil
-        detailsPrerequisiteCompleted = true
-        returnedToCardList = false
     }
 
     func returnedFromCardDetails() {
@@ -128,43 +85,43 @@ final class SupportPromptPolicy {
 
     func endForegroundSession() {
         leftCardList()
-        usedCardDetailsThisSession = false
-        attemptedTipThisSession = false
-        requestedReviewThisSession = false
+        suppressedThisSession = false
     }
 
-    func eligibleTip(in context: PresentationContext) -> TipSource? {
-        let settledOnCardList = returnedToCardList || detailsCompletedBeforeSession
-        guard context.permitsPrompt, detailsPrerequisiteCompleted, savedTipCardID == nil, settledOnCardList,
-              !usedCardDetailsThisSession, !attemptedTipThisSession,
-              !requestedReviewThisSession else { return nil }
-        return pendingTip
+    func nextPrompt(version: String, canPresent: Bool, tipsEnabled: Bool = true) -> Prompt? {
+        guard canPresent, !suppressedThisSession else { return nil }
+        if tipsEnabled, let pendingTip, storage.bool(forKey: Key.tipDetailsSeen),
+           returnedToCardList || resumedTip {
+            return .tip(pendingTip)
+        }
+        guard returnedToCardList, !version.isEmpty, copyDays.count >= 3,
+              !reviewedVersions.contains(version) else { return nil }
+        return .review
     }
 
     @discardableResult
-    func beginAutomaticTip(
-        _ source: TipSource,
-        purchaseStatus: TipPurchaseStatus,
-        in context: PresentationContext
-    ) -> Bool {
-        guard eligibleTip(in: context) == source else { return false }
-        switch purchaseStatus {
-        case .unknown:
-            attemptedTipThisSession = true
-            return false
-        case .purchased:
-            returnedToCardList = false
-            consumeTip()
-            return false
-        case .notPurchased:
-            attemptedTipThisSession = true
+    func claim(_ prompt: Prompt, version: String, hasPurchasedTip: Bool? = nil) -> Bool {
+        guard nextPrompt(version: version, canPresent: true, tipsEnabled: prompt != .review) == prompt else { return false }
+        switch prompt {
+        case .tip(let source):
+            if hasPurchasedTip == true {
+                consumeTip()
+                returnedToCardList = false
+                return false
+            }
+            suppressedThisSession = true
+            guard hasPurchasedTip == false else { return false }
             automaticTip = AutomaticTip(source: source)
-            return true
+        case .review:
+            suppressedThisSession = true
+            reviewedVersions.append(version)
+            storage.set(reviewedVersions, forKey: Key.reviewedVersions)
         }
+        return true
     }
 
     func confirmAutomaticTip(_ attempt: AutomaticTip) {
-        guard automaticTip == attempt, !tipWasConsumed else { return }
+        guard automaticTip == attempt, pendingTip != nil else { return }
         consumeTip()
     }
 
@@ -175,21 +132,18 @@ final class SupportPromptPolicy {
     }
 
     private func consumeTip() {
-        tipWasConsumed = true
         pendingTip = nil
-        savedTipCardID = nil
         storage.set("consumed", forKey: Key.tip)
         storage.removeObject(forKey: Key.tipDetailsSeen)
         storage.removeObject(forKey: Key.tipCardID)
     }
 
     func recordTipPresented() {
-        attemptedTipThisSession = true
+        suppressedThisSession = true
     }
 
     func recordShare() {
-        guard !usedCardDetailsThisSession else { return }
-        usedCardDetailsThisSession = true
+        suppressedThisSession = true
         leftCardList()
     }
 
@@ -202,20 +156,6 @@ final class SupportPromptPolicy {
         guard !copyDays.contains(key) else { return }
         copyDays.append(key)
         storage.set(copyDays, forKey: Key.copyDays)
-    }
-
-    func canRequestReview(version: String, in context: PresentationContext) -> Bool {
-        context.permitsPrompt && returnedToCardList && !version.isEmpty && copyDays.count >= 3
-            && !reviewedVersions.contains(version) && !usedCardDetailsThisSession && !attemptedTipThisSession
-            && !requestedReviewThisSession
-    }
-
-    func claimReview(version: String, in context: PresentationContext) -> Bool {
-        guard canRequestReview(version: version, in: context) else { return false }
-        requestedReviewThisSession = true
-        reviewedVersions.append(version)
-        storage.set(reviewedVersions, forKey: Key.reviewedVersions)
-        return true
     }
 }
 

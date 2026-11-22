@@ -4,15 +4,6 @@ import XCTest
 @MainActor
 final class SupportPromptPolicyTests: XCTestCase {
     private let savedCardID = UUID()
-    private let ready = SupportPromptPolicy.PresentationContext(
-        isVaultUnlocked: true,
-        isActive: true,
-        isUnlocking: false,
-        isOnboarding: false,
-        isOnCardList: true,
-        isAddingOrScanning: false,
-        hasModal: false
-    )
 
     func testFirstUneditedScanWaitsForSavedDetailsAndShowsOnce() throws {
         let storage = try makeStorage()
@@ -20,25 +11,25 @@ final class SupportPromptPolicyTests: XCTestCase {
 
         XCTAssertFalse(policy.recordNewCardSaved(id: savedCardID, scanNumberUnedited: false, activeCardCount: 1))
         XCTAssertTrue(policy.recordNewCardSaved(id: savedCardID, scanNumberUnedited: true, activeCardCount: 2))
-        XCTAssertFalse(policy.beginAutomaticTip(.firstScanSaved, purchaseStatus: .notPurchased, in: ready))
+        XCTAssertFalse(policy.claim(.tip(.firstScanSaved), version: "2.6", hasPurchasedTip: false))
 
         policy.showedCardDetails(id: UUID())
         policy.returnedFromCardDetails()
-        XCTAssertNil(policy.eligibleTip(in: ready))
+        XCTAssertNil(policy.nextPrompt(version: "2.6", canPresent: true))
 
         policy.leftCardList()
         policy.showedCardDetails(id: savedCardID)
         policy.showedCardDetails(id: UUID())
-        XCTAssertNil(policy.eligibleTip(in: ready))
+        XCTAssertNil(policy.nextPrompt(version: "2.6", canPresent: true))
         policy.returnedFromCardDetails()
-        XCTAssertEqual(policy.eligibleTip(in: ready), .firstScanSaved)
-        XCTAssertTrue(policy.beginAutomaticTip(.firstScanSaved, purchaseStatus: .notPurchased, in: ready))
-        XCTAssertFalse(policy.beginAutomaticTip(.firstScanSaved, purchaseStatus: .notPurchased, in: ready))
+        XCTAssertEqual(policy.nextPrompt(version: "2.6", canPresent: true), .tip(.firstScanSaved))
+        XCTAssertTrue(policy.claim(.tip(.firstScanSaved), version: "2.6", hasPurchasedTip: false))
+        XCTAssertFalse(policy.claim(.tip(.firstScanSaved), version: "2.6", hasPurchasedTip: false))
         policy.dismissAutomaticTip(try XCTUnwrap(policy.automaticTip))
 
         let nextLaunch = SupportPromptPolicy(storage: storage)
         nextLaunch.returnedFromCardDetails()
-        XCTAssertNil(nextLaunch.eligibleTip(in: ready))
+        XCTAssertNil(nextLaunch.nextPrompt(version: "2.6", canPresent: true))
         XCTAssertFalse(nextLaunch.recordNewCardSaved(id: savedCardID, scanNumberUnedited: true, activeCardCount: 4))
     }
 
@@ -48,22 +39,22 @@ final class SupportPromptPolicyTests: XCTestCase {
 
         XCTAssertFalse(policy.recordNewCardSaved(id: savedCardID, scanNumberUnedited: false, activeCardCount: 2))
         XCTAssertTrue(policy.recordNewCardSaved(id: savedCardID, scanNumberUnedited: false, activeCardCount: 3))
-        XCTAssertNil(policy.eligibleTip(in: ready))
+        XCTAssertNil(policy.nextPrompt(version: "2.6", canPresent: true))
         XCTAssertFalse(policy.recordNewCardSaved(id: savedCardID, scanNumberUnedited: true, activeCardCount: 4))
 
         let nextLaunch = SupportPromptPolicy(storage: storage)
-        XCTAssertNil(nextLaunch.eligibleTip(in: ready))
+        XCTAssertNil(nextLaunch.nextPrompt(version: "2.6", canPresent: true))
         nextLaunch.returnedFromCardDetails()
         nextLaunch.showedCardDetails(id: UUID())
         nextLaunch.returnedFromCardDetails()
-        XCTAssertNil(nextLaunch.eligibleTip(in: ready))
+        XCTAssertNil(nextLaunch.nextPrompt(version: "2.6", canPresent: true))
         returnFromSavedCard(in: nextLaunch)
-        XCTAssertEqual(nextLaunch.eligibleTip(in: ready), .thirdCardSaved)
+        XCTAssertEqual(nextLaunch.nextPrompt(version: "2.6", canPresent: true), .tip(.thirdCardSaved))
 
         let scanner = SupportPromptPolicy(storage: try makeStorage())
         XCTAssertTrue(scanner.recordNewCardSaved(id: savedCardID, scanNumberUnedited: true, activeCardCount: 3))
         returnFromSavedCard(in: scanner)
-        XCTAssertEqual(scanner.eligibleTip(in: ready), .firstScanSaved)
+        XCTAssertEqual(scanner.nextPrompt(version: "2.6", canPresent: true), .tip(.firstScanSaved))
 
         let establishedUser = SupportPromptPolicy(storage: try makeStorage())
         XCTAssertTrue(establishedUser.recordNewCardSaved(id: savedCardID, scanNumberUnedited: false, activeCardCount: 6))
@@ -76,31 +67,31 @@ final class SupportPromptPolicyTests: XCTestCase {
         unseen.endForegroundSession()
 
         let relaunchedUnseen = SupportPromptPolicy(storage: unseenStorage)
-        XCTAssertNil(relaunchedUnseen.eligibleTip(in: ready))
+        XCTAssertNil(relaunchedUnseen.nextPrompt(version: "2.6", canPresent: true))
         relaunchedUnseen.returnedFromCardDetails()
         relaunchedUnseen.showedCardDetails(id: UUID())
         relaunchedUnseen.returnedFromCardDetails()
-        XCTAssertNil(relaunchedUnseen.eligibleTip(in: ready))
+        XCTAssertNil(relaunchedUnseen.nextPrompt(version: "2.6", canPresent: true))
         relaunchedUnseen.showedCardDetails(id: savedCardID)
-        XCTAssertNil(relaunchedUnseen.eligibleTip(in: ready))
+        XCTAssertNil(relaunchedUnseen.nextPrompt(version: "2.6", canPresent: true))
         relaunchedUnseen.returnedFromCardDetails()
-        XCTAssertEqual(relaunchedUnseen.eligibleTip(in: ready), .firstScanSaved)
+        XCTAssertEqual(relaunchedUnseen.nextPrompt(version: "2.6", canPresent: true), .tip(.firstScanSaved))
 
         let seenStorage = try makeStorage()
         let seen = SupportPromptPolicy(storage: seenStorage)
         XCTAssertTrue(seen.recordNewCardSaved(id: savedCardID, scanNumberUnedited: false, activeCardCount: 3))
         seen.showedCardDetails(id: savedCardID)
-        XCTAssertNil(seen.eligibleTip(in: ready))
+        XCTAssertNil(seen.nextPrompt(version: "2.6", canPresent: true))
 
         let relaunchedSeen = SupportPromptPolicy(storage: seenStorage)
-        XCTAssertEqual(relaunchedSeen.eligibleTip(in: ready), .thirdCardSaved)
+        XCTAssertEqual(relaunchedSeen.nextPrompt(version: "2.6", canPresent: true), .tip(.thirdCardSaved))
 
         let returnedStorage = try makeStorage()
         let returned = SupportPromptPolicy(storage: returnedStorage)
         XCTAssertTrue(returned.recordNewCardSaved(id: savedCardID, scanNumberUnedited: false, activeCardCount: 4))
         returnFromSavedCard(in: returned)
         let relaunchedReturned = SupportPromptPolicy(storage: returnedStorage)
-        XCTAssertEqual(relaunchedReturned.eligibleTip(in: ready), .thirdCardSaved)
+        XCTAssertEqual(relaunchedReturned.nextPrompt(version: "2.6", canPresent: true), .tip(.thirdCardSaved))
     }
 
     func testFailedTipKeepsItPendingAndKnownPurchaserConsumesIt() throws {
@@ -110,52 +101,42 @@ final class SupportPromptPolicyTests: XCTestCase {
         policy.recordNewCardSaved(id: savedCardID, scanNumberUnedited: true, activeCardCount: 1)
         returnFromSavedCard(in: policy)
 
-        XCTAssertFalse(policy.beginAutomaticTip(.firstScanSaved, purchaseStatus: .unknown, in: ready))
-        XCTAssertFalse(policy.claimReview(version: "2.6", in: ready))
+        XCTAssertFalse(policy.claim(.tip(.firstScanSaved), version: "2.6", hasPurchasedTip: nil))
+        XCTAssertFalse(policy.claim(.review, version: "2.6"))
         policy.endForegroundSession()
         policy.returnedFromCardDetails()
-        XCTAssertTrue(policy.beginAutomaticTip(.firstScanSaved, purchaseStatus: .notPurchased, in: ready))
+        XCTAssertTrue(policy.claim(.tip(.firstScanSaved), version: "2.6", hasPurchasedTip: false))
         let failedAttempt = try XCTUnwrap(policy.automaticTip)
         policy.endForegroundSession()
         policy.returnedFromCardDetails()
-        XCTAssertEqual(policy.eligibleTip(in: ready), .firstScanSaved)
+        XCTAssertEqual(policy.nextPrompt(version: "2.6", canPresent: true), .tip(.firstScanSaved))
 
-        XCTAssertTrue(policy.beginAutomaticTip(.firstScanSaved, purchaseStatus: .notPurchased, in: ready))
+        XCTAssertTrue(policy.claim(.tip(.firstScanSaved), version: "2.6", hasPurchasedTip: false))
         policy.dismissAutomaticTip(failedAttempt)
         XCTAssertNotNil(policy.automaticTip)
         policy.endForegroundSession()
         policy.returnedFromCardDetails()
-        XCTAssertFalse(policy.beginAutomaticTip(.firstScanSaved, purchaseStatus: .purchased, in: ready))
+        XCTAssertFalse(policy.claim(.tip(.firstScanSaved), version: "2.6", hasPurchasedTip: true))
 
         let nextLaunch = SupportPromptPolicy(storage: storage)
         nextLaunch.returnedFromCardDetails()
-        XCTAssertNil(nextLaunch.eligibleTip(in: ready))
+        XCTAssertEqual(
+            nextLaunch.nextPrompt(version: "2.6", canPresent: true),
+            .review,
+            "A purchased tip stays consumed, so a later card-list visit can ask for a rating"
+        )
     }
 
-    func testBothPromptsRespectEveryPresentationGuard() throws {
+    func testPresentationAvailabilityBlocksBothPrompts() throws {
         let storage = try makeStorage()
         recordThreeCopyDays(in: storage)
         let policy = SupportPromptPolicy(storage: storage)
         policy.recordNewCardSaved(id: savedCardID, scanNumberUnedited: true, activeCardCount: 1)
         returnFromSavedCard(in: policy)
 
-        let guards: [(WritableKeyPath<SupportPromptPolicy.PresentationContext, Bool>, Bool)] = [
-            (\.isVaultUnlocked, false),
-            (\.isActive, false),
-            (\.isUnlocking, true),
-            (\.isOnboarding, true),
-            (\.isOnCardList, false),
-            (\.isAddingOrScanning, true),
-            (\.hasModal, true)
-        ]
-        for (keyPath, blockedValue) in guards {
-            var blocked = ready
-            blocked[keyPath: keyPath] = blockedValue
-            XCTAssertFalse(policy.beginAutomaticTip(.firstScanSaved, purchaseStatus: .notPurchased, in: blocked), "\(keyPath)")
-            XCTAssertFalse(policy.claimReview(version: "2.6", in: blocked), "\(keyPath)")
-        }
-        XCTAssertEqual(policy.eligibleTip(in: ready), .firstScanSaved)
-        XCTAssertTrue(policy.canRequestReview(version: "2.6", in: ready))
+        XCTAssertNil(policy.nextPrompt(version: "2.6", canPresent: false))
+        XCTAssertEqual(policy.nextPrompt(version: "2.6", canPresent: true), .tip(.firstScanSaved))
+        XCTAssertEqual(policy.nextPrompt(version: "2.6", canPresent: true, tipsEnabled: false), .review)
     }
 
     func testCopyAndShareDeferTipUntilNextSessionAndCardListReturn() throws {
@@ -163,17 +144,17 @@ final class SupportPromptPolicyTests: XCTestCase {
         policy.recordNewCardSaved(id: savedCardID, scanNumberUnedited: false, activeCardCount: 3)
         policy.recordCopy()
         returnFromSavedCard(in: policy)
-        XCTAssertFalse(policy.beginAutomaticTip(.thirdCardSaved, purchaseStatus: .notPurchased, in: ready))
+        XCTAssertFalse(policy.claim(.tip(.thirdCardSaved), version: "2.6", hasPurchasedTip: false))
 
         policy.endForegroundSession()
-        XCTAssertNil(policy.eligibleTip(in: ready))
+        XCTAssertNil(policy.nextPrompt(version: "2.6", canPresent: true))
         policy.recordShare()
         policy.returnedFromCardDetails()
-        XCTAssertFalse(policy.beginAutomaticTip(.thirdCardSaved, purchaseStatus: .notPurchased, in: ready))
+        XCTAssertFalse(policy.claim(.tip(.thirdCardSaved), version: "2.6", hasPurchasedTip: false))
 
         policy.endForegroundSession()
         policy.returnedFromCardDetails()
-        XCTAssertEqual(policy.eligibleTip(in: ready), .thirdCardSaved)
+        XCTAssertEqual(policy.nextPrompt(version: "2.6", canPresent: true), .tip(.thirdCardSaved))
     }
 
     func testReviewRequiresThreeDistinctCopyDaysAndIsClaimedOncePerVersion() throws {
@@ -186,21 +167,21 @@ final class SupportPromptPolicyTests: XCTestCase {
         copyingSession.recordCopy()
         let nextLaunch = SupportPromptPolicy(storage: storage)
         nextLaunch.returnedFromCardDetails()
-        XCTAssertFalse(nextLaunch.claimReview(version: "2.6", in: ready))
+        XCTAssertFalse(nextLaunch.claim(.review, version: "2.6"))
 
         now += 86_400
         copyingSession.recordCopy()
         copyingSession.returnedFromCardDetails()
-        XCTAssertFalse(copyingSession.claimReview(version: "2.6", in: ready))
+        XCTAssertFalse(copyingSession.claim(.review, version: "2.6"))
         copyingSession.endForegroundSession()
-        XCTAssertFalse(copyingSession.claimReview(version: "2.6", in: ready))
+        XCTAssertFalse(copyingSession.claim(.review, version: "2.6"))
         copyingSession.returnedFromCardDetails()
-        XCTAssertTrue(copyingSession.claimReview(version: "2.6", in: ready))
+        XCTAssertTrue(copyingSession.claim(.review, version: "2.6"))
 
         let updatedApp = SupportPromptPolicy(storage: storage)
         updatedApp.returnedFromCardDetails()
-        XCTAssertFalse(updatedApp.claimReview(version: "2.6", in: ready))
-        XCTAssertTrue(updatedApp.claimReview(version: "2.7", in: ready))
+        XCTAssertFalse(updatedApp.claim(.review, version: "2.6"))
+        XCTAssertTrue(updatedApp.claim(.review, version: "2.7"))
     }
 
     func testManualAndAutomaticTipBlockReviewAndReviewBlocksTipInItsSession() throws {
@@ -211,18 +192,18 @@ final class SupportPromptPolicyTests: XCTestCase {
         manual.recordNewCardSaved(id: savedCardID, scanNumberUnedited: true, activeCardCount: 1)
         manual.recordTipPresented()
         returnFromSavedCard(in: manual)
-        XCTAssertFalse(manual.claimReview(version: "2.6", in: ready))
-        XCTAssertNil(manual.eligibleTip(in: ready))
+        XCTAssertFalse(manual.claim(.review, version: "2.6"))
+        XCTAssertNil(manual.nextPrompt(version: "2.6", canPresent: true))
 
         let review = SupportPromptPolicy(storage: storage)
         review.returnedFromCardDetails()
-        XCTAssertTrue(review.claimReview(version: "2.6", in: ready))
-        XCTAssertFalse(review.beginAutomaticTip(.firstScanSaved, purchaseStatus: .notPurchased, in: ready))
+        XCTAssertTrue(review.claim(.review, version: "2.6"))
+        XCTAssertFalse(review.claim(.tip(.firstScanSaved), version: "2.6", hasPurchasedTip: false))
 
         let automatic = SupportPromptPolicy(storage: storage)
         automatic.returnedFromCardDetails()
-        XCTAssertTrue(automatic.beginAutomaticTip(.firstScanSaved, purchaseStatus: .notPurchased, in: ready))
-        XCTAssertFalse(automatic.claimReview(version: "2.7", in: ready))
+        XCTAssertTrue(automatic.claim(.tip(.firstScanSaved), version: "2.6", hasPurchasedTip: false))
+        XCTAssertFalse(automatic.claim(.review, version: "2.7"))
     }
 
     private func returnFromSavedCard(in policy: SupportPromptPolicy) {
