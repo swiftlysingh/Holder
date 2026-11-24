@@ -33,8 +33,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/swiftlysingh/SinghDevKit.git",
       "state" : {
-        "revision" : "bac45374b841533a1b09c12ad3c03a449a9ff88f",
-        "version" : "2.8.2"
+        "revision" : "2720350a1325710fe8bc70a6ccad7017b12311fb",
+        "version" : "2.8.3"
       }
     }
   ],
