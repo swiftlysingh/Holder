@@ -226,19 +226,7 @@ struct HolderOnboardingView: View {
 					}
 					.scrollBounceBehavior(.basedOnSize)
 				} else {
-					GeometryReader { proxy in
-						ScrollView {
-							pageContent
-								.frame(maxWidth: 560)
-								.frame(maxWidth: .infinity)
-								.padding(.horizontal, 24)
-								.padding(.vertical, 12)
-								.frame(minHeight: proxy.size.height, alignment: .center)
-						}
-						.scrollBounceBehavior(.basedOnSize)
-					}
-
-					actions
+					contentAndActions
 				}
 			}
 		}
@@ -249,6 +237,43 @@ struct HolderOnboardingView: View {
 			guard !didReportPresentation else { return }
 			didReportPresentation = true
 			onPresented()
+		}
+	}
+
+	@ViewBuilder
+	private var contentAndActions: some View {
+		// ArrangementView first ships in the iOS 27.1 SDK (Swift 6.4.1+).
+		#if os(iOS) && compiler(>=6.4.1)
+		if #available(iOS 27.1, *) {
+			// Keeps the artwork and buttons on separate sides of the fold when
+			// iPhone Duo is partly open.
+			ArrangementView {
+				centeredPageContent
+			} secondary: {
+				actions
+			}
+			.arrangementViewStyle(.split)
+		} else {
+			centeredPageContent
+			actions
+		}
+		#else
+		centeredPageContent
+		actions
+		#endif
+	}
+
+	private var centeredPageContent: some View {
+		GeometryReader { proxy in
+			ScrollView {
+				pageContent
+					.frame(maxWidth: 560)
+					.frame(maxWidth: .infinity)
+					.padding(.horizontal, 24)
+					.padding(.vertical, 12)
+					.frame(minHeight: proxy.size.height, alignment: .center)
+			}
+			.scrollBounceBehavior(.basedOnSize)
 		}
 	}
 

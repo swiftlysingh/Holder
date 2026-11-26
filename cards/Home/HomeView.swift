@@ -111,10 +111,13 @@ struct HomeView: View {
 				initialCardLoadSucceeded = await model.cardDataStore.loadCards()
 			}
 			#if os(iOS)
-			.safeAreaInset(edge: .bottom, alignment: .trailing, spacing: 0) {
-				floatingAddCardButton
-					.padding(.trailing, 16)
-					.padding(.bottom, 8)
+			// A bar item, not a floating button, so iPhone Duo can move it
+			// to the vertical bar with the other controls.
+			.toolbar {
+				ToolbarItemGroup(placement: .bottomBar) {
+					Spacer()
+					addCardToolbarButton
+				}
 			}
 			#else
 			.toolbar {
@@ -126,10 +129,8 @@ struct HomeView: View {
 			#if !os(macOS)
 			.toolbar {
 				ToolbarItem(placement: .topBarTrailing) {
-					Button {
+					Button("Settings", systemImage: "gear") {
 						isShowingSettings = true
-					} label: {
-						Image(systemName: "gear")
 					}
 				}
 			}
@@ -137,8 +138,18 @@ struct HomeView: View {
 		} detail: {
 			if let card = model.selectedCard {
 				detailView(for: card, onClose: { model.selectedCard = nil })
+			} else if hasActiveCards {
+				ContentUnavailableView(
+					"No Card Selected",
+					systemImage: "creditcard",
+					description: Text("Choose a card to see its details.")
+				)
 			} else {
-				Text("Tap on a Card to view details")
+				ContentUnavailableView(
+					"No Cards",
+					systemImage: "creditcard",
+					description: Text("Cards you add will appear here.")
+				)
 			}
 		}
 		.onOpenURL { url in
@@ -224,8 +235,15 @@ struct HomeView: View {
 					)
 					.toolbar {
 						ToolbarItem(placement: .confirmationAction) {
-							Button("Done") {
-								isShowingSettings = false
+							// iPhone Duo's vertical bar only shows items with a symbol.
+							if #available(iOS 26.0, visionOS 26.0, *) {
+								Button(role: .close) {
+									isShowingSettings = false
+								}
+							} else {
+								Button("Done") {
+									isShowingSettings = false
+								}
 							}
 						}
 					}
@@ -402,19 +420,13 @@ struct HomeView: View {
 
 	#if os(iOS)
 	@ViewBuilder
-	private var floatingAddCardButton: some View {
-		let button = addCardButton
-			.labelStyle(.iconOnly)
-			.buttonBorderShape(.circle)
-			.controlSize(.large)
-			.tint(.accentColor)
-
+	private var addCardToolbarButton: some View {
 		if #available(iOS 26.0, *) {
-			button
-				.buttonStyle(.glassProminent)
-		} else {
-			button
+			addCardButton
 				.buttonStyle(.borderedProminent)
+				.tint(.accentColor)
+		} else {
+			addCardButton
 		}
 	}
 
@@ -446,9 +458,12 @@ struct HomeView: View {
 		)
 	}
 
-	private var hasStoredCards: Bool {
+	private var hasActiveCards: Bool {
 		model.cardDataStore.cardsByType.values.contains { !$0.isEmpty }
-			|| !model.cardDataStore.archivedCards.isEmpty
+	}
+
+	private var hasStoredCards: Bool {
+		hasActiveCards || !model.cardDataStore.archivedCards.isEmpty
 	}
 
 	private func beginAddingCard(
