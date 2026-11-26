@@ -93,6 +93,49 @@ include marketing artwork and can create a nested, distorted presentation.
 - The generated set uses the approved order from `config.yaml`.
 - Upload happens only after explicit authorization and a final visual review.
 
+## Product page test
+
+`config.yaml` remains the current control. `config.ppo-copy-first.yaml` is a
+separate English iPhone treatment that leads with copying a saved number.
+No treatment screenshots have been uploaded to App Store Connect.
+
+1. **Your card number, ready to copy.** Everyday Card with Number showing
+   Copied! and the security code still locked. Supporting text: Saved details,
+   even without internet.
+2. **Scan it. Skip the typing.** Reuses the existing scanner capture and
+   template.
+3. **Your cards. One private place.** Moves the existing card-list artwork
+   from first to third. The dedicated privacy slide is omitted in this test.
+
+Generate it from this directory:
+
+```sh
+.venv/bin/kou generate config.ppo-copy-first.yaml --output json
+```
+
+Output goes to `output/ppo-copy-first/`. The raw source is
+`captures/en-US/card-details-copied.png`, captured from the real app using the
+Debug Everyday Card (`4242…`, expiry 09/29). The Number row shows the existing
+Copied! feedback; the security code remains hidden. A temporary 20-second
+feedback hold was used for capture and reverted in app source. The normal
+source delay remains 1.5 seconds; this change adds no production behavior.
+
+### Known capture issue
+
+The first slide is a draft. Its source lacks the Dynamic Island and uses gray
+cellular-signal dots, unlike the control. Recapture with consistent device and
+status-bar appearance, regenerate, and visually review the set before upload.
+The treatment passes the 1320 × 2868 size checks and its layout reports have no
+overlaps; those checks do not resolve this visual inconsistency.
+
+A recapture attempt on November 27 was blocked by the device tool timing out
+while opening the app and again on its advised snapshot check. No replacement
+capture is claimed.
+
+This is an English iPhone treatment only. iPad, Mac, French, and German artwork
+are not changed. Private keyword research and analytics are stored separately
+in `holder-private` and are not part of this screenshot change.
+
 ## Deferred
 
 - Widget artwork
