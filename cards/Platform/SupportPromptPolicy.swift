@@ -83,13 +83,14 @@ final class SupportPromptPolicy {
         automaticTip = nil
     }
 
+    /// Keeps an automatic tip on screen; a paywall should survive switching apps.
     func endForegroundSession() {
-        leftCardList()
+        returnedToCardList = false
         suppressedThisSession = false
     }
 
     func nextPrompt(version: String, canPresent: Bool, tipsEnabled: Bool = true) -> Prompt? {
-        guard canPresent, !suppressedThisSession else { return nil }
+        guard canPresent, !suppressedThisSession, automaticTip == nil else { return nil }
         if tipsEnabled, let pendingTip, storage.bool(forKey: Key.tipDetailsSeen),
            returnedToCardList || resumedTip {
             return .tip(pendingTip)
@@ -104,13 +105,17 @@ final class SupportPromptPolicy {
         guard nextPrompt(version: version, canPresent: true, tipsEnabled: prompt != .review) == prompt else { return false }
         switch prompt {
         case .tip(let source):
-            if hasPurchasedTip == true {
-                consumeTip()
+            guard let hasPurchasedTip else {
+                suppressedThisSession = true
+                return false
+            }
+            // Consumed before presenting: SwiftUI may tear the paywall down without onDismiss.
+            consumeTip()
+            if hasPurchasedTip {
                 returnedToCardList = false
                 return false
             }
             suppressedThisSession = true
-            guard hasPurchasedTip == false else { return false }
             automaticTip = AutomaticTip(source: source)
         case .review:
             suppressedThisSession = true
@@ -120,14 +125,8 @@ final class SupportPromptPolicy {
         return true
     }
 
-    func confirmAutomaticTip(_ attempt: AutomaticTip) {
-        guard automaticTip == attempt, pendingTip != nil else { return }
-        consumeTip()
-    }
-
     func dismissAutomaticTip(_ attempt: AutomaticTip) {
         guard automaticTip == attempt else { return }
-        confirmAutomaticTip(attempt)
         automaticTip = nil
     }
 

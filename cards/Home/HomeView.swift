@@ -304,16 +304,12 @@ struct HomeView: View {
 	private var automaticTipPresenter: some View {
 		if let supportPromptPolicy, let attempt = supportPromptPolicy.automaticTip {
 			Color.clear
-				// All tip entitlements have already been checked by tipPurchaseStatus.
+				// presentListPrompt already checked every tip entitlement.
 				// The SDK fetches the offering before presenting it.
 				.presentSDKPaywallIfNeeded(
 					requiredEntitlement: "",
 					presentationMode: .sheet,
 					analyticsContext: SDKPaywallContext(source: attempt.source.rawValue),
-					callbacks: SDKPaywallCallbacks(
-						onPurchaseStarted: { supportPromptPolicy.confirmAutomaticTip(attempt) },
-						onRestoreStarted: { supportPromptPolicy.confirmAutomaticTip(attempt) }
-					),
 					onDismiss: { supportPromptPolicy.dismissAutomaticTip(attempt) }
 				)
 				.id(attempt.id)

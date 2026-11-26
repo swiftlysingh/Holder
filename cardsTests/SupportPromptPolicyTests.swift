@@ -94,7 +94,7 @@ final class SupportPromptPolicyTests: XCTestCase {
         XCTAssertEqual(relaunchedReturned.nextPrompt(version: "2.6", canPresent: true), .tip(.thirdCardSaved))
     }
 
-    func testFailedTipKeepsItPendingAndKnownPurchaserConsumesIt() throws {
+    func testUnknownPurchaseDefersAndLeavingHolderNeverRepeatsTheTip() throws {
         let storage = try makeStorage()
         recordThreeCopyDays(in: storage)
         let policy = SupportPromptPolicy(storage: storage)
@@ -106,17 +106,31 @@ final class SupportPromptPolicyTests: XCTestCase {
         policy.endForegroundSession()
         policy.returnedFromCardDetails()
         XCTAssertTrue(policy.claim(.tip(.firstScanSaved), version: "2.6", hasPurchasedTip: false))
-        let failedAttempt = try XCTUnwrap(policy.automaticTip)
-        policy.endForegroundSession()
-        policy.returnedFromCardDetails()
-        XCTAssertEqual(policy.nextPrompt(version: "2.6", canPresent: true), .tip(.firstScanSaved))
+        let attempt = try XCTUnwrap(policy.automaticTip)
 
-        XCTAssertTrue(policy.claim(.tip(.firstScanSaved), version: "2.6", hasPurchasedTip: false))
-        policy.dismissAutomaticTip(failedAttempt)
-        XCTAssertNotNil(policy.automaticTip)
+        // Switching apps keeps the paywall up and asks nothing else over it.
         policy.endForegroundSession()
+        XCTAssertEqual(policy.automaticTip, attempt)
         policy.returnedFromCardDetails()
+        XCTAssertNil(policy.nextPrompt(version: "2.6", canPresent: true))
+
+        // A vault lock removes the paywall without onDismiss; the tip is still spent.
+        policy.leftCardList()
+        XCTAssertNil(policy.automaticTip)
+        let nextLaunch = SupportPromptPolicy(storage: storage)
+        XCTAssertNil(nextLaunch.nextPrompt(version: "2.6", canPresent: true))
+        XCTAssertFalse(nextLaunch.recordNewCardSaved(id: UUID(), scanNumberUnedited: true, activeCardCount: 2))
+    }
+
+    func testKnownPurchaserConsumesTipWithoutShowingIt() throws {
+        let storage = try makeStorage()
+        recordThreeCopyDays(in: storage)
+        let policy = SupportPromptPolicy(storage: storage)
+        policy.recordNewCardSaved(id: savedCardID, scanNumberUnedited: true, activeCardCount: 1)
+        returnFromSavedCard(in: policy)
+
         XCTAssertFalse(policy.claim(.tip(.firstScanSaved), version: "2.6", hasPurchasedTip: true))
+        XCTAssertNil(policy.automaticTip)
 
         let nextLaunch = SupportPromptPolicy(storage: storage)
         nextLaunch.returnedFromCardDetails()
