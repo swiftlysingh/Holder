@@ -18,7 +18,7 @@
 		AA0000062F0BC0000000002A /* PlatformTypes.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000012F0BC0000000001A /* PlatformTypes.swift */; };
 		AA0000072F0BC0000000002B /* PasteboardService.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000022F0BC0000000001B /* PasteboardService.swift */; };
 		AA0000082F0BC0000000002C /* HapticService.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000032F0BC0000000001C /* HapticService.swift */; };
-		AA0000092F0BC0000000002D /* ReviewService.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000042F0BC0000000001D /* ReviewService.swift */; };
+		AA0000092F0BC0000000002D /* SupportPromptPolicy.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000042F0BC0000000001D /* SupportPromptPolicy.swift */; };
 		AA00000A2F0BC0000000002E /* MenuBarView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000052F0BC0000000001E /* MenuBarView.swift */; platformFilters = (macos, ); };
 		AA2000022F40000100000002 /* AuthenticationSession.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA2000012F40000100000001 /* AuthenticationSession.swift */; };
 		EE1D3E902B66AE66009733A5 /* Tip.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE1D3E8F2B66AE66009733A5 /* Tip.swift */; };
@@ -88,7 +88,7 @@
 		AA0000012F0BC0000000001A /* PlatformTypes.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlatformTypes.swift; sourceTree = "<group>"; };
 		AA0000022F0BC0000000001B /* PasteboardService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PasteboardService.swift; sourceTree = "<group>"; };
 		AA0000032F0BC0000000001C /* HapticService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HapticService.swift; sourceTree = "<group>"; };
-		AA0000042F0BC0000000001D /* ReviewService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReviewService.swift; sourceTree = "<group>"; };
+		AA0000042F0BC0000000001D /* SupportPromptPolicy.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SupportPromptPolicy.swift; sourceTree = "<group>"; };
 		AA0000052F0BC0000000001E /* MenuBarView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MenuBarView.swift; sourceTree = "<group>"; };
 		AA2000012F40000100000001 /* AuthenticationSession.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthenticationSession.swift; sourceTree = "<group>"; };
 		EE1D3E8F2B66AE66009733A5 /* Tip.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Tip.swift; sourceTree = "<group>"; };
@@ -183,7 +183,7 @@
 				AA0000012F0BC0000000001A /* PlatformTypes.swift */,
 				AA0000022F0BC0000000001B /* PasteboardService.swift */,
 				AA0000032F0BC0000000001C /* HapticService.swift */,
-				AA0000042F0BC0000000001D /* ReviewService.swift */,
+				AA0000042F0BC0000000001D /* SupportPromptPolicy.swift */,
 			);
 			path = Platform;
 			sourceTree = "<group>";
@@ -487,7 +487,7 @@
 				"$(SRCROOT)/cards/Platform/AuthenticationSession.swift",
 				"$(SRCROOT)/cards/Platform/PasteboardService.swift",
 				"$(SRCROOT)/cards/Platform/PlatformTypes.swift",
-				"$(SRCROOT)/cards/Platform/ReviewService.swift",
+				"$(SRCROOT)/cards/Platform/SupportPromptPolicy.swift",
 				"$(SRCROOT)/cards/ScanView/CardScanning.swift",
 				"$(SRCROOT)/cards/ScanView/CardCandidateEngine.swift",
 				"$(SRCROOT)/cards/ScanView/CardScanSession.swift",
@@ -548,7 +548,7 @@
 				AA0000062F0BC0000000002A /* PlatformTypes.swift in Sources */,
 				AA0000072F0BC0000000002B /* PasteboardService.swift in Sources */,
 				AA0000082F0BC0000000002C /* HapticService.swift in Sources */,
-				AA0000092F0BC0000000002D /* ReviewService.swift in Sources */,
+				AA0000092F0BC0000000002D /* SupportPromptPolicy.swift in Sources */,
 				AA2000022F40000100000002 /* AuthenticationSession.swift in Sources */,
 				AA00000A2F0BC0000000002E /* MenuBarView.swift in Sources */,
 			);

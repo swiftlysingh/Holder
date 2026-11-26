@@ -150,14 +150,16 @@ struct CreditCard: App {
     #endif
 
     @State private var cardDataStore: CardDataStore
+    @State private var supportPromptPolicy: SupportPromptPolicy
     @State private var sdk: SinghDevKit
     @StateObject private var homeViewModel: HomeViewModel
-    @StateObject private var authenticationSession = AuthenticationSession()
+    @StateObject private var authenticationSession: AuthenticationSession
     @StateObject private var appFlow: HolderAppFlow
     private let privacyPolicyURL: URL?
 
     init() {
         let cardDataStore = CardDataStore()
+        let supportPromptPolicy = SupportPromptPolicy()
         let appSecrets = AppSecrets.load()
         let settings = SettingsViewModel()
         let sdkConfiguration = SDKConfiguration(
@@ -169,6 +171,10 @@ struct CreditCard: App {
             onboarding: .default()
         )
         _cardDataStore = State(initialValue: cardDataStore)
+        _supportPromptPolicy = State(initialValue: supportPromptPolicy)
+        _authenticationSession = StateObject(
+            wrappedValue: AuthenticationSession(onBackground: supportPromptPolicy.endForegroundSession)
+        )
         _homeViewModel = StateObject(
             wrappedValue: HomeViewModel(cardDataStore: cardDataStore)
         )
@@ -211,6 +217,7 @@ struct CreditCard: App {
                 }
         }
         .environmentObject(authenticationSession)
+        .environment(\.supportPromptPolicy, supportPromptPolicy)
         .withSDK(sdk)
     }
 
@@ -219,6 +226,7 @@ struct CreditCard: App {
         MenuBarExtra("Holder", systemImage: "creditcard.fill", isInserted: $keepInMenuBar) {
             MenuBarView(cardStore: cardDataStore)
                 .environmentObject(authenticationSession)
+                .environment(\.supportPromptPolicy, supportPromptPolicy)
                 .withSDK(sdk)
         }
         .menuBarExtraStyle(.window)
@@ -229,6 +237,7 @@ struct CreditCard: App {
             sdk.settingsView()
                 .sdkScreen(AppAnalyticsScreen.settings)
                 .environmentObject(authenticationSession)
+                .environment(\.supportPromptPolicy, supportPromptPolicy)
                 .environment(
                     \.holderOnboardingReplayAction,
                     HolderOnboardingReplayAction {
