@@ -250,7 +250,11 @@ struct HolderOnboardingView: View {
 			ArrangementView {
 				centeredPageContent
 			} secondary: {
+				// A split gives each view an equal share by default. Keep the
+				// buttons at the bottom, and only as tall as they need when stacked.
 				actions
+					.frame(maxHeight: .infinity, alignment: .bottom)
+					.splitArrangementFixedLayoutSize(horizontal: false, vertical: true)
 			}
 			.arrangementViewStyle(.split)
 		} else {

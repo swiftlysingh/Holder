@@ -41,9 +41,10 @@ struct CardScannerView: View {
 		ZStack {
 			// Only the camera fills the edges. The controls stay in the safe area,
 			// clear of the camera housing and side status bar on iPhone Duo.
+			// Clip first: clipping after ignoresSafeArea cuts back to the safe area.
 			model.engine.makeCameraView()
-				.ignoresSafeArea()
 				.clipped()
+				.ignoresSafeArea()
 
 			VStack(spacing: 16) {
 				HStack {
