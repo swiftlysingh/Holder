@@ -226,9 +226,22 @@ struct HolderOnboardingView: View {
 					}
 					.scrollBounceBehavior(.basedOnSize)
 				} else {
-					contentAndActions
+					GeometryReader { proxy in
+						ScrollView {
+							pageContent
+								.frame(maxWidth: 560)
+								.frame(maxWidth: .infinity)
+								.padding(.horizontal, 24)
+								.padding(.vertical, 12)
+								.frame(minHeight: proxy.size.height, alignment: .center)
+						}
+						.scrollBounceBehavior(.basedOnSize)
+					}
+
+					actions
 				}
 			}
+			.avoidingActiveFold()
 		}
 		#if os(iOS)
 		.sensoryFeedback(.selection, trigger: page)
@@ -237,47 +250,6 @@ struct HolderOnboardingView: View {
 			guard !didReportPresentation else { return }
 			didReportPresentation = true
 			onPresented()
-		}
-	}
-
-	@ViewBuilder
-	private var contentAndActions: some View {
-		// ArrangementView first ships in the iOS 27.1 SDK (Swift 6.4.1+).
-		#if os(iOS) && compiler(>=6.4.1)
-		if #available(iOS 27.1, *) {
-			// Keeps the artwork and buttons on separate sides of the fold when
-			// iPhone Duo is partly open.
-			ArrangementView {
-				centeredPageContent
-			} secondary: {
-				// A split gives each view an equal share by default. Keep the
-				// buttons at the bottom, and only as tall as they need when stacked.
-				actions
-					.frame(maxHeight: .infinity, alignment: .bottom)
-					.splitArrangementFixedLayoutSize(horizontal: false, vertical: true)
-			}
-			.arrangementViewStyle(.split)
-		} else {
-			centeredPageContent
-			actions
-		}
-		#else
-		centeredPageContent
-		actions
-		#endif
-	}
-
-	private var centeredPageContent: some View {
-		GeometryReader { proxy in
-			ScrollView {
-				pageContent
-					.frame(maxWidth: 560)
-					.frame(maxWidth: .infinity)
-					.padding(.horizontal, 24)
-					.padding(.vertical, 12)
-					.frame(minHeight: proxy.size.height, alignment: .center)
-			}
-			.scrollBounceBehavior(.basedOnSize)
 		}
 	}
 
@@ -661,5 +633,30 @@ private extension View {
 		} else {
 			buttonStyle(.borderedProminent)
 		}
+	}
+
+	/// When iPhone Duo is partly open like a book, moves the view to the trailing
+	/// side of the fold, the way the system moves sheets. Flat or closed, the fold
+	/// isn't active, so the layout stays as it is on every other iPhone.
+	@ViewBuilder
+	func avoidingActiveFold() -> some View {
+		// ReservedRegion first ships in the iOS 27.1 SDK (Swift 6.4.1+).
+		#if os(iOS) && compiler(>=6.4.1)
+		if #available(iOS 27.1, *) {
+			GeometryReader { proxy in
+				// Only a vertical fold. The horizontal fold of the laptop pose is
+				// left alone until it can be checked on a rotated device.
+				let foldTrailingEdge = proxy.reservedRegions(kind: .division)
+					.first { $0.isActive && $0.frame.height > $0.frame.width }?
+					.frame.maxX ?? 0
+				self.padding(.leading, foldTrailingEdge)
+					.animation(.snappy, value: foldTrailingEdge)
+			}
+		} else {
+			self
+		}
+		#else
+		self
+		#endif
 	}
 }
