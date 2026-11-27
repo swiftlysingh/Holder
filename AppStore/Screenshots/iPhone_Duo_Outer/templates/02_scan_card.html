@@ -1,0 +1,87 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <style>
+    * { box-sizing: border-box; }
+    html, body { margin: 0; width: 100%; height: 100%; overflow: hidden; }
+    body {
+      position: relative;
+      color: #103b32;
+      font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", sans-serif;
+      background:
+        radial-gradient(circle at 88% 8%, rgba(255, 255, 255, .48), transparent 25%),
+        #b7f3cf;
+    }
+    .brand {
+      position: absolute;
+      z-index: 5;
+      top: 4.7%;
+      left: 7%;
+      display: flex;
+      align-items: center;
+      gap: 2.3vw;
+      color: #3f6b5d;
+      font-size: 3.4vw;
+      font-weight: 700;
+    }
+    .brand img {
+      width: 7.6vw;
+      height: 7.6vw;
+      border-radius: 1.8vw;
+      box-shadow: 0 1.4vh 4vw rgba(16, 59, 50, .17);
+    }
+    .copy {
+      position: absolute;
+      z-index: 4;
+      top: 12.4%;
+      left: 7%;
+      width: 86%;
+    }
+    h1 {
+      margin: 0;
+      max-width: 94%;
+      font-size: 9.6vw;
+      line-height: .96;
+      letter-spacing: -.055em;
+      font-weight: 790;
+    }
+    p {
+      margin: 2.2vh 0 0;
+      color: #3f6b5d;
+      font-size: 4.2vw;
+      line-height: 1.22;
+    }
+    .screen {
+      position: absolute;
+      z-index: 3;
+      left: 12vw;
+      right: 12vw;
+      bottom: 4.6vh;
+      aspect-ratio: 1398 / 1392;
+      padding: .8vw;
+      overflow: hidden;
+      border: 1px solid rgba(255, 255, 255, .46);
+      border-radius: 6.4vw;
+      background: #121c19;
+      box-shadow: 0 4vh 12vw rgba(16, 59, 50, .26);
+    }
+    .screen img {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      border-radius: 5.6vw;
+    }
+  </style>
+</head>
+<body>
+  <div class="brand"><img src="{{app_icon}}" alt="">Holder</div>
+  <div class="copy">
+    <h1 data-kou-id="headline" data-kou-role="headline">{{headline}}</h1>
+    <p data-kou-id="subtitle" data-kou-role="supporting">{{subtitle}}</p>
+  </div>
+  <div class="screen" data-kou-id="device" data-kou-role="device">
+    <img src="{{app_screenshot}}" alt="Holder's card scanner">
+  </div>
+</body>
+</html>

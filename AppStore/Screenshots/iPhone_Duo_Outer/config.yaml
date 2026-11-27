@@ -1,0 +1,37 @@
+project:
+  name: "Holder iPhone Duo outer display App Store screenshots"
+  output_dir: "../output"
+  device: "iPhone Duo Outer - Portrait"
+  output_size: [1398, 2034]
+  parallel_workers: 3
+
+screenshots:
+  01_cards_together:
+    template: "templates/01_cards_together.html"
+    frame: false
+    variables:
+      headline: "Your cards. One private place."
+      subtitle: "Credit, debit, IDs, and more."
+    assets:
+      app_screenshot: "../captures/en-US/duo-outer-home.png"
+      app_icon: "../../../cards/Assets.xcassets/AppIcon.appiconset/1024.png"
+
+  02_scan_card:
+    template: "templates/02_scan_card.html"
+    frame: false
+    variables:
+      headline: "Scan it. Skip the typing."
+      subtitle: "Prefill the number, name, and expiry."
+    assets:
+      app_screenshot: "../captures/en-US/duo-outer-scanner-sheet.png"
+      app_icon: "../../../cards/Assets.xcassets/AppIcon.appiconset/1024.png"
+
+  03_private_details:
+    template: "templates/03_private_details.html"
+    frame: false
+    variables:
+      headline: "Private by design."
+      subtitle: "Saved to Keychain. Opened with Touch ID."
+    assets:
+      app_screenshot: "../captures/en-US/duo-outer-card-details.png"
+      app_icon: "../../../cards/Assets.xcassets/AppIcon.appiconset/1024.png"
