@@ -90,6 +90,9 @@ final class AuthenticationSession: ObservableObject {
         isPrivacyCurtainVisible = true
         revokeSensitiveAccess()
         invalidateAuthenticationAttempt()
+        // A cancelled prompt only blocks the reactivation that dismisses it.
+        // Returning from the background should ask again.
+        authenticationMessage = nil
         onBackground()
     }
 
