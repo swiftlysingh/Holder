@@ -95,46 +95,56 @@ include marketing artwork and can create a nested, distorted presentation.
 
 ## Product page test
 
-`config.yaml` remains the current control. `config.ppo-copy-first.yaml` is a
-separate English iPhone treatment that leads with copying a saved number.
-No treatment screenshots have been uploaded to App Store Connect.
+`config.yaml` remains the control. `config.ppo-copy-first.yaml` is a separate
+English iPhone treatment, generated with Koubou 0.20.0 and its
+**iPhone 17 Pro Max - Silver - Portrait** device frame. All three slides use
+`frame: true`; the template places Koubou's framed capture instead of drawing
+a CSS phone shell. No treatment screenshots have been uploaded to App Store
+Connect.
 
 1. **Your card number, ready to copy.** Everyday Card with Number showing
    Copied! and the security code still locked. Supporting text: Saved details,
    even without internet.
-2. **Scan it. Skip the typing.** Reuses the existing scanner capture and
-   template.
-3. **Your cards. One private place.** Moves the existing card-list artwork
-   from first to third. The dedicated privacy slide is omitted in this test.
+2. **Scan it. Skip the typing.** Full phone with the Debug scanner fixture,
+   including the visible Enter card manually action.
+3. **Your cards. One private place.** Updated home screen with the Holder
+   title and Credit, Debit, and Other section labels. The dedicated privacy
+   slide is omitted in this treatment.
 
-Generate it from this directory:
+Generate it from this directory after the HTML renderer setup above:
 
 ```sh
-.venv/bin/kou generate config.ppo-copy-first.yaml --output json
+PLAYWRIGHT_BROWSERS_PATH="$PWD/.playwright-browsers" \
+  .venv/bin/kou generate config.ppo-copy-first.yaml --output json
 ```
 
-Output goes to `output/ppo-copy-first/`. The raw source is
-`captures/en-US/card-details-copied.png`, captured from the real app using the
-Debug Everyday Card (`4242…`, expiry 09/29). The Number row shows the existing
-Copied! feedback; the security code remains hidden. A temporary 20-second
-feedback hold was used for capture and reverted in app source. The normal
-source delay remains 1.5 seconds; this change adds no production behavior.
+The raw sources are in `captures/en-US/2.6/`: `home.png`, `scanner.png`, and
+`card-details-copied.png`. They are real captures from Holder's Debug build,
+using only its sample vault and explicit scanner fixture. All share the same
+9:41, full-signal, Wi-Fi, and charging status bar. The scanner source is now a
+full-screen capture, not the older sheet-only crop. The copied-number capture
+keeps the security code protected; its card fixture uses `4242…` and expiry
+09/29. No production app behavior is changed by these screenshot files.
 
-### Known capture issue
+Templates live in `templates/framed/` and share `framed.css`. The relative
+`app-icon.png` symlink points to the existing app icon inside this repository.
+The scanner phone is smaller than the other two so the entire sheet and
+manual-entry action stay visible. Its container allows the drop shadow to
+extend naturally instead of clipping it to a rectangle. Slides one and three
+intentionally continue past the bottom canvas edge.
 
-The first slide is a draft. Its source lacks the Dynamic Island and uses gray
-cellular-signal dots, unlike the control. Recapture with consistent device and
-status-bar appearance, regenerate, and visually review the set before upload.
-The treatment passes the 1320 × 2868 size checks and its layout reports have no
-overlaps; those checks do not resolve this visual inconsistency.
-
-A recapture attempt on November 27 was blocked by the device tool timing out
-while opening the app and again on its advised snapshot check. No replacement
-capture is claimed.
+Output goes to
+`output/ppo-copy-first/iPhone_17_Pro_Max_-_Silver_-_Portrait/`.
+All three final PNGs are 1320 × 2868, and all three layout reports have empty
+`overlaps` arrays. Review covered the full-size renders and gallery-sized
+thumbnails, including the frame, status bar, locked security code, headline
+spacing, and scanner shadow. The former frameless treatment assets have been
+removed.
 
 This is an English iPhone treatment only. iPad, Mac, French, and German artwork
-are not changed. Private keyword research and analytics are stored separately
-in `holder-private` and are not part of this screenshot change.
+are not changed. Private keyword research, analytics, and store metadata are
+not part of this screenshot PR. Upload and any product-page experiment remain
+separate actions.
 
 ## Deferred
 
