@@ -462,7 +462,6 @@
 /* Begin PBXShellScriptBuildPhase section */
 		EE9000042F25000100000004 /* Count Lines of Code */ = {
 			isa = PBXShellScriptBuildPhase;
-			alwaysOutOfDate = 1;
 			buildActionMask = 2147483647;
 			files = (
 			);
@@ -506,7 +505,7 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "APP_LINES=0\nINDEX=0\nwhile [ \"${INDEX}\" -lt \"${SCRIPT_INPUT_FILE_COUNT}\" ]; do\n    eval \"INPUT=\\${SCRIPT_INPUT_FILE_${INDEX}}\"\n    FILE_LINES=$(grep -v \"^[[:space:]]*$\" \"${INPUT}\" | grep -v \"^[[:space:]]*//\" | wc -l | tr -d ' ')\n    APP_LINES=$((APP_LINES + FILE_LINES))\n    INDEX=$((INDEX + 1))\ndone\n\ncat > \"${SRCROOT}/cards/Generated/LinesOfCode.swift\" << EOF\nenum LinesOfCode {\n    static let count = ${APP_LINES}\n    static let appCount = ${APP_LINES}\n}\nEOF\n";
+			shellScript = "OUTPUT=\"${SRCROOT}/cards/Generated/LinesOfCode.swift\"\nif [ \"${CONFIGURATION}\" = \"Debug\" ] && [ -f \"${OUTPUT}\" ]; then\n    exit 0\nfi\n\nAPP_LINES=0\nINDEX=0\nwhile [ \"${INDEX}\" -lt \"${SCRIPT_INPUT_FILE_COUNT}\" ]; do\n    eval \"INPUT=\\${SCRIPT_INPUT_FILE_${INDEX}}\"\n    FILE_LINES=$(grep -v \"^[[:space:]]*$\" \"${INPUT}\" | grep -v \"^[[:space:]]*//\" | wc -l | tr -d ' ')\n    APP_LINES=$((APP_LINES + FILE_LINES))\n    INDEX=$((INDEX + 1))\ndone\n\nTMP_DIR=\"${TEMP_DIR:-${TMPDIR:-/tmp}}\"\nTMP_FILE=\"$(mktemp \"${TMP_DIR%/}/LinesOfCode.XXXXXX\")\"\ntrap 'rm -f \"${TMP_FILE}\"' EXIT\ncat > \"${TMP_FILE}\" << EOF\nenum LinesOfCode {\n    static let count = ${APP_LINES}\n    static let appCount = ${APP_LINES}\n}\nEOF\n\nif [ ! -f \"${OUTPUT}\" ] || ! cmp -s \"${TMP_FILE}\" \"${OUTPUT}\"; then\n    OUTPUT_DIR=\"$(dirname \"${OUTPUT}\")\"\n    if [ ! -d \"${OUTPUT_DIR}\" ]; then\n        mkdir -p \"${OUTPUT_DIR}\"\n    fi\n    cat \"${TMP_FILE}\" > \"${OUTPUT}\"\nfi\n";
 		};
 /* End PBXShellScriptBuildPhase section */
 
