@@ -112,10 +112,14 @@ final class AuthenticationSession: ObservableObject {
                 return
             }
 
+            if isVaultUnlocked {
+                authenticationMessage = nil
+            }
             isVaultUnlocked = false
         }
 
-        if !isVaultUnlocked {
+        // Dismissing a failed authentication prompt also reactivates the scene.
+        if !isVaultUnlocked && authenticationMessage == nil {
             authenticateToUnlockVault()
         }
     }
