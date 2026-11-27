@@ -102,6 +102,10 @@ struct CardScannerView: View {
 					}
 				}
 				.padding(.bottom, 24)
+				// The scan frame is centered on the full camera width, so center
+				// its guidance there too, or it drifts off the frame on iPhone Duo.
+				.frame(maxWidth: .infinity)
+				.ignoresSafeArea(.container, edges: .horizontal)
 			}
 		}
 		.background(Color.black)
