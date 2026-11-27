@@ -1,9 +1,10 @@
 import XCTest
+import os
 @testable import Holder
 
-@MainActor
 final class CardDataPersistenceTests: XCTestCase {
-	func testArchivedCardRoundTripPreservesState() throws {
+	@MainActor
+	func testArchivedCardRoundTripPreservesState() async throws {
 		var card = makeCard(id: UUID(), isArchived: true)
 		card.network = .master
 
@@ -14,7 +15,8 @@ final class CardDataPersistenceTests: XCTestCase {
 		XCTAssertEqual(decoded.network, .master)
 	}
 
-	func testLegacyCardDefaultsToActiveAndDerivesNetwork() throws {
+	@MainActor
+	func testLegacyCardDefaultsToActiveAndDerivesNetwork() async throws {
 		let id = UUID()
 		let data = try JSONSerialization.data(withJSONObject: [
 			"id": id.uuidString,
@@ -33,7 +35,8 @@ final class CardDataPersistenceTests: XCTestCase {
 		XCTAssertFalse(card.isArchived)
 	}
 
-	func testPartitionSeparatesActiveAndArchivedCards() {
+	@MainActor
+	func testPartitionSeparatesActiveAndArchivedCards() async {
 		let creditCard = makeCard(id: UUID())
 		let debitCard = makeCard(id: UUID(), type: .debit)
 		let archivedCard = makeCard(id: UUID(), type: .other, isArchived: true)
@@ -46,13 +49,15 @@ final class CardDataPersistenceTests: XCTestCase {
 		XCTAssertEqual(partition.archivedCards.map(\.id), [archivedCard.id])
 	}
 
-	func testCardRetrievalKindDistinguishesEmptyFromFailure() {
+	@MainActor
+	func testCardRetrievalKindDistinguishesEmptyFromFailure() async {
 		XCTAssertEqual(CardDataStore.cardRetrievalKind(forStatus: errSecSuccess), .success)
 		XCTAssertEqual(CardDataStore.cardRetrievalKind(forStatus: errSecItemNotFound), .empty)
 		XCTAssertEqual(CardDataStore.cardRetrievalKind(forStatus: errSecAuthFailed), .failure)
 		XCTAssertEqual(CardDataStore.cardRetrievalKind(forStatus: errSecInteractionNotAllowed), .failure)
 	}
 
+	@MainActor
 	func testLoadCardsReportsFailureAndPreservesExistingCards() async throws {
 		let fixturesKey = "debugFixturesInitialized"
 		let previousFixturesValue = UserDefaults.standard.object(forKey: fixturesKey)
@@ -88,6 +93,7 @@ final class CardDataPersistenceTests: XCTestCase {
 		XCTAssertNil(store.findCard(by: card.id))
 	}
 
+	@MainActor
 	func testKeychainReadsWritesAndDeletesRunOffTheMainThread() async throws {
 		let storedCard = makeCard(id: UUID())
 		let newCard = makeCard(id: UUID())
@@ -115,6 +121,7 @@ final class CardDataPersistenceTests: XCTestCase {
 		XCTAssertTrue(deleteSucceeded)
 	}
 
+	@MainActor
 	func testLoadingExistingCardsDoesNotWriteOrDelete() async throws {
 		let card = makeCard(id: UUID())
 		let recorder = MutationCallRecorder()
@@ -137,6 +144,7 @@ final class CardDataPersistenceTests: XCTestCase {
 		XCTAssertEqual(recorder.deleteCount, 0)
 	}
 
+	@MainActor
 	func testSuccessfulSaveDoesNotDependOnFollowingReload() async throws {
 		let existingCard = makeCard(id: UUID())
 		let newCard = makeCard(id: UUID(), type: .debit)
@@ -163,6 +171,7 @@ final class CardDataPersistenceTests: XCTestCase {
 		XCTAssertEqual(store.findCard(by: newCard.id), newCard)
 	}
 
+	@MainActor
 	func testLateLoadMergesNewerMutationWithoutHidingExistingCards() async throws {
 		let existingCard = makeCard(id: UUID())
 		let newerCard = makeCard(id: UUID())
@@ -194,6 +203,7 @@ final class CardDataPersistenceTests: XCTestCase {
 		XCTAssertEqual(store.findCard(by: newerCard.id), newerCard)
 	}
 
+	@MainActor
 	func testLateLoadDoesNotRestoreADeletedCard() async throws {
 		let card = makeCard(id: UUID())
 		let payload = try card.toData()
@@ -223,6 +233,7 @@ final class CardDataPersistenceTests: XCTestCase {
 		XCTAssertNil(store.findCard(by: card.id))
 	}
 
+	@MainActor
 	func testDeletingOtherCardKeepsImageWhenKeychainDeleteFails() async throws {
 		let card = makeCard(id: UUID(), type: .other)
 		let payload = try card.toData()
@@ -244,6 +255,7 @@ final class CardDataPersistenceTests: XCTestCase {
 		XCTAssertTrue(deletedImageIDs.isEmpty)
 	}
 
+	@MainActor
 	func testDeletingCardAttemptsImageCleanupRegardlessOfCurrentType() async throws {
 		let card = makeCard(id: UUID())
 		let stub = CardPayloadRetrievalStub(result: .success([try card.toData()]))
@@ -267,6 +279,7 @@ final class CardDataPersistenceTests: XCTestCase {
 		XCTAssertEqual(deletedImageIDs, [card.id])
 	}
 
+	@MainActor
 	func testQueuedUpdateDoesNotRestoreDeletedCard() async throws {
 		let card = makeCard(id: UUID())
 		let persistence = BlockingDeletePersistence(payload: try card.toData())
@@ -291,7 +304,8 @@ final class CardDataPersistenceTests: XCTestCase {
 		XCTAssertEqual(persistence.saveCount, 0)
 	}
 
-	func testDecodeAllCardDataRecoversValidPayloads() throws {
+	@MainActor
+	func testDecodeAllCardDataRecoversValidPayloads() async throws {
 		let valid = try JSONEncoder().encode(makeCard(id: UUID()))
 		let invalid = Data("{}".utf8)
 
@@ -303,7 +317,8 @@ final class CardDataPersistenceTests: XCTestCase {
 		XCTAssertEqual(decoded.count, 1)
 	}
 
-	func testDebugFixturesSeedOnlyBeforeInitialization() {
+	@MainActor
+	func testDebugFixturesSeedOnlyBeforeInitialization() async {
 		XCTAssertTrue(CardDataStore.shouldSeedDebugFixtures(
 			isDebugOrSimulator: true,
 			hasStoredCards: false,
@@ -316,6 +331,7 @@ final class CardDataPersistenceTests: XCTestCase {
 		))
 	}
 
+	@MainActor
 	private func makeCard(
 		id: UUID,
 		type: CardType = .credit,
@@ -336,17 +352,16 @@ final class CardDataPersistenceTests: XCTestCase {
 
 }
 
-private final class CardPayloadRetrievalStub: @unchecked Sendable {
-	private let lock = NSLock()
-	private var resultStorage: CardPayloadRetrievalResult
+private final class CardPayloadRetrievalStub: Sendable {
+	private let resultStorage: OSAllocatedUnfairLock<CardPayloadRetrievalResult>
 
 	init(result: CardPayloadRetrievalResult) {
-		resultStorage = result
+		resultStorage = OSAllocatedUnfairLock(initialState: result)
 	}
 
 	var result: CardPayloadRetrievalResult {
-		get { lock.withLock { resultStorage } }
-		set { lock.withLock { resultStorage = newValue } }
+		get { resultStorage.withLock { $0 } }
+		set { resultStorage.withLock { $0 = newValue } }
 	}
 }
 
@@ -366,45 +381,51 @@ private actor TestCardImageStore: CardImageStore {
 	}
 }
 
-private final class MutationCallRecorder: @unchecked Sendable {
-	private let lock = NSLock()
-	private var saves = 0
-	private var deletes = 0
+private final class MutationCallRecorder: Sendable {
+	private struct State: Sendable {
+		var saves = 0
+		var deletes = 0
+	}
+
+	private let state = OSAllocatedUnfairLock(initialState: State())
 
 	func recordSave() {
-		lock.withLock { saves += 1 }
+		state.withLock { $0.saves += 1 }
 	}
 
 	func recordDelete() {
-		lock.withLock { deletes += 1 }
+		state.withLock { $0.deletes += 1 }
 	}
 
-	var saveCount: Int { lock.withLock { saves } }
-	var deleteCount: Int { lock.withLock { deletes } }
+	var saveCount: Int { state.withLock { $0.saves } }
+	var deleteCount: Int { state.withLock { $0.deletes } }
 }
 
-private final class BlockingDeletePersistence: @unchecked Sendable {
-	private let lock = NSLock()
+private final class BlockingDeletePersistence: Sendable {
+	private struct State: Sendable {
+		var payload: Data?
+		var saves = 0
+	}
+
+	private let state: OSAllocatedUnfairLock<State>
 	private let deleteStarted = DispatchGroup()
 	private let finishDelete = DispatchSemaphore(value: 0)
-	private var payload: Data?
-	private var saves = 0
 
 	init(payload: Data) {
-		self.payload = payload
+		state = OSAllocatedUnfairLock(initialState: State(payload: payload))
 		deleteStarted.enter()
 	}
 
 	func retrieve() -> CardPayloadRetrievalResult {
-		lock.withLock {
-			payload.map { .success([$0]) } ?? .empty
+		state.withLock {
+			$0.payload.map { .success([$0]) } ?? .empty
 		}
 	}
 
 	func save(_ data: Data) -> Bool {
-		lock.withLock {
-			saves += 1
-			payload = data
+		state.withLock {
+			$0.saves += 1
+			$0.payload = data
 		}
 		return true
 	}
@@ -412,7 +433,7 @@ private final class BlockingDeletePersistence: @unchecked Sendable {
 	func delete() -> Bool {
 		deleteStarted.leave()
 		finishDelete.wait()
-		lock.withLock { payload = nil }
+		state.withLock { $0.payload = nil }
 		return true
 	}
 
@@ -428,7 +449,7 @@ private final class BlockingDeletePersistence: @unchecked Sendable {
 		finishDelete.signal()
 	}
 
-	var saveCount: Int { lock.withLock { saves } }
+	var saveCount: Int { state.withLock { $0.saves } }
 }
 
 private actor LoadCommitGate {

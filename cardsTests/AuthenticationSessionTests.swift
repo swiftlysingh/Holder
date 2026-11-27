@@ -6,9 +6,9 @@ import XCTest
 import AppKit
 #endif
 
-@MainActor
 final class AuthenticationSessionTests: XCTestCase {
-    func testInitialStateIsFailClosed() {
+    @MainActor
+    func testInitialStateIsFailClosed() async {
         let session = makeSession()
 
         XCTAssertFalse(session.isVaultUnlocked)
@@ -18,6 +18,7 @@ final class AuthenticationSessionTests: XCTestCase {
         XCTAssertNil(session.authenticationMessage)
     }
 
+    @MainActor
     func testVaultAuthenticationUnlocksVaultAndStartsFreshAccess() async {
         let authenticator = MockDeviceAuthenticator()
         let sleeper = ControllableAsyncSleeper()
@@ -39,6 +40,7 @@ final class AuthenticationSessionTests: XCTestCase {
         XCTAssertEqual(duration, AuthenticationSession.sensitiveAccessDuration)
     }
 
+    @MainActor
     func testFailedAndUnavailableAuthenticationLeaveVaultLocked() async {
         let authenticator = MockDeviceAuthenticator()
         let session = makeSession(authenticator: authenticator)
@@ -59,6 +61,7 @@ final class AuthenticationSessionTests: XCTestCase {
         XCTAssertEqual(session.authenticationMessage, "Authentication isn’t available on this device.")
     }
 
+    @MainActor
     func testBackgroundImmediatelyCoversAndRevokesSensitiveAccess() async {
         let authenticator = MockDeviceAuthenticator()
         let session = makeSession(authenticator: authenticator)
@@ -72,6 +75,7 @@ final class AuthenticationSessionTests: XCTestCase {
     }
 
     #if os(macOS)
+    @MainActor
     func testClosingMainWindowStartsVaultGraceAndRevokesSensitiveAccess() async {
         let authenticator = MockDeviceAuthenticator()
         let session = makeSession(authenticator: authenticator)
@@ -84,6 +88,7 @@ final class AuthenticationSessionTests: XCTestCase {
             name: NSWindow.willCloseNotification,
             object: window
         )
+        await settle()
 
         XCTAssertTrue(session.isVaultUnlocked)
         XCTAssertFalse(session.isSensitiveAccessFresh)
@@ -91,6 +96,7 @@ final class AuthenticationSessionTests: XCTestCase {
     }
     #endif
 
+    @MainActor
     func testReturnAtGraceBoundaryKeepsVaultOpenWithoutPrompt() async {
         let authenticator = MockDeviceAuthenticator()
         let session = makeSession(authenticator: authenticator)
@@ -110,6 +116,7 @@ final class AuthenticationSessionTests: XCTestCase {
         XCTAssertEqual(authenticator.evaluateCount, 1)
     }
 
+    @MainActor
     func testReturnAfterGraceLocksAndStartsNewAuthentication() async {
         let authenticator = MockDeviceAuthenticator()
         let session = makeSession(authenticator: authenticator)
@@ -128,6 +135,7 @@ final class AuthenticationSessionTests: XCTestCase {
         XCTAssertEqual(authenticator.evaluateCount, 2)
     }
 
+    @MainActor
     func testSensitiveAccessExpiresWithoutLockingVault() async {
         let authenticator = MockDeviceAuthenticator()
         let sleeper = ControllableAsyncSleeper()
@@ -147,6 +155,7 @@ final class AuthenticationSessionTests: XCTestCase {
         XCTAssertTrue(session.isVaultUnlocked)
     }
 
+    @MainActor
     func testFreshSensitiveAccessDoesNotPromptAgain() async {
         let authenticator = MockDeviceAuthenticator()
         let session = makeSession(authenticator: authenticator)
@@ -161,6 +170,7 @@ final class AuthenticationSessionTests: XCTestCase {
         XCTAssertEqual(authenticator.evaluateCount, 1)
     }
 
+    @MainActor
     func testBackgroundInvalidatesPendingAuthenticationCallback() async {
         let authenticator = MockDeviceAuthenticator()
         let session = makeSession(authenticator: authenticator)
@@ -177,6 +187,7 @@ final class AuthenticationSessionTests: XCTestCase {
         XCTAssertTrue(session.isPrivacyCurtainVisible)
     }
 
+    @MainActor
     func testOlderAuthenticationCannotOverrideNewerAttempt() async {
         let authenticator = MockDeviceAuthenticator()
         let session = makeSession(authenticator: authenticator)
@@ -194,7 +205,8 @@ final class AuthenticationSessionTests: XCTestCase {
         XCTAssertTrue(session.isVaultUnlocked)
     }
 
-    func testVaultSettingTransitionsDoNotDisableCVVProtection() {
+    @MainActor
+    func testVaultSettingTransitionsDoNotDisableCVVProtection() async {
         let session = makeSession()
 
         session.vaultLockSettingChanged(isEnabled: false)
@@ -207,6 +219,7 @@ final class AuthenticationSessionTests: XCTestCase {
         XCTAssertFalse(session.isSensitiveAccessFresh)
     }
 
+    @MainActor
     func testSensitiveTimerFailureFailsClosed() async {
         let authenticator = MockDeviceAuthenticator()
         let sleeper = ControllableAsyncSleeper()
@@ -229,6 +242,7 @@ final class AuthenticationSessionTests: XCTestCase {
         withExtendedLifetime(cancellable) {}
     }
 
+    @MainActor
     private func makeSession(
         authenticator: MockDeviceAuthenticator = MockDeviceAuthenticator(),
         sleeper: AsyncSleeper = TaskAsyncSleeper()
@@ -239,6 +253,7 @@ final class AuthenticationSessionTests: XCTestCase {
         )
     }
 
+    @MainActor
     private func unlock(
         _ session: AuthenticationSession,
         with authenticator: MockDeviceAuthenticator
@@ -249,6 +264,7 @@ final class AuthenticationSessionTests: XCTestCase {
         XCTAssertTrue(session.isVaultUnlocked)
     }
 
+    @MainActor
     private func settle() async {
         for _ in 0..<4 {
             await Task.yield()
@@ -260,21 +276,25 @@ private final class MockDeviceAuthenticator: DeviceAuthenticating {
     var canEvaluate = true
     private(set) var evaluateCount = 0
     private(set) var invalidateCount = 0
-    private var pendingReplies: [(Bool) -> Void] = []
+    private var pendingReplies: [@Sendable (Bool) -> Void] = []
 
+    @MainActor
     func canEvaluateDeviceOwnerAuthentication() -> Bool {
         canEvaluate
     }
 
-    func evaluateDeviceOwnerAuthentication(reason: String, reply: @escaping (Bool) -> Void) {
+    @MainActor
+    func evaluateDeviceOwnerAuthentication(reason: String, reply: @escaping @Sendable (Bool) -> Void) {
         evaluateCount += 1
         pendingReplies.append(reply)
     }
 
+    @MainActor
     func invalidate() {
         invalidateCount += 1
     }
 
+    @MainActor
     func completeOldest(success: Bool) {
         guard !pendingReplies.isEmpty else {
             XCTFail("No pending authentication replies")
@@ -291,6 +311,7 @@ private struct MockDeviceAuthenticatorFactory: DeviceAuthenticatorFactory {
         self.authenticator = authenticator
     }
 
+    @MainActor
     func makeAuthenticator() -> DeviceAuthenticating {
         authenticator
     }

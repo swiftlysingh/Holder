@@ -1,13 +1,13 @@
 import SwiftUI
 import WidgetKit
 
-enum CardPayloadRetrievalResult: Sendable {
+nonisolated enum CardPayloadRetrievalResult: Sendable {
 	case success([Data?])
 	case empty
 	case failure
 }
 
-private final class CardKeychainPersistence: @unchecked Sendable {
+nonisolated private final class CardKeychainPersistence: Sendable {
 	typealias RetrievePayloads = @Sendable (String) -> CardPayloadRetrievalResult
 	typealias SavePayload = @Sendable (Data, String, String) -> Bool
 	typealias DeletePayload = @Sendable (String, String) -> Bool

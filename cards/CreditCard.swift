@@ -33,7 +33,7 @@ enum MainWindowCoordinator {
             queue: .main
         ) { notification in
             guard let window = notification.object as? NSWindow else { return }
-            MainActor.assumeIsolated {
+            Task { @MainActor in
                 MainWindowCoordinator.mainWindowDidClose(window: window)
             }
         }
@@ -253,7 +253,7 @@ struct CreditCard: App {
     #endif
 }
 
-struct AppSecrets: Sendable {
+nonisolated struct AppSecrets: Sendable {
     let postHogProjectToken: String?
     let postHogHost: URL
     let revenueCatAPIKey: String?

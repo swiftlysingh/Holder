@@ -3,11 +3,13 @@ import XCTest
 @testable import Holder
 
 final class HangSafeUITests: XCTestCase {
-	func testDataCommitTransactionDisablesAnimations() {
+	@MainActor
+	func testDataCommitTransactionDisablesAnimations() async {
 		XCTAssertTrue(HangSafeUI.dataCommitTransaction().disablesAnimations)
 	}
 
-	func testWithoutTextAnimationRunsUpdates() {
+	@MainActor
+	func testWithoutTextAnimationRunsUpdates() async {
 		var didRun = false
 		HangSafeUI.withoutTextAnimation {
 			didRun = true

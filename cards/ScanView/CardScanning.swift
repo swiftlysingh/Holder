@@ -4,7 +4,7 @@ import SwiftUI
 import VisionKit
 #endif
 
-struct CardScanResult: Equatable, Sendable {
+nonisolated struct CardScanResult: Equatable, Sendable {
 	var pan: String
 	var expiry: String?
 	var cardholderName: String?
@@ -15,7 +15,7 @@ struct CardScanResult: Equatable, Sendable {
 	}
 }
 
-struct CardScanMetrics: Equatable, Sendable {
+nonisolated struct CardScanMetrics: Equatable, Sendable {
 	var engine: String
 	var timeToPANMs: Int?
 	var timeToCompleteMs: Int
@@ -25,7 +25,7 @@ struct CardScanMetrics: Equatable, Sendable {
 	var wasRescan: Bool
 }
 
-struct CardScanEndMetrics: Equatable, Sendable {
+nonisolated struct CardScanEndMetrics: Equatable, Sendable {
 	enum Outcome: String, Sendable {
 		case success
 		case cancelled
@@ -59,7 +59,7 @@ struct CardScanEndMetrics: Equatable, Sendable {
 	}
 }
 
-struct CardScanRetryMetrics: Equatable, Sendable {
+nonisolated struct CardScanRetryMetrics: Equatable, Sendable {
 	var engine: String
 	var elapsedMs: Int
 	var hadCandidate: Bool
@@ -67,7 +67,7 @@ struct CardScanRetryMetrics: Equatable, Sendable {
 	var attemptNumber: Int
 }
 
-enum CardScanUpdate: Sendable {
+nonisolated enum CardScanUpdate: Sendable {
 	case permissionDenied
 	case unsupported(String)
 	case scanning(guidance: String)
@@ -95,7 +95,7 @@ extension CardScanningEngine {
 	func setTorchEnabled(_ isEnabled: Bool) -> Bool { false }
 }
 
-enum CardScanningEngineID {
+nonisolated enum CardScanningEngineID {
 	static let vision = "vision"
 }
 

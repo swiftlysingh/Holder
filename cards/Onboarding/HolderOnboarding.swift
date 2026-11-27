@@ -2,7 +2,7 @@ import Foundation
 import SinghDevKit
 import SwiftUI
 
-enum HolderOnboardingAudience: String, Identifiable, Sendable {
+nonisolated enum HolderOnboardingAudience: String, Identifiable, Sendable {
 	case newUser = "new_user"
 	case update
 	case replay
@@ -14,7 +14,7 @@ enum HolderOnboardingAudience: String, Identifiable, Sendable {
 	}
 }
 
-struct HolderOnboardingStore {
+nonisolated struct HolderOnboardingStore {
 	static let currentRelease = 203
 	static let completedReleaseKey = "holder.onboarding.completedRelease"
 	static let legacyCompletionKey = "sdk.onboarding.completed"

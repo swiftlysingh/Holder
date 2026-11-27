@@ -1,7 +1,7 @@
 import CoreGraphics
 import Foundation
 
-struct OCRTextItem: Equatable, Sendable {
+nonisolated struct OCRTextItem: Equatable, Sendable {
 	var text: String
 	var candidates: [String]
 	var boundingBox: CGRect?
@@ -13,7 +13,7 @@ struct OCRTextItem: Equatable, Sendable {
 	}
 }
 
-enum CardPAN {
+nonisolated enum CardPAN {
 	static let minimumLength = 13
 	static let maximumLength = 19
 
@@ -122,7 +122,7 @@ enum CardPAN {
 	}
 }
 
-enum CardExpiryParser {
+nonisolated enum CardExpiryParser {
 	static func parse(_ raw: String, now: Date = Date()) -> String? {
 		let compact = raw.uppercased()
 			.replacingOccurrences(of: "-", with: "/")
@@ -182,7 +182,7 @@ enum CardExpiryParser {
 	}
 }
 
-enum CardholderNameParser {
+nonisolated enum CardholderNameParser {
 	private static let blocked: Set<String> = [
 		"VISA", "MASTERCARD", "MASTER CARD", "AMEX", "AMERICAN EXPRESS",
 		"DISCOVER", "RUPAY", "UNIONPAY", "UNION PAY", "JCB", "DINERS",
@@ -251,13 +251,13 @@ enum CardholderNameParser {
 	}
 }
 
-struct CardFrameObservation: Equatable {
+nonisolated struct CardFrameObservation: Equatable, Sendable {
 	var pan: String?
 	var expiry: String?
 	var cardholderName: String?
 }
 
-enum CardCandidateEngine {
+nonisolated enum CardCandidateEngine {
 	static func observe(_ items: [OCRTextItem], now: Date = Date()) -> CardFrameObservation {
 		let pans = reconstructPANs(from: items)
 		let pan = pans.first
@@ -395,7 +395,7 @@ enum CardCandidateEngine {
 	}
 }
 
-struct TemporalPANVoter: Sendable {
+nonisolated struct TemporalPANVoter: Sendable {
 	var windowSize: Int
 	var requiredVotes: Int
 	private var recent: [String] = []
