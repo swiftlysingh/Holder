@@ -1,0 +1,88 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <style>
+    * { box-sizing: border-box; }
+    html, body { margin: 0; width: 100%; height: 100%; overflow: hidden; }
+    body {
+      position: relative;
+      color: #edf8f1;
+      font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", sans-serif;
+      background:
+        radial-gradient(circle at 72% 50%, rgba(183, 243, 207, .17), transparent 30%),
+        linear-gradient(155deg, #12493e 0%, #103b32 52%, #121c19 100%);
+    }
+    .brand {
+      position: absolute;
+      z-index: 5;
+      top: 7vh;
+      left: 5vw;
+      display: flex;
+      align-items: center;
+      gap: 2.4vh;
+      color: #a7c0b8;
+      font-size: 2.9vh;
+      font-weight: 700;
+    }
+    .brand img {
+      width: 5.6vh;
+      height: 5.6vh;
+      border-radius: 1.3vh;
+      box-shadow: 0 1.4vh 4vh rgba(0, 0, 0, .24);
+    }
+    .copy {
+      position: absolute;
+      z-index: 4;
+      top: 50%;
+      left: 5vw;
+      width: 31vw;
+      transform: translateY(-50%);
+    }
+    h1 {
+      margin: 0;
+      font-size: 7.4vh;
+      line-height: .96;
+      letter-spacing: -.055em;
+      font-weight: 790;
+    }
+    p {
+      margin: 2.6vh 0 0;
+      color: #a7c0b8;
+      font-size: 3vh;
+      line-height: 1.22;
+    }
+    .screen {
+      position: absolute;
+      z-index: 3;
+      top: 50%;
+      right: 4.5vw;
+      width: 56vw;
+      aspect-ratio: 2852 / 2006;
+      transform: translateY(-50%);
+      padding: .45vw;
+      overflow: hidden;
+      border: 1px solid rgba(255, 255, 255, .16);
+      border-radius: 2.6vw;
+      background: #121c19;
+      box-shadow: 0 4vh 13vh rgba(0, 0, 0, .42);
+    }
+    .screen img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      border-radius: 2.2vw;
+    }
+  </style>
+</head>
+<body>
+  <div class="brand"><img src="{{app_icon}}" alt="">Holder</div>
+  <div class="copy">
+    <h1 data-kou-id="headline" data-kou-role="headline">{{headline}}</h1>
+    <p data-kou-id="subtitle" data-kou-role="supporting">{{subtitle}}</p>
+  </div>
+  <div class="screen" data-kou-id="device" data-kou-role="device">
+    <img src="{{app_screenshot}}" alt="Private card details in Holder">
+  </div>
+</body>
+</html>

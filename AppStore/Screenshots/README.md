@@ -80,6 +80,46 @@ production or personal vault data.
 Do not use screenshots downloaded from App Store Connect because those already
 include marketing artwork and can create a nested, distorted presentation.
 
+## iPhone Duo sets
+
+App Store Connect has two iPhone Duo slots: the outer display (1398 × 2034
+portrait) and the inner display (2853 × 2007 landscape). Apple requires them
+from April 2027 for apps built with the iOS 27.1 SDK or later, and uploading
+them adds the "made for iPhone Duo" badge to the product page.
+
+- `iPhone_Duo_Outer/` renders the outer set to
+  `output/iPhone_Duo_Outer_-_Portrait/`.
+- `iPhone_Duo_Inner/` renders the inner set to
+  `output/iPhone_Duo_Inner_-_Landscape/`. The inner display opens like a book,
+  so the set is landscape, with the copy on the left and the app on the right.
+
+Both use the same sequence and copy as the iPhone set, in en-US, fr-FR and
+de-DE. iPhone Duo has Touch ID instead of Face ID, so the third subtitle says
+Touch ID.
+
+The captures came from an iPhone Duo simulator (iOS 27.1) running the Debug
+build with its sample cards and `--holder-screenshot-scanner-fixture`:
+
+- `duo-outer-*.png` with the phone closed. `duo-outer-scanner-sheet.png` is
+  cropped from the sheet's top edge, and everything outside the sheet's
+  rounded corners is filled black so no part of the vault shows.
+- `duo-inner-*.png` with the phone fully open. As in the iPad set, the scanner
+  sheet sits over the fictional vault.
+
+From this directory:
+
+```sh
+export PLAYWRIGHT_BROWSERS_PATH="$PWD/.playwright-browsers"
+for set in iPhone_Duo_Outer iPhone_Duo_Inner; do
+  for config in config.yaml config.fr-FR.yaml config.de-DE.yaml; do
+    .venv/bin/kou generate "$set/$config" --parallel-workers 3 --output json
+  done
+done
+```
+
+Render on a Mac so the templates get SF Pro. As with the iPad set, upload only
+the PNGs, not the `.layout.json` reports.
+
 ## Final checklist
 
 - The first screenshot makes Holder's purpose obvious without its subtitle.
