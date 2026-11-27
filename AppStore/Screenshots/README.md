@@ -93,6 +93,59 @@ include marketing artwork and can create a nested, distorted presentation.
 - The generated set uses the approved order from `config.yaml`.
 - Upload happens only after explicit authorization and a final visual review.
 
+## Product page test
+
+`config.yaml` remains the control. `config.ppo-copy-first.yaml` is a separate
+English iPhone treatment, generated with Koubou 0.20.0 and its
+**iPhone 17 Pro Max - Silver - Portrait** device frame. All three slides use
+`frame: true`; the template places Koubou's framed capture instead of drawing
+a CSS phone shell. No treatment screenshots have been uploaded to App Store
+Connect.
+
+1. **Your card number, ready to copy.** Everyday Card with Number showing
+   Copied! and the security code still locked. Supporting text: Saved details,
+   even without internet.
+2. **Scan it. Skip the typing.** Full phone with the Debug scanner fixture,
+   including the visible Enter card manually action.
+3. **Your cards. One private place.** Updated home screen with the Holder
+   title and Credit, Debit, and Other section labels. The dedicated privacy
+   slide is omitted in this treatment.
+
+Generate it from this directory after the HTML renderer setup above:
+
+```sh
+PLAYWRIGHT_BROWSERS_PATH="$PWD/.playwright-browsers" \
+  .venv/bin/kou generate config.ppo-copy-first.yaml --output json
+```
+
+The raw sources are in `captures/en-US/2.6/`: `home.png`, `scanner.png`, and
+`card-details-copied.png`. They are real captures from Holder's Debug build,
+using only its sample vault and explicit scanner fixture. All share the same
+9:41, full-signal, Wi-Fi, and charging status bar. The scanner source is now a
+full-screen capture, not the older sheet-only crop. The copied-number capture
+keeps the security code protected; its card fixture uses `4242…` and expiry
+09/29. No production app behavior is changed by these screenshot files.
+
+Templates live in `templates/framed/` and share `framed.css`. The relative
+`app-icon.png` symlink points to the existing app icon inside this repository.
+The scanner phone is smaller than the other two so the entire sheet and
+manual-entry action stay visible. Its container allows the drop shadow to
+extend naturally instead of clipping it to a rectangle. Slides one and three
+intentionally continue past the bottom canvas edge.
+
+Output goes to
+`output/ppo-copy-first/iPhone_17_Pro_Max_-_Silver_-_Portrait/`.
+All three final PNGs are 1320 × 2868, and all three layout reports have empty
+`overlaps` arrays. Review covered the full-size renders and gallery-sized
+thumbnails, including the frame, status bar, locked security code, headline
+spacing, and scanner shadow. The former frameless treatment assets have been
+removed.
+
+This is an English iPhone treatment only. iPad, Mac, French, and German artwork
+are not changed. Private keyword research, analytics, and store metadata are
+not part of this screenshot PR. Upload and any product-page experiment remain
+separate actions.
+
 ## Deferred
 
 - Widget artwork

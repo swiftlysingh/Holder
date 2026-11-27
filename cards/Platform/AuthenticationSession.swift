@@ -59,6 +59,7 @@ final class AuthenticationSession: ObservableObject {
 
     private let authenticatorFactory: DeviceAuthenticatorFactory
     private let sleeper: AsyncSleeper
+    private let onBackground: () -> Void
     private var activeAuthenticator: DeviceAuthenticating?
     private var authenticationAttemptID: UInt64 = 0
     private var authenticationCompletion: ((Bool) -> Void)?
@@ -67,10 +68,12 @@ final class AuthenticationSession: ObservableObject {
 
     init(
         authenticatorFactory: DeviceAuthenticatorFactory = DefaultDeviceAuthenticatorFactory(),
-        sleeper: AsyncSleeper = TaskAsyncSleeper()
+        sleeper: AsyncSleeper = TaskAsyncSleeper(),
+        onBackground: @escaping () -> Void = {}
     ) {
         self.authenticatorFactory = authenticatorFactory
         self.sleeper = sleeper
+        self.onBackground = onBackground
     }
 
     isolated deinit {
@@ -87,6 +90,7 @@ final class AuthenticationSession: ObservableObject {
         isPrivacyCurtainVisible = true
         revokeSensitiveAccess()
         invalidateAuthenticationAttempt()
+        onBackground()
     }
 
     func didBecomeActive(

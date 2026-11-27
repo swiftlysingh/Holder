@@ -14,7 +14,13 @@ import PhotosUI
 @MainActor
 final class CardViewModel: ObservableObject {
 
-	@Published var card : CardData
+	@Published var card: CardData {
+		didSet {
+			if card.number != oldValue.number {
+				scanNumberUnedited = false
+			}
+		}
+	}
 	@Published var isEditing = false
 	@Published var cardImage: PlatformImage?
 	@Published var isShowingScanner = false
@@ -33,6 +39,8 @@ final class CardViewModel: ObservableObject {
 	private var imageMutationTask: Task<Void, Never>?
 	private let imageStore: CardImageStore
 	private(set) var didUseScanner = false
+	private var scanNumberUnedited = false
+	private let onSaved: ((CardData, Bool) -> Void)?
 	let startMode: CardEditorStartMode
 
 	#if os(iOS)
@@ -54,7 +62,8 @@ final class CardViewModel: ObservableObject {
 		addNewFlow: Bool = false,
 		startMode: CardEditorStartMode = .scanner,
 		addUpdateCard: @escaping CardUpdateAction,
-		imageStore: CardImageStore = ICloudDataManager.shared
+		imageStore: CardImageStore = ICloudDataManager.shared,
+		onSaved: ((CardData, Bool) -> Void)? = nil
 	) {
 		self.card = card
 		self.isEditing = isEditing
@@ -62,6 +71,7 @@ final class CardViewModel: ObservableObject {
 		self.isAddNewFlow = addNewFlow
 		self.startMode = startMode
 		self.imageStore = imageStore
+		self.onSaved = onSaved
 		self.selectedCardType = addNewFlow ? nil : card.type
 		let id = card.id
 		imageLoadTask = Task { [weak self, imageStore, id] in
@@ -149,15 +159,19 @@ final class CardViewModel: ObservableObject {
 		isSaving = true
 		defer { isSaving = false }
 
-		let succeeded = await addUpdateCard(card)
+		let savedCard = card
+		let scanNumberUnedited = self.scanNumberUnedited
+		let succeeded = await addUpdateCard(savedCard)
 		if succeeded {
 			isEditing = false
+			onSaved?(savedCard, scanNumberUnedited)
 		}
 		return succeeded
 	}
 
 	func applyScan(_ result: CardScanResult) {
 		CardScanSession.apply(result, to: &card)
+		scanNumberUnedited = !card.number.isEmpty
 		didUseScanner = true
 		isShowingScanner = false
 		isEditing = true

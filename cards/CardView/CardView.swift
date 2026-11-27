@@ -1,3 +1,4 @@
+import CoreTransferable
 import SinghDevKit
 import SwiftUI
 import UniformTypeIdentifiers
@@ -13,9 +14,12 @@ struct CardView: View {
 
 	@StateObject private var model: CardViewModel
 	@EnvironmentObject private var authenticationSession: AuthenticationSession
+	@Environment(\.supportPromptPolicy) private var supportPromptPolicy
 	@Environment(\.analytics) private var analytics
+	private let onClose: (() -> Void)?
 	#if os(iOS)
 	@Environment(\.dismiss) private var dismiss
+	@Environment(\.horizontalSizeClass) private var horizontalSizeClass
 	@Binding private var cardSheetDetent: PresentationDetent
 	@State private var isShowingCardForm = false
 	@State private var scanAttemptNumber = 0
@@ -26,14 +30,17 @@ struct CardView: View {
 	#if os(iOS)
 	init(
 		model: CardViewModel,
-		cardSheetDetent: Binding<PresentationDetent> = .constant(.large)
+		cardSheetDetent: Binding<PresentationDetent> = .constant(.large),
+		onClose: (() -> Void)? = nil
 	) {
 		_model = StateObject(wrappedValue: model)
 		_cardSheetDetent = cardSheetDetent
+		self.onClose = onClose
 	}
 	#else
-	init(model: CardViewModel) {
+	init(model: CardViewModel, onClose: (() -> Void)? = nil) {
 		_model = StateObject(wrappedValue: model)
+		self.onClose = onClose
 	}
 	#endif
 
@@ -68,6 +75,22 @@ struct CardView: View {
 				: AppAnalyticsScreen.cardDetails
 		)
 		.disabled(model.isSaving)
+		#if os(macOS)
+		.if(onClose != nil) { view in
+			view.onExitCommand(perform: closeDetails)
+		}
+		#endif
+	}
+
+	private func closeDetails() {
+		guard !model.isEditing, !model.isSaving else { return }
+		onClose?()
+	}
+
+	private var closeDetailsButton: some View {
+		Button("Close Card Details", systemImage: "xmark", action: closeDetails)
+			.labelStyle(.iconOnly)
+			.disabled(model.isEditing)
 	}
 
 	#if os(iOS)
@@ -496,8 +519,17 @@ struct CardView: View {
 		})
 		.toolbar {
 			if !model.isAddNewFlow {
-				sensitiveShareMenu
-				editToolbarButton
+				#if os(iOS)
+				if horizontalSizeClass == .regular, onClose != nil {
+					ToolbarItem(placement: .navigation) {
+						closeDetailsButton
+					}
+				}
+				#endif
+				ToolbarItemGroup {
+					sensitiveShareMenu
+					editToolbarButton
+				}
 			}
 		}
 	}
@@ -555,11 +587,11 @@ struct CardView: View {
 	private var sensitiveShareMenu: some View {
 		if authenticationSession.isSensitiveAccessFresh {
 			Menu {
-				ShareLink(item: model.card.toShareString(includeSecurityCode: false)) {
+				ShareLink(item: shareItem(includeSecurityCode: false), preview: SharePreview("Card Details")) {
 					Label("Share without Security Code", systemImage: "square.and.arrow.up")
 				}
 				if !model.card.cvv.isEmpty {
-					ShareLink(item: model.card.toShareString(includeSecurityCode: true)) {
+					ShareLink(item: shareItem(includeSecurityCode: true), preview: SharePreview("Card Details")) {
 						Label("Share with Security Code", systemImage: "lock.open.fill")
 					}
 				}
@@ -576,6 +608,13 @@ struct CardView: View {
 			}
 			.disabled(authenticationSession.isAuthenticating)
 		}
+	}
+
+	private func shareItem(includeSecurityCode: Bool) -> CardShareItem {
+		CardShareItem(
+			text: model.card.toShareString(includeSecurityCode: includeSecurityCode),
+			supportPromptPolicy: supportPromptPolicy
+		)
 	}
 
 	#if os(macOS)
@@ -622,8 +661,15 @@ struct CardView: View {
 		.scrollContentBackground(.hidden)
 		.contentMargins(0)
 		.toolbar {
-			sensitiveShareMenu
-			editToolbarButton
+			if onClose != nil {
+				ToolbarItem(placement: .navigation) {
+					closeDetailsButton
+				}
+			}
+			ToolbarItemGroup {
+				sensitiveShareMenu
+				editToolbarButton
+			}
 		}
 	}
 
@@ -960,15 +1006,27 @@ struct CardView: View {
 
 	private func copyToClipboard(_ value: String, field: String) {
 		guard model.copyAction(with: value) else { return }
-		#if os(iOS)
-		UserSettings.shared.requestReview()
-		#endif
+		supportPromptPolicy?.recordCopy()
 		copiedField = field
 		DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
 			if copiedField == field {
 				copiedField = nil
 			}
 		}
+	}
+}
+
+private struct CardShareItem: Transferable {
+	let text: String
+	let supportPromptPolicy: SupportPromptPolicy?
+
+	static var transferRepresentation: some TransferRepresentation {
+		ProxyRepresentation(exporting: { item in
+			Task { @MainActor in
+				item.supportPromptPolicy?.recordShare()
+			}
+			return item.text
+		})
 	}
 }
 

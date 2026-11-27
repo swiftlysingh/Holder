@@ -18,7 +18,7 @@
 		AA0000062F0BC0000000002A /* PlatformTypes.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000012F0BC0000000001A /* PlatformTypes.swift */; };
 		AA0000072F0BC0000000002B /* PasteboardService.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000022F0BC0000000001B /* PasteboardService.swift */; };
 		AA0000082F0BC0000000002C /* HapticService.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000032F0BC0000000001C /* HapticService.swift */; };
-		AA0000092F0BC0000000002D /* ReviewService.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000042F0BC0000000001D /* ReviewService.swift */; };
+		AA0000092F0BC0000000002D /* SupportPromptPolicy.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000042F0BC0000000001D /* SupportPromptPolicy.swift */; };
 		AA00000A2F0BC0000000002E /* MenuBarView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000052F0BC0000000001E /* MenuBarView.swift */; platformFilters = (macos, ); };
 		AA2000022F40000100000002 /* AuthenticationSession.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA2000012F40000100000001 /* AuthenticationSession.swift */; };
 		EE1D3E902B66AE66009733A5 /* Tip.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE1D3E8F2B66AE66009733A5 /* Tip.swift */; };
@@ -88,7 +88,7 @@
 		AA0000012F0BC0000000001A /* PlatformTypes.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlatformTypes.swift; sourceTree = "<group>"; };
 		AA0000022F0BC0000000001B /* PasteboardService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PasteboardService.swift; sourceTree = "<group>"; };
 		AA0000032F0BC0000000001C /* HapticService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HapticService.swift; sourceTree = "<group>"; };
-		AA0000042F0BC0000000001D /* ReviewService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReviewService.swift; sourceTree = "<group>"; };
+		AA0000042F0BC0000000001D /* SupportPromptPolicy.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SupportPromptPolicy.swift; sourceTree = "<group>"; };
 		AA0000052F0BC0000000001E /* MenuBarView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MenuBarView.swift; sourceTree = "<group>"; };
 		AA2000012F40000100000001 /* AuthenticationSession.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthenticationSession.swift; sourceTree = "<group>"; };
 		EE1D3E8F2B66AE66009733A5 /* Tip.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Tip.swift; sourceTree = "<group>"; };
@@ -183,7 +183,7 @@
 				AA0000012F0BC0000000001A /* PlatformTypes.swift */,
 				AA0000022F0BC0000000001B /* PasteboardService.swift */,
 				AA0000032F0BC0000000001C /* HapticService.swift */,
-				AA0000042F0BC0000000001D /* ReviewService.swift */,
+				AA0000042F0BC0000000001D /* SupportPromptPolicy.swift */,
 			);
 			path = Platform;
 			sourceTree = "<group>";
@@ -462,7 +462,6 @@
 /* Begin PBXShellScriptBuildPhase section */
 		EE9000042F25000100000004 /* Count Lines of Code */ = {
 			isa = PBXShellScriptBuildPhase;
-			alwaysOutOfDate = 1;
 			buildActionMask = 2147483647;
 			files = (
 			);
@@ -487,7 +486,7 @@
 				"$(SRCROOT)/cards/Platform/AuthenticationSession.swift",
 				"$(SRCROOT)/cards/Platform/PasteboardService.swift",
 				"$(SRCROOT)/cards/Platform/PlatformTypes.swift",
-				"$(SRCROOT)/cards/Platform/ReviewService.swift",
+				"$(SRCROOT)/cards/Platform/SupportPromptPolicy.swift",
 				"$(SRCROOT)/cards/ScanView/CardScanning.swift",
 				"$(SRCROOT)/cards/ScanView/CardCandidateEngine.swift",
 				"$(SRCROOT)/cards/ScanView/CardScanSession.swift",
@@ -506,7 +505,7 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "APP_LINES=0\nINDEX=0\nwhile [ \"${INDEX}\" -lt \"${SCRIPT_INPUT_FILE_COUNT}\" ]; do\n    eval \"INPUT=\\${SCRIPT_INPUT_FILE_${INDEX}}\"\n    FILE_LINES=$(grep -v \"^[[:space:]]*$\" \"${INPUT}\" | grep -v \"^[[:space:]]*//\" | wc -l | tr -d ' ')\n    APP_LINES=$((APP_LINES + FILE_LINES))\n    INDEX=$((INDEX + 1))\ndone\n\ncat > \"${SRCROOT}/cards/Generated/LinesOfCode.swift\" << EOF\nenum LinesOfCode {\n    static let count = ${APP_LINES}\n    static let appCount = ${APP_LINES}\n}\nEOF\n";
+			shellScript = "OUTPUT=\"${SRCROOT}/cards/Generated/LinesOfCode.swift\"\nif [ \"${CONFIGURATION}\" = \"Debug\" ] && [ -f \"${OUTPUT}\" ]; then\n    exit 0\nfi\n\nAPP_LINES=0\nINDEX=0\nwhile [ \"${INDEX}\" -lt \"${SCRIPT_INPUT_FILE_COUNT}\" ]; do\n    eval \"INPUT=\\${SCRIPT_INPUT_FILE_${INDEX}}\"\n    FILE_LINES=$(grep -v \"^[[:space:]]*$\" \"${INPUT}\" | grep -v \"^[[:space:]]*//\" | wc -l | tr -d ' ')\n    APP_LINES=$((APP_LINES + FILE_LINES))\n    INDEX=$((INDEX + 1))\ndone\n\nTMP_DIR=\"${TEMP_DIR:-${TMPDIR:-/tmp}}\"\nTMP_FILE=\"$(mktemp \"${TMP_DIR%/}/LinesOfCode.XXXXXX\")\"\ntrap 'rm -f \"${TMP_FILE}\"' EXIT\ncat > \"${TMP_FILE}\" << EOF\nenum LinesOfCode {\n    static let count = ${APP_LINES}\n    static let appCount = ${APP_LINES}\n}\nEOF\n\nif [ ! -f \"${OUTPUT}\" ] || ! cmp -s \"${TMP_FILE}\" \"${OUTPUT}\"; then\n    OUTPUT_DIR=\"$(dirname \"${OUTPUT}\")\"\n    if [ ! -d \"${OUTPUT_DIR}\" ]; then\n        mkdir -p \"${OUTPUT_DIR}\"\n    fi\n    cat \"${TMP_FILE}\" > \"${OUTPUT}\"\nfi\n";
 		};
 /* End PBXShellScriptBuildPhase section */
 
@@ -548,7 +547,7 @@
 				AA0000062F0BC0000000002A /* PlatformTypes.swift in Sources */,
 				AA0000072F0BC0000000002B /* PasteboardService.swift in Sources */,
 				AA0000082F0BC0000000002C /* HapticService.swift in Sources */,
-				AA0000092F0BC0000000002D /* ReviewService.swift in Sources */,
+				AA0000092F0BC0000000002D /* SupportPromptPolicy.swift in Sources */,
 				AA2000022F40000100000002 /* AuthenticationSession.swift in Sources */,
 				AA00000A2F0BC0000000002E /* MenuBarView.swift in Sources */,
 			);
@@ -1118,8 +1117,8 @@
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/swiftlysingh/SinghDevKit.git";
 			requirement = {
-				kind = upToNextMajorVersion;
-				minimumVersion = 2.8.2;
+				kind = exactVersion;
+				version = 2.9.0;
 			};
 		};
 /* End XCRemoteSwiftPackageReference section */

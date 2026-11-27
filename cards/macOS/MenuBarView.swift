@@ -265,6 +265,7 @@ struct MenuBarView: View {
 }
 
 struct MenuBarCardRow: View {
+    @Environment(\.supportPromptPolicy) private var supportPromptPolicy
     let card: CardData
     let isSensitiveAccessFresh: Bool
     let isAuthenticating: Bool
@@ -420,7 +421,9 @@ struct MenuBarCardRow: View {
     }
 
     private func copyToClipboard(_ value: String, field: String) {
+        guard !value.isEmpty else { return }
         PasteboardService.copy(value)
+        supportPromptPolicy?.recordCopy()
         copiedField = field
         DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
             if copiedField == field {

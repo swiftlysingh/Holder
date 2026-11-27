@@ -132,6 +132,7 @@ final class CardViewModelTests: XCTestCase {
 	@MainActor
 	func testSaveCardPreventsReentryAndOnlyLeavesEditingAfterSuccess() async {
 		let saver = GatedCardSaveAction()
+		var successfulSaves = 0
 		let model = CardViewModel(
 			card: CardData(
 				id: UUID(),
@@ -144,7 +145,8 @@ final class CardViewModelTests: XCTestCase {
 			),
 			isEditing: true,
 			addUpdateCard: { _ in await saver.save() },
-			imageStore: EmptyCardImageStore()
+			imageStore: EmptyCardImageStore(),
+			onSaved: { _, _ in successfulSaves += 1 }
 		)
 
 		let firstSave = Task { @MainActor in await model.saveCard() }
@@ -160,14 +162,49 @@ final class CardViewModelTests: XCTestCase {
 		await saver.finishFirst(with: false)
 		let failedSave = await firstSave.value
 		XCTAssertEqual(failedSave, false)
+		XCTAssertEqual(successfulSaves, 0)
 		XCTAssertFalse(model.isSaving)
 		XCTAssertTrue(model.isEditing)
 
 		let successfulSave = await model.saveCard()
 		XCTAssertEqual(successfulSave, true)
+		XCTAssertEqual(successfulSaves, 1)
 		XCTAssertFalse(model.isEditing)
 		let finalSaveCount = await saver.callCount
 		XCTAssertEqual(finalSaveCount, 2)
+	}
+
+	@MainActor
+	func testScannedNumberFlagOnlySurvivesSavesWithoutNumberEdits() async {
+		let scan = CardScanResult(
+			pan: "4111111111111111",
+			expiry: nil,
+			cardholderName: nil,
+			network: .visa
+		)
+		var flags: [Bool] = []
+		let model = CardViewModel(
+			card: CardData(id: UUID(), number: "", cvv: "", expiration: "", name: "", description: "", type: .credit),
+			isEditing: true,
+			addUpdateCard: { _ in true },
+			imageStore: EmptyCardImageStore(),
+			onSaved: { _, scanNumberUnedited in flags.append(scanNumberUnedited) }
+		)
+
+		model.applyScan(scan)
+		model.card.name = "Test Card"
+		_ = await model.saveCard()
+
+		model.applyScan(scan)
+		let scannedNumber = model.card.number
+		model.card.number = "5555555555554444"
+		model.card.number = scannedNumber
+		_ = await model.saveCard()
+
+		model.applyScan(scan)
+		_ = await model.saveCard()
+
+		XCTAssertEqual(flags, [true, false, true])
 	}
 
 	@MainActor
