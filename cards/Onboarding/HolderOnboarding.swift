@@ -241,6 +241,7 @@ struct HolderOnboardingView: View {
 					actions
 				}
 			}
+			.avoidingActiveFold()
 		}
 		#if os(iOS)
 		.sensoryFeedback(.selection, trigger: page)
@@ -632,5 +633,30 @@ private extension View {
 		} else {
 			buttonStyle(.borderedProminent)
 		}
+	}
+
+	/// When iPhone Duo is partly open like a book, moves the view to the trailing
+	/// side of the fold, the way the system moves sheets. Flat or closed, the fold
+	/// isn't active, so the layout stays as it is on every other iPhone.
+	@ViewBuilder
+	func avoidingActiveFold() -> some View {
+		// ReservedRegion first ships in the iOS 27.1 SDK (Swift 6.4.1+).
+		#if os(iOS) && compiler(>=6.4.1)
+		if #available(iOS 27.1, *) {
+			GeometryReader { proxy in
+				// Only a vertical fold. The horizontal fold of the laptop pose is
+				// left alone until it can be checked on a rotated device.
+				let foldTrailingEdge = proxy.reservedRegions(kind: .division)
+					.first { $0.isActive && $0.frame.height > $0.frame.width }?
+					.frame.maxX ?? 0
+				self.padding(.leading, foldTrailingEdge)
+					.animation(.snappy, value: foldTrailingEdge)
+			}
+		} else {
+			self
+		}
+		#else
+		self
+		#endif
 	}
 }

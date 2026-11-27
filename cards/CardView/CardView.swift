@@ -133,7 +133,6 @@ struct CardView: View {
 					}
 				)
 				.frame(maxWidth: .infinity, maxHeight: .infinity)
-				.clipped()
 			}
 
 			if !model.isAddNewFlow || isShowingCardForm {
@@ -141,10 +140,6 @@ struct CardView: View {
 					.disabled(model.isShowingScanner)
 			}
 		}
-		.ignoresSafeArea(
-			.container,
-			edges: model.isShowingScanner ? .all : []
-		)
 		.bottomActionBar {
 			if model.isAddNewFlow && isShowingCardForm && !model.isShowingScanner {
 				addCardActionButton
@@ -534,14 +529,12 @@ struct CardView: View {
 		}
 	}
 	private var editToolbarButton: some View {
-		Button(action: toggleEditing) {
-			if model.isEditing {
-				Text("Done")
-			} else {
-				Image(systemName: "pencil")
-			}
-		}
-		.accessibilityLabel(model.isEditing ? "Done" : "Edit")
+		// iPhone Duo's vertical bar only shows items that have a symbol.
+		Button(
+			model.isEditing ? "Done" : "Edit",
+			systemImage: model.isEditing ? "checkmark" : "pencil",
+			action: toggleEditing
+		)
 		.disabled(model.isEditing && (!model.canFinishEditing || model.isSaving))
 	}
 
